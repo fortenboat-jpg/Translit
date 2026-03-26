@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BirthCert Translation — Перевод свидетельства о рождении</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<style>
+:root{
+  --navy:#0c1b3a;--navy2:#162d5c;--blue:#1a46b8;--blue2:#2558d4;
+  --gold:#b8922a;--gold2:#d4aa3e;--gold-light:#f0cc6a;
+  --bg:#f4f6fb;--bg2:#eaedfa;--white:#fff;
+  --text:#0e1c36;--muted:#5a6b90;--border:#d4daf0;
+  --green:#0ea86e;--red:#e03b3b;
+  --shadow:0 4px 28px rgba(12,27,58,.10);--shadow-xl:0 16px 56px rgba(12,27,58,.18);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);line-height:1.6}
+
+/* NAV */
+nav{background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:200;box-shadow:0 2px 16px rgba(12,27,58,.07)}
+.nav-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:0 28px;height:68px}
+.logo{display:flex;align-items:center;gap:11px;text-decoration:none}
+.logo-box{width:42px;height:42px;background:linear-gradient(135deg,var(--navy),var(--blue2));border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:1.15rem;flex-shrink:0;box-shadow:0 4px 12px rgba(26,70,184,.3)}
+.logo-name{font-family:'Cormorant Garamond',serif;font-size:1.3rem;font-weight:700;color:var(--navy);line-height:1}
+.logo-sub{font-size:.6rem;font-weight:500;color:var(--muted);letter-spacing:2.5px;text-transform:uppercase;display:block;margin-top:2px}
+.nav-links{display:flex;gap:30px}
+.nav-links a{text-decoration:none;color:var(--muted);font-size:.88rem;font-weight:500;transition:color .2s}
+.nav-links a:hover{color:var(--navy)}
+.nav-right{display:flex;align-items:center;gap:14px}
+.btn-cta{background:var(--navy);color:#fff;border:none;border-radius:10px;padding:10px 22px;font-size:.88rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .2s,transform .1s}
+.btn-cta:hover{background:var(--blue2);transform:translateY(-1px)}
+
+/* HERO */
+.hero{background:linear-gradient(140deg,var(--navy) 0%,var(--navy2) 55%,#1e3f8a 100%);position:relative;overflow:hidden}
+.hero-pat{position:absolute;inset:0;background-image:radial-gradient(circle at 20% 50%,rgba(184,146,42,.08) 0%,transparent 50%),radial-gradient(circle at 80% 20%,rgba(26,70,184,.15) 0%,transparent 40%);pointer-events:none}
+.hero-inner{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr 540px;align-items:stretch;position:relative;z-index:1}
+.hero-left{padding:60px 48px 60px 28px;display:flex;flex-direction:column;justify-content:center}
+.badge{display:inline-flex;align-items:center;gap:8px;background:rgba(212,170,62,.15);border:1px solid rgba(212,170,62,.35);color:var(--gold-light);border-radius:100px;padding:6px 16px;font-size:.72rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:22px;width:fit-content}
+.hero h1{font-family:'Cormorant Garamond',serif;font-size:clamp(2rem,3.8vw,3.1rem);font-weight:700;color:#fff;line-height:1.18;margin-bottom:18px}
+.hero h1 em{color:var(--gold-light);font-style:italic}
+.hero-desc{color:rgba(255,255,255,.72);font-size:.95rem;margin-bottom:28px;max-width:420px;line-height:1.75}
+.hero-checks{list-style:none;display:flex;flex-direction:column;gap:11px;margin-bottom:34px}
+.hero-checks li{display:flex;align-items:center;gap:11px;color:rgba(255,255,255,.82);font-size:.88rem}
+.chk{width:22px;height:22px;border-radius:50%;background:rgba(212,170,62,.2);border:1px solid rgba(212,170,62,.4);display:flex;align-items:center;justify-content:center;color:var(--gold-light);font-size:.7rem;flex-shrink:0}
+.btn-hero{background:linear-gradient(135deg,var(--gold),var(--gold-light));color:var(--navy);border:none;border-radius:12px;padding:15px 30px;font-size:.97rem;font-weight:700;cursor:pointer;width:fit-content;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:9px;box-shadow:0 6px 24px rgba(184,146,42,.45);transition:transform .15s,box-shadow .15s}
+.btn-hero:hover{transform:translateY(-2px);box-shadow:0 10px 36px rgba(184,146,42,.55)}
+.hero-note{margin-top:14px;display:flex;align-items:center;gap:7px;color:rgba(255,255,255,.45);font-size:.78rem}
+.hero-right{background:#fff;padding:32px 28px;display:flex;flex-direction:column;overflow-y:auto;max-height:100vh}
+
+/* API KEY BANNER */
+.api-banner{background:linear-gradient(135deg,#fff8e6,#fffbf0);border:1.5px solid var(--gold2);border-radius:12px;padding:14px 16px;margin-bottom:18px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.api-banner-text{font-size:.78rem;color:var(--text);flex:1;min-width:180px}
+.api-banner-text strong{display:block;color:var(--navy);margin-bottom:2px;font-size:.82rem}
+.api-key-wrap{display:flex;gap:6px;width:100%;margin-top:8px}
+.api-key-inp{flex:1;padding:8px 12px;border:1.5px solid var(--gold2);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.8rem;outline:none;background:#fff}
+.api-key-inp:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(26,70,184,.1)}
+.btn-save-key{background:var(--navy);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:.78rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap}
+.btn-save-key:hover{background:var(--blue2)}
+.key-status{font-size:.72rem;margin-top:5px;width:100%}
+.key-status.ok{color:var(--green)}
+.key-status.err{color:var(--red)}
+
+/* TABS */
+.tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:20px}
+.tab{flex:1;text-align:center;padding:10px 6px;font-size:.73rem;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2.5px solid transparent;transition:all .2s;line-height:1.3}
+.tab span{display:block;font-size:.63rem;font-weight:400;opacity:.7;margin-top:2px}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+
+/* FORM */
+.step{display:none}.step.active{display:block}
+.fl{display:block;font-size:.74rem;font-weight:600;color:var(--muted);margin-bottom:4px}
+.fi,.fs,.ft{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.84rem;color:var(--text);background:#fff;outline:none;transition:border-color .2s,box-shadow .2s}
+.fi:focus,.fs:focus,.ft:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(26,70,184,.09)}
+.fi.af{background:#edfaf4;border-color:var(--green)}
+.ft{resize:vertical;min-height:60px}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fr3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.fg{margin-bottom:12px}
+.fsec{font-size:.78rem;font-weight:700;color:var(--text);margin:14px 0 9px;padding-bottom:6px;border-bottom:1px solid var(--bg2);display:flex;align-items:center;gap:7px}
+
+/* UPLOAD */
+.uzone{border:2px dashed var(--border);border-radius:12px;padding:18px;text-align:center;cursor:pointer;transition:all .2s;background:var(--bg)}
+.uzone:hover{border-color:var(--blue);background:rgba(26,70,184,.03)}
+.uzone.analyzing{border-color:var(--gold2);background:rgba(212,170,62,.05)}
+.uzone.uploaded{border-color:var(--green);background:rgba(14,168,110,.05)}
+.uic{font-size:1.6rem;margin-bottom:6px}
+.utx{font-size:.8rem;color:var(--muted);font-weight:500}
+.uhn{font-size:.7rem;color:var(--muted);margin-top:3px}
+.abar{height:4px;background:var(--bg2);border-radius:4px;overflow:hidden;margin-top:9px;display:none}
+.abar.show{display:block}
+.afill{height:100%;background:linear-gradient(90deg,var(--blue),var(--gold2));border-radius:4px;width:0;transition:width .4s}
+.albl{font-size:.7rem;color:var(--gold2);font-weight:600;margin-top:5px;display:none}
+.albl.show{display:block}
+.fchip{display:none;align-items:center;gap:9px;background:var(--bg2);border-radius:8px;padding:7px 11px;margin-top:7px;font-size:.78rem}
+.fchip.show{display:flex}
+
+/* BUTTONS */
+.bgen{width:100%;background:linear-gradient(135deg,var(--navy),var(--blue2));color:#fff;border:none;border-radius:11px;padding:13px;font-size:.9rem;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:6px;box-shadow:0 4px 18px rgba(26,70,184,.28);transition:opacity .2s,transform .1s}
+.bgen:hover:not(:disabled){opacity:.91;transform:translateY(-1px)}
+.bgen:disabled{opacity:.45;cursor:not-allowed}
+.bsec{display:inline-flex;align-items:center;gap:7px;background:#fff;border:1.5px solid var(--border);border-radius:8px;padding:8px 14px;font-size:.8rem;font-weight:600;color:var(--text);cursor:pointer;font-family:'DM Sans',sans-serif;transition:border-color .2s}
+.bsec:hover{border-color:var(--blue)}
+.priv{text-align:center;font-size:.69rem;color:var(--muted);margin-top:6px;display:flex;align-items:center;justify-content:center;gap:5px}
+
+/* PREVIEW */
+.pvh{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.pvbadge{font-size:.7rem;font-weight:700;color:var(--green);background:rgba(14,168,110,.1);border-radius:100px;padding:4px 11px}
+.pvdl{font-size:.7rem;color:var(--muted)}
+.pvbox{background:var(--bg);border:1.5px solid var(--border);border-radius:11px;padding:16px 18px;font-size:.78rem;line-height:1.85;color:var(--text);max-height:320px;overflow-y:auto;white-space:pre-wrap;font-family:'DM Sans',sans-serif;margin-bottom:12px}
+.pvbox.ld{display:flex;align-items:center;justify-content:center;min-height:140px;flex-direction:column;gap:10px;color:var(--muted)}
+.sp{width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.brow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.enote{font-size:.76rem;color:var(--muted);margin-top:9px;padding:9px 12px;background:rgba(14,168,110,.06);border:1px solid rgba(14,168,110,.2);border-radius:8px;display:flex;align-items:center;gap:7px}
+
+/* PAYMENT */
+.pcrd{border:1.5px solid var(--border);border-radius:14px;padding:20px}
+.plbl{font-size:.73rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:11px}
+.pbig{font-family:'Cormorant Garamond',serif;font-size:2.3rem;font-weight:700;color:var(--navy);line-height:1}
+.psub{font-size:.76rem;color:var(--muted);margin-top:4px;margin-bottom:14px}
+.pssl{display:flex;align-items:center;gap:7px;font-size:.74rem;font-weight:600;color:var(--green);margin-bottom:9px}
+.pms{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.pm{background:var(--bg2);border:1px solid var(--border);border-radius:5px;padding:4px 9px;font-size:.68rem;font-weight:700;color:var(--muted)}
+.bpay{width:100%;background:linear-gradient(135deg,#0ea86e,#0c9460);color:#fff;border:none;border-radius:11px;padding:14px;font-size:.95rem;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 18px rgba(14,168,110,.3);transition:opacity .2s,transform .1s}
+.bpay:hover{opacity:.9;transform:translateY(-1px)}
+.pguar{font-size:.74rem;color:var(--muted);margin-top:11px;padding-top:11px;border-top:1px solid var(--border)}
+
+/* SECTIONS */
+.sec{padding:64px 28px}
+.sec-in{max-width:1200px;margin:0 auto}
+.stag{font-size:.72rem;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--blue);margin-bottom:10px}
+.sh2{font-family:'Cormorant Garamond',serif;font-size:clamp(1.8rem,3vw,2.5rem);font-weight:700;color:var(--navy);margin-bottom:40px}
+
+/* HOW */
+.howg{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+.hwc{background:#fff;border:1.5px solid var(--border);border-radius:14px;padding:24px 18px;text-align:center;transition:box-shadow .2s,transform .2s}
+.hwc:hover{box-shadow:var(--shadow);transform:translateY(-4px)}
+.hwi{width:50px;height:50px;border-radius:15px;background:linear-gradient(135deg,var(--navy),var(--blue));margin:0 auto 14px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;box-shadow:0 4px 14px rgba(26,70,184,.22)}
+.hwtag{font-size:.63rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--blue);margin-bottom:5px}
+.hwc h3{font-size:.9rem;font-weight:700;margin-bottom:6px;color:var(--navy)}
+.hwc p{font-size:.78rem;color:var(--muted);line-height:1.65}
+
+/* SHOWCASE */
+.scbg{background:linear-gradient(155deg,var(--navy) 0%,var(--navy2) 100%)}
+.scg{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center}
+.scl{list-style:none;display:flex;flex-direction:column;gap:16px;margin-top:18px}
+.scl li{display:flex;gap:13px;align-items:flex-start}
+.sclic{width:34px;height:34px;border-radius:9px;background:rgba(212,170,62,.15);border:1px solid rgba(212,170,62,.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.9rem}
+.sclt strong{display:block;color:#fff;font-size:.88rem;margin-bottom:2px}
+.sclt span{color:rgba(255,255,255,.5);font-size:.77rem}
+.tlrow{display:flex;align-items:center;margin-top:10px;flex-wrap:wrap;gap:0}
+.tlst{display:flex;align-items:center;gap:7px}
+.tldot{width:26px;height:26px;border-radius:50%;background:var(--blue);color:#fff;font-size:.68rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.tllb{font-size:.76rem;color:rgba(255,255,255,.65)}
+.tllb strong{color:#fff;display:block;font-size:.8rem}
+.tlln{flex:1;height:2px;background:rgba(255,255,255,.15);min-width:18px}
+
+/* DOC PREVIEW CARD */
+.docwrap{position:relative}
+.docback{position:absolute;width:92%;height:100%;background:#fff;border-radius:16px;top:10px;left:4%;z-index:0;box-shadow:0 6px 20px rgba(12,27,58,.1)}
+.docpaper{background:#fff;border-radius:16px;padding:26px 24px;box-shadow:var(--shadow-xl);position:relative;z-index:1;overflow:hidden}
+.docpaper::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--navy),var(--blue),var(--gold2))}
+.docwm{position:absolute;bottom:12px;right:12px;font-size:4rem;opacity:.04;font-family:'Cormorant Garamond',serif;font-weight:700;color:var(--navy);pointer-events:none;line-height:1}
+.dochdr{text-align:center;margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid var(--border)}
+.doctitle{font-family:'Cormorant Garamond',serif;font-size:.88rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:1.5px;line-height:1.4}
+.docsub{font-size:.66rem;color:var(--muted);margin-top:3px}
+.docbody{display:grid;grid-template-columns:1fr 1fr;gap:9px 20px;margin-bottom:14px}
+.docf{border-bottom:1px solid var(--bg2);padding-bottom:5px}
+.docfl{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:2px}
+.docfv{font-size:.78rem;font-weight:600;color:var(--text)}
+.docf.full{grid-column:1/-1}
+.doccert{margin-top:12px;padding-top:10px;border-top:1.5px dashed var(--border);display:flex;align-items:center;gap:11px}
+.docstamp{width:46px;height:46px;border-radius:50%;border:2px solid var(--blue);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.docsi{font-size:.38rem;font-weight:700;color:var(--blue);text-align:center;text-transform:uppercase;letter-spacing:.4px;line-height:1.4;padding:2px}
+.docct{font-size:.68rem;color:var(--muted);line-height:1.6}
+.docct strong{color:var(--text);display:block;margin-bottom:2px}
+.docnum{font-size:.6rem;color:var(--muted);text-align:right;margin-top:8px;font-style:italic}
+
+/* FAQ */
+.faqlist{display:flex;flex-direction:column;gap:10px;max-width:720px}
+.faqi{background:#fff;border:1.5px solid var(--border);border-radius:11px;overflow:hidden}
+.faqq{padding:15px 18px;font-weight:600;font-size:.88rem;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:11px}
+.faqq:hover{background:var(--bg)}
+.faqarr{transition:transform .25s;color:var(--muted);flex-shrink:0}
+.faqi.open .faqarr{transform:rotate(180deg)}
+.faqa{padding:0 18px;max-height:0;overflow:hidden;transition:max-height .3s,padding .3s;font-size:.83rem;color:var(--muted);line-height:1.75}
+.faqi.open .faqa{max-height:180px;padding:0 18px 14px}
+
+/* FOOTER */
+footer{background:var(--navy);color:rgba(255,255,255,.5);padding:40px 28px;text-align:center;font-size:.8rem}
+.ftin{max-width:1200px;margin:0 auto}
+.ftlogo{font-family:'Cormorant Garamond',serif;font-size:1.2rem;color:#fff;margin-bottom:6px}
+.ftlinks{display:flex;gap:22px;justify-content:center;margin:12px 0;flex-wrap:wrap}
+.ftlinks a{color:rgba(255,255,255,.42);text-decoration:none;transition:color .2s}
+.ftlinks a:hover{color:#fff}
+
+/* TOAST */
+.toast{position:fixed;bottom:22px;right:22px;z-index:999;background:var(--navy);color:#fff;border-radius:12px;padding:12px 18px;font-size:.84rem;font-weight:600;box-shadow:var(--shadow-xl);transform:translateY(80px);opacity:0;transition:all .3s;display:flex;align-items:center;gap:8px;max-width:300px}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.ok{border-left:3px solid var(--green)}
+.toast.err{border-left:3px solid var(--red)}
+.toast.info{border-left:3px solid var(--gold2)}
+
+/* MODAL */
+.moverlay{position:fixed;inset:0;background:rgba(12,27,58,.65);z-index:500;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.moverlay.show{display:flex}
+.mbox{background:#fff;border-radius:20px;padding:34px;max-width:420px;width:92%;text-align:center;box-shadow:var(--shadow-xl);position:relative}
+.mbox-ico{font-size:2.4rem;margin-bottom:12px}
+.mbox h3{font-family:'Cormorant Garamond',serif;font-size:1.45rem;font-weight:700;color:var(--navy);margin-bottom:7px}
+.mbox p{font-size:.86rem;color:var(--muted);margin-bottom:18px;line-height:1.7}
+.mclose{position:absolute;top:13px;right:15px;background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--muted)}
+.mbtn{width:100%;background:linear-gradient(135deg,var(--navy),var(--blue2));color:#fff;border:none;border-radius:10px;padding:12px;font-size:.9rem;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:opacity .2s}
+.mbtn:hover{opacity:.9}
+
+@media(max-width:960px){
+  .hero-inner{grid-template-columns:1fr}
+  .howg{grid-template-columns:1fr 1fr}
+  .scg{grid-template-columns:1fr}
+  .fr,.fr3{grid-template-columns:1fr}
+  .nav-links{display:none}
+  .docbody{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a href="#" class="logo">
+      <div class="logo-box">📄</div>
+      <div><div class="logo-name">BirthCert</div><span class="logo-sub">Translation</span></div>
+    </a>
+    <div class="nav-links">
+      <a href="#how">Как это работает</a>
+      <a href="#example">Пример перевода</a>
+      <a href="#faq">FAQ</a>
+    </div>
+    <div class="nav-right">
+      <span style="font-size:.78rem;color:var(--muted)">🔒 SSL</span>
+      <button class="btn-cta" onclick="scrollToForm()">Начать перевод</button>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-pat"></div>
+  <div class="hero-inner">
+    <div class="hero-left">
+      <div class="badge">🇷🇺 Консульство РФ в США</div>
+      <h1>Перевод свидетельства<br>о рождении для<br><em>Консульства РФ</em></h1>
+      <p class="hero-desc">Загрузите скан — AI мгновенно считывает все данные и формирует официальный нотариальный PDF. На ваш email за 10 минут.</p>
+      <ul class="hero-checks">
+        <li><div class="chk">✓</div>Автоматическое считывание данных (OpenAI Vision)</li>
+        <li><div class="chk">✓</div>PDF на email за 10 минут после оплаты</li>
+        <li><div class="chk">✓</div>Принимается всеми консульствами РФ в США</li>
+        <li><div class="chk">✓</div>Точный перевод по стандартам консульства</li>
+      </ul>
+      <button class="btn-hero" onclick="scrollToForm()">Начать перевод →</button>
+      <div class="hero-note">🔒 Данные защищены (SSL)</div>
+    </div>
+
+    <!-- FORM -->
+    <div class="hero-right" id="form-area">
+
+      <!-- API KEY -->
+      <div class="api-banner" id="apiBanner">
+        <div style="font-size:1.2rem">🔑</div>
+        <div style="flex:1">
+          <div class="api-banner-text"><strong>OpenAI API ключ</strong>Нужен для считывания и перевода документа</div>
+          <div class="api-key-wrap">
+            <input class="api-key-inp" id="apiKeyInp" type="password" placeholder="sk-...">
+            <button class="btn-save-key" onclick="saveKey()">Сохранить</button>
+          </div>
+          <div class="key-status" id="keyStatus"></div>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <div class="tab active" id="tab1" onclick="goTab(1)">Шаг 1<span>Загрузка и данные</span></div>
+        <div class="tab" id="tab2" onclick="goTab(2)">Шаг 2<span>Предпросмотр</span></div>
+        <div class="tab" id="tab3" onclick="goTab(3)">Шаг 3<span>Оплата</span></div>
+      </div>
+
+      <!-- STEP 1 -->
+      <div class="step active" id="s1">
+        <div class="fsec">📎 Загрузите свидетельство о рождении</div>
+        <div class="fg">
+          <div class="uzone" id="uZone" onclick="document.getElementById('fInput').click()">
+            <div class="uic" id="uIc">⬆️</div>
+            <div class="utx" id="uTx">Перетащите JPG, PNG или PDF сюда</div>
+            <div class="uhn" id="uHn">до 10 МБ · Данные считываются автоматически через AI</div>
+            <div class="abar" id="aBar"><div class="afill" id="aFill"></div></div>
+            <div class="albl" id="aLbl">🔍 OpenAI Vision считывает документ...</div>
+          </div>
+          <div class="fchip" id="fChip">
+            <span>📄</span>
+            <div><div style="font-weight:600" id="fName"></div><div style="font-size:.7rem;color:var(--muted)" id="fSz"></div></div>
+            <span style="margin-left:auto;font-size:.7rem;color:var(--green);font-weight:600">✓ Загружено</span>
+          </div>
+          <input type="file" id="fInput" accept=".jpg,.jpeg,.png,.pdf" style="display:none" onchange="handleUpload(this)">
+        </div>
+
+        <div class="fsec">👶 Данные о ребёнке</div>
+        <div class="fr3">
+          <div class="fg"><label class="fl">Фамилия</label><input class="fi" id="fLast" placeholder="Кирзов"/></div>
+          <div class="fg"><label class="fl">Имя</label><input class="fi" id="fFirst" placeholder="Марк"/></div>
+          <div class="fg"><label class="fl">Отчество</label><input class="fi" id="fMid" placeholder="Алексеевич"/></div>
+        </div>
+        <div class="fr">
+          <div class="fg"><label class="fl">Дата рождения</label><input class="fi" id="fDob" type="date"/></div>
+          <div class="fg"><label class="fl">Пол</label>
+            <select class="fs" id="fSex"><option value="МУЖСКОЙ">Мужской</option><option value="ЖЕНСКИЙ">Женский</option></select></div>
+        </div>
+        <div class="fr">
+          <div class="fg"><label class="fl">Время рождения</label><input class="fi" id="fTime" placeholder="14:11"/></div>
+          <div class="fg"><label class="fl">Вес при рождении</label><input class="fi" id="fWeight" placeholder="8 фунтов 0 унций"/></div>
+        </div>
+        <div class="fg"><label class="fl">Больница / место рождения</label><input class="fi" id="fHosp" placeholder="Bayfront Health Medical Center"/></div>
+        <div class="fg"><label class="fl">Город и округ рождения</label><input class="fi" id="fPlace" placeholder="г. Санкт-Петербург, округ Пинеллас"/></div>
+        <div class="fg"><label class="fl">Номер регистрации в штате</label><input class="fi" id="fRegNum" placeholder="109-2022-034113"/></div>
+        <div class="fr">
+          <div class="fg"><label class="fl">Дата выдачи</label><input class="fi" id="fIssued" placeholder="08 МАРТА 2022 г."/></div>
+          <div class="fg"><label class="fl">Дата регистрации</label><input class="fi" id="fRegDate" placeholder="27 ФЕВРАЛЯ 2022 г."/></div>
+        </div>
+
+        <div class="fsec">👩 Мать / родитель</div>
+        <div class="fr">
+          <div class="fg"><label class="fl">ФИО матери</label><input class="fi" id="fMom" placeholder="ЕКАТЕРИНА ОЛЕГОВНА ГОЛОД"/></div>
+          <div class="fg"><label class="fl">Дата рождения матери</label><input class="fi" id="fMomDob" placeholder="28 АВГУСТА 1990 г."/></div>
+        </div>
+        <div class="fg"><label class="fl">Место рождения матери</label><input class="fi" id="fMomBirth" placeholder="БЕЛАРУСЬ"/></div>
+
+        <div class="fsec">👨 Отец / родитель</div>
+        <div class="fr">
+          <div class="fg"><label class="fl">ФИО отца</label><input class="fi" id="fDad" placeholder="АЛЕКСЕЙ ЛЕОНИДОВИЧ КИРЗОВ"/></div>
+          <div class="fg"><label class="fl">Дата рождения отца</label><input class="fi" id="fDadDob" placeholder="09 НОЯБРЯ 1982 г."/></div>
+        </div>
+        <div class="fg"><label class="fl">Место рождения отца</label><input class="fi" id="fDadBirth" placeholder="РОССИЯ"/></div>
+
+        <div class="fg"><label class="fl" style="color:var(--gold2)">✉️ Email для получения PDF *</label>
+          <input class="fi" id="fEmail" type="email" placeholder="your@email.com" style="border-color:var(--gold2)"/></div>
+
+        <button class="bgen" id="btnGen" onclick="doGenerate()">✨ Сгенерировать перевод →</button>
+        <div class="priv">🔒 Данные используются только для перевода</div>
+      </div>
+
+      <!-- STEP 2 -->
+      <div class="step" id="s2">
+        <div class="pvh">
+          <div class="pvbadge">✓ Перевод сформирован</div>
+          <div class="pvdl">⏱ PDF придёт за 10 мин</div>
+        </div>
+        <div class="pvbox ld" id="pvBox"><div class="sp"></div><span>Формируем перевод...</span></div>
+        <div class="brow">
+          <button class="bsec" onclick="goTab(1)">← Назад</button>
+          <button class="bsec" onclick="downloadPDF()">⬇️ Скачать PDF</button>
+          <button class="bgen" style="width:auto;padding:10px 20px;margin:0" onclick="goTab(3)">К оплате →</button>
+        </div>
+        <div class="enote" id="eNote" style="display:none">✉️ PDF будет отправлен на <strong id="eDisp"></strong> после оплаты</div>
+      </div>
+
+      <!-- STEP 3 -->
+      <div class="step" id="s3">
+        <div class="pcrd">
+          <div class="plbl">Итого к оплате</div>
+          <div class="pbig">USD $49<span style="font-size:1.1rem">.00</span></div>
+          <div class="psub">Перевод + оформленный PDF + отправка на email за 10 мин</div>
+          <div class="pssl">🔒 Безопасная оплата через Stripe</div>
+          <div class="pms">
+            <div class="pm">VISA</div><div class="pm">Mastercard</div>
+            <div class="pm">AMEX</div><div class="pm">Apple Pay</div><div class="pm">Google Pay</div>
+          </div>
+          <button class="bpay" onclick="doPayment()">💳 Оплатить USD $49.00 →</button>
+          <div class="pguar">🛡️ <strong>Гарантия возврата:</strong> если перевод не примут в консульстве из-за формата — вернём деньги. PDF придёт на email в течение <strong>10 минут</strong>.</div>
+        </div>
+        <div style="margin-top:10px"><button class="bsec" onclick="goTab(2)">← Назад</button></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="sec" id="how">
+  <div class="sec-in">
+    <div class="stag">Процесс</div>
+    <div class="sh2">Как это работает</div>
+    <div class="howg">
+      <div class="hwc"><div class="hwtag">Шаг 1</div><div class="hwi">📤</div><h3>Загрузите скан</h3><p>JPG, PNG или PDF. OpenAI Vision мгновенно считывает все поля — заполнять вручную почти ничего не нужно.</p></div>
+      <div class="hwc"><div class="hwtag">Шаг 2</div><div class="hwi">🤖</div><h3>AI формирует перевод</h3><p>GPT-4 переводит по официальному консульскому шаблону. Проверьте предпросмотр до оплаты.</p></div>
+      <div class="hwc"><div class="hwtag">Шаг 3</div><div class="hwi">💳</div><h3>Оплатите онлайн</h3><p>Безопасная оплата через Stripe. Visa, Mastercard, Apple Pay.</p></div>
+      <div class="hwc"><div class="hwtag">Шаг 4</div><div class="hwi">📧</div><h3>PDF за 10 минут</h3><p>Готовый нотариальный PDF приходит на email автоматически. Распечатайте и подайте.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- SHOWCASE -->
+<section class="sec scbg" id="example">
+  <div class="sec-in">
+    <div class="scg">
+      <div>
+        <div class="stag" style="color:var(--gold-light)">Результат</div>
+        <div class="sh2" style="color:#fff;margin-bottom:14px">Что вы получите</div>
+        <div class="tlrow">
+          <div class="tlst"><div class="tldot">1</div><div class="tllb"><strong>Загрузка</strong>Ваш скан</div></div>
+          <div class="tlln"></div>
+          <div class="tlst"><div class="tldot">2</div><div class="tllb"><strong>AI-перевод</strong>Автоматически</div></div>
+          <div class="tlln"></div>
+          <div class="tlst"><div class="tldot">3</div><div class="tllb"><strong>Email PDF</strong>10 минут</div></div>
+        </div>
+        <ul class="scl">
+          <li><div class="sclic">📄</div><div class="sclt"><strong>Все поля по консульскому шаблону</strong><span>Штат, номер, ребёнок, родители, больница — всё переведено</span></div></li>
+          <li><div class="sclic">🎓</div><div class="sclt"><strong>Сертификация переводчика</strong><span>Подпись, печать и номер сертификата</span></div></li>
+          <li><div class="sclic">🏛️</div><div class="sclt"><strong>Все консульства РФ в США</strong><span>Вашингтон, Нью-Йорк, Хьюстон, Сан-Франциско, Сиэтл</span></div></li>
+          <li><div class="sclic">⚡</div><div class="sclt"><strong>На email за 10 минут</strong><span>Готовый PDF — распечатать и подать</span></div></li>
+        </ul>
+      </div>
+
+      <!-- DOC PREVIEW -->
+      <div class="docwrap">
+        <div class="docback"></div>
+        <div class="docpaper">
+          <div class="docwm">РФ</div>
+          <div class="dochdr">
+            <div class="doctitle">Свидетельство о рождении<br>Перевод с английского на русский</div>
+            <div class="docsub">Certificate of Live Birth · штат Флорида, США · Форма DH 1946</div>
+          </div>
+          <div class="docbody">
+            <div class="docf full"><div class="docfl">Номер регистрации в штате</div><div class="docfv">109-2022-034113</div></div>
+            <div class="docf"><div class="docfl">Дата выдачи</div><div class="docfv">08 марта 2022 г.</div></div>
+            <div class="docf"><div class="docfl">Дата регистрации</div><div class="docfv">27 февраля 2022 г.</div></div>
+            <div class="docf full"><div class="docfl">ФИО ребёнка</div><div class="docfv">МАРК АЛЕКСЕЕВИЧ КИРЗОВ</div></div>
+            <div class="docf"><div class="docfl">Дата рождения</div><div class="docfv">26 февраля 2022 г.</div></div>
+            <div class="docf"><div class="docfl">Время / Пол / Вес</div><div class="docfv">14:11 · Мужской · 8 ф. 0 уц.</div></div>
+            <div class="docf full"><div class="docfl">Место рождения</div><div class="docfv">Мед. центр Bayfront Health, г. Санкт-Петербург, округ Пинеллас</div></div>
+            <div class="docf full"><div class="docfl">Мать</div><div class="docfv">Екатерина Олеговна Голод · р. 28.08.1990 · Беларусь</div></div>
+            <div class="docf full"><div class="docfl">Отец</div><div class="docfv">Алексей Леонидович Кирзов · р. 09.11.1982 · Россия</div></div>
+          </div>
+          <div class="doccert">
+            <div class="docstamp"><div class="docsi">CERTIFIED<br>TRANSLATOR<br>★</div></div>
+            <div class="docct"><strong>Сертификация переводчика</strong>Настоящий перевод является точным и полным переводом оригинала с английского языка на русский язык.</div>
+          </div>
+          <div class="docnum">BirthCert Translation · birthcert-translation.com</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="sec" id="faq">
+  <div class="sec-in">
+    <div class="stag">Вопросы</div>
+    <div class="sh2">FAQ</div>
+    <div class="faqlist">
+      <div class="faqi"><div class="faqq" onclick="faqT(this)">Как быстро придёт перевод? <span class="faqarr">▼</span></div><div class="faqa">После оплаты PDF отправляется автоматически в течение 10 минут.</div></div>
+      <div class="faqi"><div class="faqq" onclick="faqT(this)">Зачем нужен OpenAI API ключ? <span class="faqarr">▼</span></div><div class="faqa">Ключ используется для считывания данных из вашего скана (Vision) и формирования перевода (GPT-4). Ключ хранится только в вашем браузере и никуда не отправляется. Получить ключ можно на platform.openai.com.</div></div>
+      <div class="faqi"><div class="faqq" onclick="faqT(this)">Примут ли перевод в консульстве? <span class="faqarr">▼</span></div><div class="faqa">Формат соответствует требованиям всех консульств РФ в США. Если откажут из-за формата — полный возврат.</div></div>
+      <div class="faqi"><div class="faqq" onclick="faqT(this)">Нужно ли нотариальное заверение? <span class="faqarr">▼</span></div><div class="faqa">PDF включает сертификацию переводчика. При необходимости нотариальное заверение можно сделать у нотариуса в США.</div></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="ftin">
+    <div class="ftlogo">📄 BirthCert Translation</div>
+    <p>Перевод свидетельств о рождении для консульств РФ в США</p>
+    <div class="ftlinks"><a href="#">Конфиденциальность</a><a href="#">Условия</a><a href="#">Возврат</a><a href="#">Контакты</a></div>
+    <p>© 2025 BirthCert Translation. Все права защищены.</p>
+  </div>
+</footer>
+
+<!-- SUCCESS MODAL -->
+<div class="moverlay" id="succModal">
+  <div class="mbox">
+    <div class="mbox-ico">🎉</div>
+    <h3>Оплата подтверждена!</h3>
+    <p>PDF-перевод будет отправлен на <strong id="succEmail"></strong> в течение <strong>10 минут</strong>.<br><br>Проверьте папки «Входящие» и «Спам».</p>
+    <button class="mbtn" onclick="document.getElementById('succModal').classList.remove('show');goTab(1)">Закрыть</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─────────────────────────────────────────
+//  STATE
+// ─────────────────────────────────────────
+const DEFAULT_KEY = '';   // ключ теперь на бэкенде
+let translationText = '';
+
+// На Vercel API функции доступны по относительному пути
+const API = '';
+
+// Скрыть банер ключа — он не нужен, ключ на сервере
+document.getElementById('apiBanner').style.display = 'none';
+
+// ─── UTILS ───────────────────────────────────────────────
+function scrollToForm(){document.getElementById('form-area').scrollIntoView({behavior:'smooth',block:'start'})}
+function goTab(n){[1,2,3].forEach(i=>{document.getElementById('s'+i).classList.toggle('active',i===n);document.getElementById('tab'+i).classList.toggle('active',i===n)})}
+function faqT(el){el.closest('.faqi').classList.toggle('open')}
+function toast(type,msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast '+type;
+  void t.offsetWidth; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),4500);
+}
+function af(id,val){if(!val||val==='—')return;const el=document.getElementById(id);if(el){el.value=val;el.classList.add('af');setTimeout(()=>el.classList.remove('af'),3000)}}
+function saveKey(){toast('info','Ключ хранится на сервере')}
+
+// ─── UPLOAD → BACKEND OCR ────────────────────────────────
+function handleUpload(inp){
+  const file=inp.files[0]; if(!file) return;
+  document.getElementById('fName').textContent=file.name;
+  document.getElementById('fSz').textContent=(file.size/1024).toFixed(1)+' КБ';
+  document.getElementById('fChip').classList.add('show');
+
+  const zone=document.getElementById('uZone');
+  zone.classList.add('analyzing');
+  document.getElementById('uIc').textContent='🔍';
+  document.getElementById('uTx').textContent='Отправляем на сервер...';
+  document.getElementById('uHn').textContent='OpenAI Vision считывает скан';
+  const bar=document.getElementById('aBar'),fill=document.getElementById('aFill'),lbl=document.getElementById('aLbl');
+  bar.classList.add('show'); lbl.classList.add('show');
+  let p=0; const iv=setInterval(()=>{p=Math.min(p+2,90);fill.style.width=p+'%'},300);
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  fetch(API+'/api/ocr', { method:'POST', body: formData })
+    .then(r=>r.json())
+    .then(res=>{
+      clearInterval(iv); fill.style.width='100%';
+      if(res.ok && res.data){
+        const j=res.data;
+        af('fLast',j.lastName);
+        af('fFirst',j.firstName);
+        af('fMid',j.middleName);
+        if(j.dob){
+          const d=new Date(j.dob+'T12:00:00');
+          if(!isNaN(d)){
+            const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),dd=String(d.getDate()).padStart(2,'0');
+            af('fDob',`${y}-${m}-${dd}`);
+          }
+        }
+        if(j.sex) document.getElementById('fSex').value=(j.sex.includes('Ж')||j.sex.includes('F'))?'ЖЕНСКИЙ':'МУЖСКОЙ';
+        af('fTime',j.timeOfBirth);
+        af('fWeight',j.weight);
+        af('fHosp',j.hospital);
+        af('fPlace',j.cityCounty);
+        af('fRegNum',j.stateRegNum);
+        af('fIssued',j.dateIssued);
+        af('fRegDate',j.dateRegistered);
+        af('fMom',j.motherName);
+        af('fMomDob',j.motherDob);
+        af('fMomBirth',j.motherBirthPlace);
+        af('fDad',j.fatherName);
+        af('fDadDob',j.fatherDob);
+        af('fDadBirth',j.fatherBirthPlace);
+        toast('ok','✓ Данные считаны — проверьте поля');
+      } else {
+        toast('err','Ошибка OCR: '+(res.error||'неизвестно'));
+      }
+    })
+    .catch(err=>{
+      clearInterval(iv);
+      toast('err','Ошибка сервера. Проверьте Vercel Functions логи.');
+      console.error(err);
+    })
+    .finally(()=>{
+      fill.style.width='100%';
+      setTimeout(()=>{
+        zone.classList.remove('analyzing'); zone.classList.add('uploaded');
+        document.getElementById('uIc').textContent='✅';
+        document.getElementById('uTx').textContent='Файл загружен';
+        document.getElementById('uHn').textContent=file.name;
+        bar.classList.remove('show'); lbl.classList.remove('show');
+      },400);
+    });
+}
+
+// ─── GENERATE → BACKEND translate ────────────────────────
+function doGenerate(){
+  const last=document.getElementById('fLast').value.trim();
+  const first=document.getElementById('fFirst').value.trim();
+  const email=document.getElementById('fEmail').value.trim();
+  if(!last||!first){toast('err','⚠️ Заполните хотя бы фамилию и имя ребёнка');return}
+  if(!email){toast('err','⚠️ Укажите email для получения PDF');return}
+
+  goTab(2);
+  const box=document.getElementById('pvBox');
+  box.className='pvbox ld';
+  box.innerHTML='<div class="sp"></div><span>Формируем перевод на сервере...</span>';
+
+  const payload = {
+    lastName:        last,
+    firstName:       first,
+    middleName:      document.getElementById('fMid').value.trim(),
+    dob:             document.getElementById('fDob').value,
+    sex:             document.getElementById('fSex').value,
+    timeOfBirth:     document.getElementById('fTime').value.trim(),
+    weight:          document.getElementById('fWeight').value.trim(),
+    hospital:        document.getElementById('fHosp').value.trim(),
+    cityCounty:      document.getElementById('fPlace').value.trim(),
+    stateRegNum:     document.getElementById('fRegNum').value.trim(),
+    dateIssued:      document.getElementById('fIssued').value.trim(),
+    dateRegistered:  document.getElementById('fRegDate').value.trim(),
+    motherName:      document.getElementById('fMom').value.trim(),
+    motherDob:       document.getElementById('fMomDob').value.trim(),
+    motherBirthPlace:document.getElementById('fMomBirth').value.trim(),
+    fatherName:      document.getElementById('fDad').value.trim(),
+    fatherDob:       document.getElementById('fDadDob').value.trim(),
+    fatherBirthPlace:document.getElementById('fDadBirth').value.trim(),
+    email
+  };
+
+  fetch(API+'/api/translate',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(payload)
+  })
+  .then(r=>r.json())
+  .then(res=>{
+    if(res.ok){
+      translationText = res.translationText;
+      box.className='pvbox'; box.style.display='block'; box.textContent=translationText;
+      document.getElementById('eDisp').textContent=email;
+      document.getElementById('eNote').style.display='flex';
+      // store PDF base64 for download
+      window._pdfBase64 = res.pdfBase64;
+      window._orderNum  = res.orderNum;
+      toast('ok','✓ Перевод готов — PDF сформирован');
+    } else {
+      box.className='pvbox'; box.textContent='❌ Ошибка: '+(res.error||'сервер не ответил');
+      toast('err','Ошибка генерации: '+(res.error||''));
+    }
+  })
+  .catch(err=>{
+    box.className='pvbox'; box.textContent='❌ Ошибка сервера. Проверьте Vercel логи.';
+    toast('err','Сервер недоступен');
+    console.error(err);
+  });
+}
+
+// ─── DOWNLOAD PDF (from server base64) ───────────────────
+function downloadPDF(){
+  if(window._pdfBase64){
+    const bin=atob(window._pdfBase64);
+    const buf=new Uint8Array(bin.length);
+    for(let i=0;i<bin.length;i++) buf[i]=bin.charCodeAt(i);
+    const blob=new Blob([buf],{type:'application/pdf'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='BirthCert_'+(window._orderNum||Date.now())+'.pdf';
+    a.click();
+    toast('ok','✓ PDF скачан');
+  } else if(translationText){
+    // fallback txt
+    const a=document.createElement('a');
+    a.href='data:text/plain;charset=utf-8,'+encodeURIComponent(translationText);
+    a.download='translation.txt'; a.click();
+  } else {
+    toast('err','Нет PDF — сначала сгенерируйте перевод');
+  }
+}
+
+// ─── PAYMENT ─────────────────────────────────────────────
+function doPayment(){
+  if(!translationText){toast('err','Сначала сгенерируйте перевод');return}
+  const email=document.getElementById('fEmail').value.trim();
+  toast('info','💳 Обработка платежа...');
+  setTimeout(()=>{
+    downloadPDF();
+    document.getElementById('succEmail').textContent=email||'ваш email';
+    document.getElementById('succModal').classList.add('show');
+    // Email уже был отправлен сервером при /api/translate
+    toast('ok','✉️ PDF отправлен на '+email);
+  },1800);
+}
+
+// ─── DRAG & DROP ─────────────────────────────────────────
+const uz=document.getElementById('uZone');
+uz.addEventListener('dragover',e=>{e.preventDefault();uz.style.borderColor='var(--blue)'});
+uz.addEventListener('dragleave',()=>uz.style.borderColor='');
+uz.addEventListener('drop',e=>{
+  e.preventDefault(); uz.style.borderColor='';
+  const f=e.dataTransfer.files[0];
+  if(f){const dt=new DataTransfer();dt.items.add(f);document.getElementById('fInput').files=dt.files;handleUpload(document.getElementById('fInput'))}
+});
+
+
+
+</script>
+</body>
+</html>
