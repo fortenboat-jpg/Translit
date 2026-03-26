@@ -111,6 +111,8 @@ nav{background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;
 .pvdl{font-size:.7rem;color:var(--muted)}
 .pvbox{background:var(--bg);border:1.5px solid var(--border);border-radius:11px;padding:16px 18px;font-size:.78rem;line-height:1.85;color:var(--text);max-height:320px;overflow-y:auto;white-space:pre-wrap;font-family:'DM Sans',sans-serif;margin-bottom:12px}
 .pvbox.ld{display:flex;align-items:center;justify-content:center;min-height:140px;flex-direction:column;gap:10px;color:var(--muted)}
+.dot-pulse{width:12px;height:12px;border-radius:50%;background:var(--blue);animation:dotPulse 1s ease-in-out infinite}
+@keyframes dotPulse{0%,100%{transform:scale(.6);opacity:.4}50%{transform:scale(1);opacity:1}}
 .sp{width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:sp .7s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
 .brow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
@@ -352,16 +354,29 @@ footer{background:var(--navy);color:rgba(255,255,255,.5);padding:40px 28px;text-
       <!-- STEP 2 -->
       <div class="step" id="s2">
         <div class="pvh">
-          <div class="pvbadge">✓ Перевод сформирован</div>
-          <div class="pvdl">⏱ PDF придёт за 10 мин</div>
+          <div class="pvbadge" id="pvBadge">⏳ Формируем перевод...</div>
+          <div class="pvdl">✉️ придёт на email за 10 мин</div>
         </div>
-        <div class="pvbox ld" id="pvBox"><div class="sp"></div><span>Формируем перевод...</span></div>
-        <div class="brow">
+        <!-- LOADING ANIMATION -->
+        <div id="loadingAnim" style="display:none;text-align:center;padding:28px 0">
+          <div style="display:flex;justify-content:center;gap:10px;margin-bottom:14px">
+            <div class="dot-pulse" style="animation-delay:0s"></div>
+            <div class="dot-pulse" style="animation-delay:0.2s"></div>
+            <div class="dot-pulse" style="animation-delay:0.4s"></div>
+          </div>
+          <div id="loadStep" style="font-size:.82rem;color:var(--muted);font-weight:500">Считываем документ...</div>
+          <div style="margin-top:12px;background:var(--bg2);border-radius:8px;height:6px;overflow:hidden;width:100%">
+            <div id="loadBar" style="height:100%;background:linear-gradient(90deg,var(--blue),var(--gold2));border-radius:8px;width:0%;transition:width .5s ease"></div>
+          </div>
+        </div>
+        <div class="pvbox ld" id="pvBox" style="display:none"></div>
+        <div class="brow" id="pvButtons" style="display:none">
           <button class="bsec" onclick="goTab(1)">← Назад</button>
-          <button class="bsec" onclick="downloadPDF()">⬇️ Скачать PDF</button>
+          <button class="bsec" onclick="downloadDocx()">📝 Скачать DOCX</button>
+          <button class="bsec" onclick="downloadHtml()">🎨 Скачать с фоном</button>
           <button class="bgen" style="width:auto;padding:10px 20px;margin:0" onclick="goTab(3)">К оплате →</button>
         </div>
-        <div class="enote" id="eNote" style="display:none">✉️ PDF будет отправлен на <strong id="eDisp"></strong> после оплаты</div>
+        <div class="enote" id="eNote" style="display:none">✉️ Файлы отправлены на <strong id="eDisp"></strong></div>
       </div>
 
       <!-- STEP 3 -->
@@ -493,8 +508,9 @@ footer{background:var(--navy);color:rgba(255,255,255,.5);padding:40px 28px;text-
 const DEFAULT_KEY = '';   // ключ теперь на бэкенде
 let translationText = '';
 
-// На Vercel API функции доступны по относительному пути
+// ── BACKEND URL — поменяй если другой адрес ──────────────
 const API = '';
+// ─────────────────────────────────────────────────────────
 
 // Скрыть банер ключа — он не нужен, ключ на сервере
 document.getElementById('apiBanner').style.display = 'none';
@@ -568,7 +584,7 @@ function handleUpload(inp){
     })
     .catch(err=>{
       clearInterval(iv);
-      toast('err','Ошибка сервера. Проверьте Vercel Functions логи.');
+      toast('err','Сервер недоступен. Проверьте что бэкенд запущен на бобле.');
       console.error(err);
     })
     .finally(()=>{
@@ -583,102 +599,125 @@ function handleUpload(inp){
     });
 }
 
-// ─── GENERATE → BACKEND translate ────────────────────────
+// ─── GENERATE ────────────────────────────────────────────
+const LOAD_STEPS=[
+  [15,'Считываем данные...'],
+  [35,'Формируем перевод...'],
+  [58,'Создаём DOCX файл...'],
+  [78,'Создаём HTML с фоном...'],
+  [92,'Отправляем на email...'],
+];
+
 function doGenerate(){
   const last=document.getElementById('fLast').value.trim();
   const first=document.getElementById('fFirst').value.trim();
   const email=document.getElementById('fEmail').value.trim();
   if(!last||!first){toast('err','⚠️ Заполните хотя бы фамилию и имя ребёнка');return}
-  if(!email){toast('err','⚠️ Укажите email для получения PDF');return}
-
+  if(!email){toast('err','⚠️ Укажите email для получения файлов');return}
   goTab(2);
-  const box=document.getElementById('pvBox');
-  box.className='pvbox ld';
-  box.innerHTML='<div class="sp"></div><span>Формируем перевод на сервере...</span>';
-
-  const payload = {
-    lastName:        last,
-    firstName:       first,
-    middleName:      document.getElementById('fMid').value.trim(),
-    dob:             document.getElementById('fDob').value,
-    sex:             document.getElementById('fSex').value,
-    timeOfBirth:     document.getElementById('fTime').value.trim(),
-    weight:          document.getElementById('fWeight').value.trim(),
-    hospital:        document.getElementById('fHosp').value.trim(),
-    cityCounty:      document.getElementById('fPlace').value.trim(),
-    stateRegNum:     document.getElementById('fRegNum').value.trim(),
-    dateIssued:      document.getElementById('fIssued').value.trim(),
-    dateRegistered:  document.getElementById('fRegDate').value.trim(),
-    motherName:      document.getElementById('fMom').value.trim(),
-    motherDob:       document.getElementById('fMomDob').value.trim(),
+  document.getElementById('loadingAnim').style.display='block';
+  document.getElementById('pvBox').style.display='none';
+  document.getElementById('pvButtons').style.display='none';
+  document.getElementById('eNote').style.display='none';
+  document.getElementById('pvBadge').textContent='⏳ Формируем перевод...';
+  let si=0;
+  const stepIv=setInterval(()=>{
+    if(si<LOAD_STEPS.length){
+      const [pct,msg]=LOAD_STEPS[si];
+      document.getElementById('loadBar').style.width=pct+'%';
+      document.getElementById('loadStep').textContent=msg;
+      si++;
+    }
+  },700);
+  const payload={
+    lastName:last,firstName:first,
+    middleName:document.getElementById('fMid').value.trim(),
+    dob:document.getElementById('fDob').value,
+    sex:document.getElementById('fSex').value,
+    timeOfBirth:document.getElementById('fTime').value.trim(),
+    weight:document.getElementById('fWeight').value.trim(),
+    hospital:document.getElementById('fHosp').value.trim(),
+    cityCounty:document.getElementById('fPlace').value.trim(),
+    stateRegNum:document.getElementById('fRegNum').value.trim(),
+    dateIssued:document.getElementById('fIssued').value.trim(),
+    dateRegistered:document.getElementById('fRegDate').value.trim(),
+    motherName:document.getElementById('fMom').value.trim(),
+    motherDob:document.getElementById('fMomDob').value.trim(),
     motherBirthPlace:document.getElementById('fMomBirth').value.trim(),
-    fatherName:      document.getElementById('fDad').value.trim(),
-    fatherDob:       document.getElementById('fDadDob').value.trim(),
+    fatherName:document.getElementById('fDad').value.trim(),
+    fatherDob:document.getElementById('fDadDob').value.trim(),
     fatherBirthPlace:document.getElementById('fDadBirth').value.trim(),
     email
   };
-
-  fetch(API+'/api/translate',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify(payload)
-  })
+  fetch(API+'/api/translate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
   .then(r=>r.json())
   .then(res=>{
-    if(res.ok){
-      translationText = res.translationText;
-      box.className='pvbox'; box.style.display='block'; box.textContent=translationText;
-      document.getElementById('eDisp').textContent=email;
-      document.getElementById('eNote').style.display='flex';
-      // store PDF base64 for download
-      window._pdfBase64 = res.pdfBase64;
-      window._orderNum  = res.orderNum;
-      toast('ok','✓ Перевод готов — PDF сформирован');
-    } else {
-      box.className='pvbox'; box.textContent='❌ Ошибка: '+(res.error||'сервер не ответил');
-      toast('err','Ошибка генерации: '+(res.error||''));
-    }
+    clearInterval(stepIv);
+    document.getElementById('loadBar').style.width='100%';
+    document.getElementById('loadStep').textContent='✓ Готово!';
+    setTimeout(()=>{
+      document.getElementById('loadingAnim').style.display='none';
+      if(res.ok){
+        translationText=res.translationText;
+        window._docxBase64=res.docxBase64;
+        window._pdfHtml=res.pdfHtml;
+        window._orderNum=res.orderNum;
+        const box=document.getElementById('pvBox');
+        box.style.display='block';box.className='pvbox';box.textContent=translationText;
+        document.getElementById('pvButtons').style.display='flex';
+        document.getElementById('pvBadge').textContent='✓ Перевод готов';
+        document.getElementById('eDisp').textContent=email;
+        document.getElementById('eNote').style.display='flex';
+        toast('ok','✓ Файлы отправлены на '+email);
+      } else {
+        document.getElementById('pvBox').style.display='block';
+        document.getElementById('pvBox').textContent='❌ Ошибка: '+(res.error||'');
+        toast('err','Ошибка: '+(res.error||''));
+      }
+    },400);
   })
   .catch(err=>{
-    box.className='pvbox'; box.textContent='❌ Ошибка сервера. Проверьте Vercel логи.';
-    toast('err','Сервер недоступен');
-    console.error(err);
+    clearInterval(stepIv);
+    document.getElementById('loadingAnim').style.display='none';
+    document.getElementById('pvBox').style.display='block';
+    document.getElementById('pvBox').textContent='❌ Ошибка сервера. Проверьте Vercel логи.';
+    toast('err','Ошибка сервера');console.error(err);
   });
 }
 
-// ─── DOWNLOAD PDF (from server base64) ───────────────────
-function downloadPDF(){
-  if(window._pdfBase64){
-    const bin=atob(window._pdfBase64);
-    const buf=new Uint8Array(bin.length);
-    for(let i=0;i<bin.length;i++) buf[i]=bin.charCodeAt(i);
-    const blob=new Blob([buf],{type:'application/pdf'});
-    const a=document.createElement('a');
-    a.href=URL.createObjectURL(blob);
-    a.download='BirthCert_'+(window._orderNum||Date.now())+'.pdf';
-    a.click();
-    toast('ok','✓ PDF скачан');
-  } else if(translationText){
-    // fallback txt
-    const a=document.createElement('a');
-    a.href='data:text/plain;charset=utf-8,'+encodeURIComponent(translationText);
-    a.download='translation.txt'; a.click();
-  } else {
-    toast('err','Нет PDF — сначала сгенерируйте перевод');
-  }
+function downloadDocx(){
+  if(!window._docxBase64){toast('err','Нет файла');return}
+  const bin=atob(window._docxBase64);
+  const buf=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) buf[i]=bin.charCodeAt(i);
+  const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='BirthCert_'+(window._orderNum||Date.now())+'.docx';
+  a.click();toast('ok','✓ DOCX скачан');
 }
 
-// ─── PAYMENT ─────────────────────────────────────────────
+function downloadHtml(){
+  if(!window._pdfHtml){toast('err','Нет файла');return}
+  const blob=new Blob([window._pdfHtml],{type:'text/html;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='BirthCert_'+(window._orderNum||Date.now())+'_с_фоном.html';
+  a.click();toast('ok','✓ HTML скачан — откройте в браузере и распечатайте');
+}
+
+function downloadPDF(){downloadDocx();}
+
 function doPayment(){
   if(!translationText){toast('err','Сначала сгенерируйте перевод');return}
   const email=document.getElementById('fEmail').value.trim();
   toast('info','💳 Обработка платежа...');
   setTimeout(()=>{
-    downloadPDF();
+    downloadDocx();
+    setTimeout(downloadHtml,600);
     document.getElementById('succEmail').textContent=email||'ваш email';
     document.getElementById('succModal').classList.add('show');
-    // Email уже был отправлен сервером при /api/translate
-    toast('ok','✉️ PDF отправлен на '+email);
+    toast('ok','✉️ Файлы отправлены на '+email);
   },1800);
 }
 
