@@ -15,8 +15,10 @@ export default async function handler(req, res) {
       ? new Date(d.dob + 'T12:00:00').toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })
       : '—';
     const fullName = [d.lastName, d.firstName, d.middleName].filter(Boolean).join(' ');
+
     const translationText = buildText(d, dobFmt, fullName, num, today);
 
+    // Send email via Resend (if configured)
     if (d.email && process.env.RESEND_API_KEY) {
       const resend = new Resend(process.env.RESEND_API_KEY);
       await resend.emails.send({
@@ -101,19 +103,23 @@ function buildText(d, dobFmt, fullName, num, today) {
 function buildEmailHtml(fullName, num, text) {
   const escaped = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   return `
-<div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;border-radius:14px;overflow:hidden">
+<div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;border-radius:14px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.1)">
   <div style="background:#0c1b3a;padding:28px;text-align:center">
-    <h2 style="color:white;margin:0;font-size:22px">BirthCert Translation</h2>
+    <h2 style="color:white;margin:0;font-size:22px">📄 BirthCert Translation</h2>
     <p style="color:rgba(255,255,255,0.6);margin:6px 0 0;font-size:13px">Официальный перевод для Консульства РФ в США</p>
   </div>
   <div style="background:#f4f6fb;padding:32px">
     <p style="color:#0e1c36;font-size:15px;margin:0 0 10px">Здравствуйте!</p>
-    <p style="color:#5a6b90;font-size:14px;line-height:1.7">Ваш перевод готов. Распечатайте и подайте в консульство.</p>
-    <div style="background:white;border:1.5px solid #d4daf0;border-radius:10px;padding:20px;margin:20px 0;font-family:monospace;font-size:11px;white-space:pre-wrap;line-height:1.7;color:#0e1c36">${escaped}</div>
+    <p style="color:#5a6b90;font-size:14px;line-height:1.7">Ваш перевод свидетельства о рождении готов.<br>Текст перевода ниже — распечатайте и подайте в консульство.</p>
+    <div style="background:white;border:1.5px solid #d4daf0;border-radius:10px;padding:20px;margin:20px 0;font-family:monospace;font-size:12px;white-space:pre-wrap;line-height:1.7;color:#0e1c36">${escaped}</div>
     <div style="background:#e8f8f0;border-left:3px solid #0ea86e;padding:12px 16px;border-radius:0 8px 8px 0">
-      <p style="margin:0;color:#0a6644;font-size:13px">При необходимости заверьте у нотариуса в США.</p>
+      <p style="margin:0;color:#0a6644;font-size:13px">🖨️ Распечатайте и подайте в консульство. При необходимости заверьте у нотариуса.</p>
     </div>
-    <p style="color:#aab0c8;font-size:12px;margin-top:16px">№ перевода: <strong>${num}</strong> · BirthCert Translation</p>
+    <div style="border-top:1px solid #d4daf0;padding-top:14px;margin-top:18px">
+      <p style="color:#aab0c8;font-size:12px;margin:0">№ перевода: <strong>${num}</strong></p>
+      <p style="color:#aab0c8;font-size:12px;margin:4px 0 0">© BirthCert Translation</p>
+    </div>
   </div>
 </div>`;
 }
+
