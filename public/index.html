@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 :root{
   --navy:#0c1b3a;--navy2:#162d5c;--blue:#1a46b8;--blue2:#2558d4;
@@ -696,8 +697,8 @@ function doGenerate(){
         window._pdfHtml=res.pdfHtml;
         window._orderNum=res.orderNum;
         window._payload=payload;
-        // Показываем PNG превью — зафиксированный документ
-        showBlankPreview(res.previewPng, res.values || payload, res.fields, res.bgUrl);
+        // Рендерим PNG в браузере из HTML
+        renderPreviewPng(res.pdfHtml, res.values || payload, res.fields, res.bgUrl);
         document.getElementById('pvButtons').style.display='flex';
         document.getElementById('pvBadge').textContent='✓ Перевод готов — проверьте данные';
         document.getElementById('eDisp').textContent=email;
@@ -724,59 +725,95 @@ function doGenerate(){
 }
 
 // ─── ПОКАЗ БЛАНКА С ДАННЫМИ ──────────────────────────────
-function showBlankPreview(pngBase64, values, serverFields, bgUrl) {
+// ─── РЕНДЕР PNG В БРАУЗЕРЕ ───────────────────────────────
+function renderPreviewPng(pdfHtml, values, serverFields, bgUrl) {
   const container = document.getElementById('blankPreview');
   const overlayDiv = document.getElementById('overlayFields');
+  const bgImg = document.getElementById('bgImg');
 
-  if (pngBase64) {
-    // PNG готов — показываем как изображение, поля уже зафиксированы
-    overlayDiv.innerHTML = `<img src="data:image/png;base64,${pngBase64}"
-      style="position:absolute;top:0;left:0;width:100%;height:auto;display:block">`;
-    // Скрываем фоновый бланк — PNG его заменяет
-    const bgImg = document.getElementById('bgImg');
-    if (bgImg) bgImg.style.display = 'none';
-  } else {
-    // Fallback если PNG не сгенерировался — наложение полей
-    const bgImg = document.getElementById('bgImg');
-    if (bgImg) { bgImg.style.display = 'block'; if (bgUrl) bgImg.src = bgUrl; }
-    const v = values || {};
-    const fields = serverFields || [
-      { id:'stateRegNum',      top:15.0, left:30.1, size:20 },
-      { id:'dateIssued',       top:15.0, left:64.3, size:20 },
-      { id:'dateRegistered',   top:17.0, left:64.4, size:20 },
-      { id:'childName',        top:21.8, left:33.6, size:20 },
-      { id:'dobFormatted',     top:26.5, left:33.6, size:20 },
-      { id:'timeOfBirth',      top:27.0, left:79.1, size:20 },
-      { id:'sex',              top:31.0, left:33.6, size:20 },
-      { id:'weight',           top:31.0, left:71.1, size:20 },
-      { id:'hospital',         top:34.4, left:33.6, size:20 },
-      { id:'cityCounty',       top:38.3, left:33.7, size:20 },
-      { id:'motherName',       top:49.3, left:33.5, size:20 },
-      { id:'motherDob',        top:53.1, left:33.5, size:20 },
-      { id:'motherBirthPlace', top:56.3, left:33.4, size:20 },
-      { id:'fatherName',       top:65.5, left:33.4, size:20 },
-      { id:'fatherDob',        top:69.9, left:33.4, size:20 },
-      { id:'fatherBirthPlace', top:73.5, left:33.5, size:20 },
-      { id:'reqNum',           top:84.6, left:75.1, size:20 },
-      { id:'barcode',          top:96.6, left:17.9, size:17 },
-    ];
-    const containerW = container.offsetWidth || 460;
-    const scale = containerW / 794;
-    overlayDiv.innerHTML = fields.map(f => {
-      const val = v[f.id]; if (!val) return '';
-      return `<div style="position:absolute;top:${f.top}%;left:${f.left}%;font-size:${Math.max(Math.round(f.size*scale),8)}px;font-weight:700;color:#000;font-family:'Times New Roman',serif;white-space:nowrap;line-height:1">${val}</div>`;
-    }).join('');
-  }
-
-  // Показываем с анимацией
+  // Показываем контейнер сразу с лоадером
   container.style.display = 'block';
   container.style.opacity = '0';
-  container.style.transform = 'translateY(8px)';
-  container.style.transition = 'opacity .4s, transform .4s';
-  requestAnimationFrame(() => {
-    container.style.opacity = '1';
-    container.style.transform = 'translateY(0)';
-  });
+  overlayDiv.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:380px;color:var(--muted);font-size:.82rem;flex-direction:column;gap:10px"><div class="sp"></div><span>Фиксируем документ...</span></div>';
+  if (bgImg) bgImg.style.display = 'none';
+
+  // Создаём скрытый iframe с HTML документа
+  const iframe = document.createElement('iframe');
+  iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:794px;height:1123px;border:none;opacity:0;pointer-events:none';
+  iframe.srcdoc = pdfHtml;
+  document.body.appendChild(iframe);
+
+  iframe.onload = function() {
+    // Ждём загрузки фона в iframe
+    setTimeout(() => {
+      html2canvas(iframe.contentDocument.querySelector('.page') || iframe.contentDocument.body, {
+        width: 794,
+        height: 1123,
+        scale: 1,
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+      }).then(canvas => {
+        document.body.removeChild(iframe);
+        // Конвертируем в PNG
+        const pngUrl = canvas.toDataURL('image/png');
+        window._previewPng = pngUrl;
+        // Показываем PNG в превью
+        overlayDiv.innerHTML = `<img src="${pngUrl}" style="position:absolute;top:0;left:0;width:100%;height:auto;display:block">`;
+        // Анимация появления
+        container.style.transition = 'opacity .4s, transform .4s';
+        container.style.transform = 'translateY(8px)';
+        requestAnimationFrame(() => {
+          container.style.opacity = '1';
+          container.style.transform = 'translateY(0)';
+        });
+      }).catch(err => {
+        console.error('html2canvas error:', err);
+        document.body.removeChild(iframe);
+        // Fallback — показываем наложение полей
+        showBlankPreview(values, serverFields, bgUrl);
+      });
+    }, 2000); // 2 сек на загрузку фона в iframe
+  };
+}
+
+function showBlankPreview(values, serverFields, bgUrl) {
+  const container = document.getElementById('blankPreview');
+  const overlayDiv = document.getElementById('overlayFields');
+  const bgImg = document.getElementById('bgImg');
+  if (bgImg) { bgImg.style.display = 'block'; if (bgUrl) bgImg.src = bgUrl; }
+  const v = values || {};
+  const fields = serverFields || [
+    { id:'stateRegNum',      top:15.0, left:30.1, size:20 },
+    { id:'dateIssued',       top:15.0, left:64.3, size:20 },
+    { id:'dateRegistered',   top:17.0, left:64.4, size:20 },
+    { id:'childName',        top:21.8, left:33.6, size:20 },
+    { id:'dobFormatted',     top:26.5, left:33.6, size:20 },
+    { id:'timeOfBirth',      top:27.0, left:79.1, size:20 },
+    { id:'sex',              top:31.0, left:33.6, size:20 },
+    { id:'weight',           top:31.0, left:71.1, size:20 },
+    { id:'hospital',         top:34.4, left:33.6, size:20 },
+    { id:'cityCounty',       top:38.3, left:33.7, size:20 },
+    { id:'motherName',       top:49.3, left:33.5, size:20 },
+    { id:'motherDob',        top:53.1, left:33.5, size:20 },
+    { id:'motherBirthPlace', top:56.3, left:33.4, size:20 },
+    { id:'fatherName',       top:65.5, left:33.4, size:20 },
+    { id:'fatherDob',        top:69.9, left:33.4, size:20 },
+    { id:'fatherBirthPlace', top:73.5, left:33.5, size:20 },
+    { id:'reqNum',           top:84.6, left:75.1, size:20 },
+    { id:'barcode',          top:96.6, left:17.9, size:17 },
+  ];
+  const containerW = container.offsetWidth || 460;
+  const scale = containerW / 794;
+  overlayDiv.innerHTML = fields.map(f => {
+    const val = v[f.id]; if (!val) return '';
+    return `<div style="position:absolute;top:${f.top}%;left:${f.left}%;font-size:${Math.max(Math.round(f.size*scale),8)}px;font-weight:700;color:#000;font-family:'Times New Roman',serif;white-space:nowrap;line-height:1">${val}</div>`;
+  }).join('');
+  container.style.display = 'block';
+  container.style.opacity = '0';
+  container.style.transition = 'opacity .4s';
+  requestAnimationFrame(() => { container.style.opacity = '1'; });
 }
 
 
