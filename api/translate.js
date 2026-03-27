@@ -60,13 +60,13 @@ export default async function handler(req, res) {
 function buildOverlayHtml(d, dobFmt, fullName, num, today, bgUrl) {
   const v = (val) => val || '';
 
-  // Штрих-код: номер запроса в формате *XXXXXXXX* (Code 39 шрифт имитируется жирным моноширинным)
-  const barcodeVal = v(d.reqNum) || num;
-  const barcodeText = '*' + barcodeVal + '*';
+  // Штрих-код: только цифры со звёздочками
+  const barcodeVal = (d.reqNum || '').replace(/[^0-9]/g, '') || num.replace(/[^0-9]/g, '');
+  const barcodeText = barcodeVal ? '*' + barcodeVal + '*' : '';
 
   // Точные координаты с редактора (size 24px ≈ 12.4pt при 150dpi)
   const fields = [
-    { top:14.9, left:29.2, size:16, val: v(d.stateRegNum)      },
+    { top:14.9, left:29.2, size:18, val: v(d.stateRegNum)      },
     { top:14.7, left:63.4, size:16, val: v(d.dateIssued)        },
     { top:16.7, left:63.4, size:16, val: v(d.dateRegistered)    },
     { top:21.6, left:34.1, size:16, val: fullName               },
