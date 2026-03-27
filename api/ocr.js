@@ -222,6 +222,7 @@ CRITICAL RULES - follow exactly:
 10. MOTHER and FATHER names: copy exactly as written, include all three name parts
 
 11. Mother/Father dates and birthplaces: copy exactly as written
+12. reqNum: the REQ or REQUEST number at the bottom of the document (digits only, e.g. "2023733714")
 
 Return ONLY this JSON, no markdown:
 {
@@ -242,7 +243,8 @@ Return ONLY this JSON, no markdown:
   "motherBirthPlace": "",
   "fatherName": "",
   "fatherDob": "",
-  "fatherBirthPlace": ""
+  "fatherBirthPlace": "",
+  "reqNum": ""
 }`
             }
           ]
@@ -258,33 +260,36 @@ Return ONLY this JSON, no markdown:
 
     // Post-process: translate everything to Russian
     const result = {
-      lastName:        translitName(raw.lastName),
-      firstName:       translitName(raw.firstName),
-      middleName:      translitName(raw.middleName),
+      lastName:        translitName(raw.lastName).toUpperCase(),
+      firstName:       translitName(raw.firstName).toUpperCase(),
+      middleName:      translitName(raw.middleName).toUpperCase(),
       dob:             raw.dob || '',
-     sex: (() => {
-  const s = (raw.sex || '').toUpperCase().trim();
-  console.log('RAW SEX VALUE:', JSON.stringify(raw.sex), '| PROCESSED:', s);
-  if (s === 'FEMALE' || s === 'F' || s.includes('FEMALE')) return 'ЖЕНСКИЙ';
-  if (s === 'MALE' || s === 'M' || s.includes('MALE')) return 'МУЖСКОЙ';
-  return 'МУЖСКОЙ';
-  })(),
+      sex:             (() => {
+                         const s = (raw.sex || '').toUpperCase().replace(/[^A-Z]/g, '');
+                         console.log('SEX RAW:', raw.sex, '| CLEAN:', s);
+                         if (s.includes('FEMALE')) return 'ЖЕНСКИЙ';
+                         if (s.includes('MALE'))   return 'МУЖСКОЙ';
+                         if (s === 'F') return 'ЖЕНСКИЙ';
+                         return 'МУЖСКОЙ';
+                       })(),
       timeOfBirth:     raw.timeOfBirth || '',
       weight:          (raw.weight || '')
-                         .replace(/LBS?/gi, 'фунтов')
-                         .replace(/OZS?/gi, 'унций')
-                         .replace(/\s+/g, ' ').trim(),
-      hospital:        translateHospital(raw.hospital),
-      cityCounty:      translateCity(raw.cityCounty),
+                         .replace(/LBS?/gi, 'ФУНТОВ')
+                         .replace(/OZS?/gi, 'УНЦИЙ')
+                         .replace(/\s+/g, ' ').trim().toUpperCase(),
+      hospital:        translateHospital(raw.hospital).toUpperCase(),
+      cityCounty:      translateCity(raw.cityCounty).toUpperCase(),
       stateRegNum:     raw.stateRegNum || '',
-      dateIssued:      translateDate(raw.dateIssued),
-      dateRegistered:  translateDate(raw.dateRegistered),
-      motherName:      translitName(raw.motherName),
-      motherDob:       translateDate(raw.motherDob),
-      motherBirthPlace:translatePlace(raw.motherBirthPlace),
-      fatherName:      translitName(raw.fatherName),
-      fatherDob:       translateDate(raw.fatherDob),
-      fatherBirthPlace:translatePlace(raw.fatherBirthPlace),
+      dateIssued:      translateDate(raw.dateIssued).toUpperCase().replace(' Г.', ' г.'),
+      dateRegistered:  translateDate(raw.dateRegistered).toUpperCase().replace(' Г.', ' г.'),
+      motherName:      translitName(raw.motherName).toUpperCase(),
+      motherDob:       translateDate(raw.motherDob).toUpperCase().replace(' Г.', ' г.'),
+      motherBirthPlace:translatePlace(raw.motherBirthPlace).toUpperCase(),
+      fatherName:      translitName(raw.fatherName).toUpperCase(),
+      fatherDob:       translateDate(raw.fatherDob).toUpperCase().replace(' Г.', ' г.'),
+      fatherBirthPlace:translatePlace(raw.fatherBirthPlace).toUpperCase(),
+      // Только цифры для запроса и штрихкода
+      reqNum:          (raw.reqNum || raw.stateRegNum || '').replace(/[^0-9]/g, ''),
     };
 
     return res.status(200).json({ ok: true, data: result });
