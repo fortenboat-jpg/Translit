@@ -262,14 +262,13 @@ Return ONLY this JSON, no markdown:
       firstName:       translitName(raw.firstName),
       middleName:      translitName(raw.middleName),
       dob:             raw.dob || '',
-      sex:             (() => {
-                         const s = (raw.sex || '').toUpperCase().trim();
-                         if (s === 'FEMALE' || s === 'F') return 'ЖЕНСКИЙ';
-                         if (s === 'MALE' || s === 'M') return 'МУЖСКОЙ';
-                         // fallback: check contains
-                         if (s.includes('FEMALE')) return 'ЖЕНСКИЙ';
-                         return 'МУЖСКОЙ';
-                       })(),
+     sex: (() => {
+  const s = (raw.sex || '').toUpperCase().trim();
+  console.log('RAW SEX VALUE:', JSON.stringify(raw.sex), '| PROCESSED:', s);
+  if (s === 'FEMALE' || s === 'F' || s.includes('FEMALE')) return 'ЖЕНСКИЙ';
+  if (s === 'MALE' || s === 'M' || s.includes('MALE')) return 'МУЖСКОЙ';
+  return 'МУЖСКОЙ';
+  })(),
       timeOfBirth:     raw.timeOfBirth || '',
       weight:          (raw.weight || '')
                          .replace(/LBS?/gi, 'фунтов')
