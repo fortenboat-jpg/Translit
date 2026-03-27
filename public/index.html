@@ -370,18 +370,32 @@ footer{background:var(--navy);color:rgba(255,255,255,.5);padding:40px 28px;text-
             <div id="loadBar" style="height:100%;background:linear-gradient(90deg,var(--blue),var(--gold2));border-radius:8px;width:0%;transition:width .5s ease"></div>
           </div>
         </div>
-        <!-- BLANK PREVIEW -->
-        <div id="blankPreview" style="display:none;position:relative;width:100%;border-radius:10px;overflow:hidden;border:1.5px solid var(--border);box-shadow:var(--shadow)">
-          <div style="font-size:.72rem;color:var(--muted);padding:6px 10px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
-            <span>📄 Предпросмотр — данные на бланке</span>
-            <span style="color:var(--green);font-weight:600">✓ Готов к оплате</span>
+        <!-- BLANK PREVIEW — показывается только после полного ответа сервера -->
+        <div id="blankPreview" style="display:none;border-radius:12px;overflow:hidden;border:2px solid var(--green);box-shadow:0 8px 32px rgba(14,168,110,0.15)">
+          <!-- Заголовок -->
+          <div style="background:linear-gradient(135deg,#0c1b3a,#1a3266);padding:10px 14px;display:flex;justify-content:space-between;align-items:center">
+            <span style="color:white;font-size:.82rem;font-weight:600">📄 Предпросмотр бланка</span>
+            <span style="color:#0ea86e;font-size:.76rem;font-weight:700;background:rgba(14,168,110,0.15);padding:3px 10px;border-radius:100px">✓ Данные сохранены</span>
           </div>
-          <div style="position:relative;width:100%;height:420px;overflow:hidden">
-            <img id="bgImg" src="https://translit-gilt.vercel.app/bg.jpg" style="width:100%;height:100%;object-fit:cover;object-position:top;display:block">
-            <div id="overlayFields" style="position:absolute;inset:0;pointer-events:none"></div>
+          <!-- Бланк — верхняя половина -->
+          <div style="position:relative;width:100%;overflow:hidden;background:#fff">
+            <!-- Маска fade внизу -->
+            <div style="position:absolute;bottom:0;left:0;right:0;height:80px;background:linear-gradient(to bottom,transparent,rgba(255,255,255,0.95));z-index:2;pointer-events:none"></div>
+            <!-- Замок по центру внизу -->
+            <div style="position:absolute;bottom:12px;left:50%;transform:translateX(-50%);z-index:3;display:flex;align-items:center;gap:6px;background:white;border:1.5px solid var(--border);border-radius:100px;padding:5px 14px;font-size:.72rem;color:var(--muted);font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,0.08)">
+              🔒 Полный документ — после оплаты
+            </div>
+            <!-- Бланк -->
+            <div style="position:relative;width:100%;height:380px;overflow:hidden">
+              <img id="bgImg" src="https://translit-gilt.vercel.app/bg.jpg"
+                style="position:absolute;top:0;left:0;width:100%;height:auto;display:block">
+              <div id="overlayFields" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none"></div>
+            </div>
           </div>
-          <div style="font-size:.7rem;color:var(--muted);padding:5px 10px;background:var(--bg2);text-align:center">
-            Полный вид откроется после оплаты · Данные введены корректно
+          <!-- Подвал -->
+          <div style="background:var(--bg2);padding:8px 14px;display:flex;align-items:center;justify-content:space-between">
+            <span style="font-size:.72rem;color:var(--muted)">Данные на бланке проверены и сохранены</span>
+            <span style="font-size:.72rem;color:var(--blue);font-weight:600;cursor:pointer" onclick="downloadHtml()">👁 Скачать полный</span>
           </div>
         </div>
         <div class="brow" id="pvButtons" style="display:none;margin-top:10px">
@@ -713,8 +727,11 @@ function doGenerate(){
 function showBlankPreview(values, serverFields, bgUrl) {
   const container = document.getElementById('blankPreview');
   const overlayDiv = document.getElementById('overlayFields');
-  // Используем поля и данные от сервера если есть, иначе строим сами
+  const bgImg     = document.getElementById('bgImg');
+
   const v = values || {};
+
+  // Координаты из редактора — точно те же что на сервере
   const fields = serverFields || [
     { id:'stateRegNum',      top:15.0, left:30.1, size:20 },
     { id:'dateIssued',       top:15.0, left:64.3, size:20 },
@@ -735,15 +752,48 @@ function showBlankPreview(values, serverFields, bgUrl) {
     { id:'reqNum',           top:84.6, left:75.1, size:20 },
     { id:'barcode',          top:96.6, left:17.9, size:17 },
   ];
-  // Обновляем картинку фона если нужно
-  const bgImg = document.getElementById('bgImg');
-  if(bgUrl && bgImg) bgImg.src = bgUrl;
+
+  // Обновляем фон если нужно
+  if (bgUrl && bgImg) bgImg.src = bgUrl;
+
+  // Бланк: оригинал 794x1123px
+  // Контейнер ~460px шириной → масштаб ~0.58
+  // Используем transform: scale на всём блоке бланка
+  const BLANK_W = 794;
+  const BLANK_H = 1123;
+  const containerW = container.offsetWidth || 460;
+  const scale = containerW / BLANK_W;
+
+  // Рендерим поля в % — они работают независимо от масштаба
+  // т.к. img растянута на 100% ширины контейнера
   overlayDiv.innerHTML = fields.map(f => {
     const val = v[f.id];
-    if(!val) return '';
-    return `<div style="position:absolute;top:${f.top}%;left:${f.left}%;font-size:${f.size||16}px;font-weight:700;color:#000;font-family:'Times New Roman',serif;white-space:nowrap;line-height:1">${val}</div>`;
+    if (!val) return '';
+    // Масштабируем шрифт пропорционально
+    const scaledSize = Math.round(f.size * scale);
+    return `<div style="
+      position:absolute;
+      top:${f.top}%;
+      left:${f.left}%;
+      font-size:${Math.max(scaledSize, 8)}px;
+      font-weight:700;
+      color:#000;
+      font-family:'Times New Roman',Times,serif;
+      white-space:nowrap;
+      line-height:1;
+      pointer-events:none;
+    ">${val}</div>`;
   }).join('');
+
+  // Показываем с анимацией
   container.style.display = 'block';
+  container.style.opacity = '0';
+  container.style.transform = 'translateY(8px)';
+  container.style.transition = 'opacity .4s, transform .4s';
+  requestAnimationFrame(() => {
+    container.style.opacity = '1';
+    container.style.transform = 'translateY(0)';
+  });
 }
 
 
