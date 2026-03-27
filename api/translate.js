@@ -1,33 +1,4 @@
 import { Resend } from 'resend';
-import chromium from '@sparticuz/chromium';
-import puppeteer from 'puppeteer-core';
-
-// Генерация PNG из HTML через headless Chrome
-async function htmlToPng(html) {
-  const browser = await puppeteer.launch({
-    args: chromium.args,
-    defaultViewport: { width: 794, height: 1123 },
-    executablePath: await chromium.executablePath(),
-    headless: chromium.headless,
-  });
-  try {
-    const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: 'networkidle0', timeout: 20000 });
-    // Ждём загрузки фонового изображения
-    await page.waitForFunction(() => {
-      const img = document.querySelector('img');
-      return img && img.complete && img.naturalWidth > 0;
-    }, { timeout: 15000 });
-    const screenshot = await page.screenshot({
-      type: 'png',
-      fullPage: false,
-      clip: { x: 0, y: 0, width: 794, height: 1123 }
-    });
-    return screenshot;
-  } finally {
-    await browser.close();
-  }
-}
 
 // ── ТОЧНЫЕ КООРДИНАТЫ ПОЛЕЙ НА БЛАНКЕ (из редактора пользователя) ────
 const FIELDS = [
@@ -103,16 +74,6 @@ export default async function handler(req, res) {
     const styledHtml = buildHtml(values, bgUrl, num, today);
     const docxBuffer = buildDocx(values, num, today);
 
-    // Генерируем PNG — фиксируем документ как изображение
-    let previewPngBase64 = null;
-    try {
-      const pngBuffer = await htmlToPng(styledHtml);
-      previewPngBase64 = pngBuffer.toString('base64');
-    } catch (pngErr) {
-      console.error('PNG generation failed:', pngErr.message);
-      // Продолжаем без PNG — не критично
-    }
-
     // Email
     if (d.email && process.env.RESEND_API_KEY) {
       const resend = new Resend(process.env.RESEND_API_KEY);
@@ -135,7 +96,6 @@ export default async function handler(req, res) {
       bgUrl,
       pdfHtml: styledHtml,
       docxBase64: docxBuffer.toString('base64'),
-      previewPng: previewPngBase64,
       orderNum: num,
       translationText: buildPlainText(values, num, today),
     });
