@@ -87,17 +87,24 @@ const MONTHS_EN_RU = {
 function translateDate(str) {
   if (!str) return '';
   if (/[а-яёА-ЯЁ]/.test(str)) return str; // already Russian
+  
+  // Match: MONTH D, YYYY or MONTH DD, YYYY
+  const m = str.match(/(\w+)\s+(\d{1,2}),?\s+(\d{4})/);
+  if (m) {
+    const monthRu = MONTHS_EN_RU[m[1].toLowerCase()];
+    if (monthRu) {
+      const day = m[2].padStart(2, '0');
+      return `${day} ${monthRu} ${m[3]} г.`;
+    }
+  }
+  // Fallback: just replace month names
   let result = str;
   for (const [en, ru] of Object.entries(MONTHS_EN_RU)) {
-    const re = new RegExp(en, 'gi');
-    result = result.replace(re, ru);
+    result = result.replace(new RegExp(en, 'gi'), ru);
   }
-  // Add "г." if not present
   result = result.trim();
-  if (result && !result.endsWith('г.') && /\d{4}/.test(result)) {
-    result += ' г.';
-  }
-  return result.toUpperCase().replace(' Г.', ' г.');
+  if (result && !result.endsWith('г.') && /\d{4}/.test(result)) result += ' г.';
+  return result;
 }
 
 // Перевод стран/мест EN→RU
@@ -118,7 +125,6 @@ function translatePlace(str) {
   return map[upper] || str;
 }
 
-// Перевод больницы/места
 function translateHospital(str) {
   if (!str) return '';
   if (/[а-яёА-ЯЁ]{4,}/.test(str)) return str;
@@ -126,12 +132,12 @@ function translateHospital(str) {
     .replace(/\bHOSPITAL\b/gi, 'БОЛЬНИЦА')
     .replace(/\bMEDICAL CENTER\b/gi, 'МЕДИЦИНСКИЙ ЦЕНТР')
     .replace(/\bMEDICAL CENTRE\b/gi, 'МЕДИЦИНСКИЙ ЦЕНТР')
-    .replace(/\bHEALTH\b/gi, 'HEALTH')
     .replace(/\bST\.?\s+PETERSBURG\b/gi, 'СТ. ПИТЕРСБУРГ')
-    .replace(/\bSAINT\s+PETERSBURG\b/gi, 'САНКТ-ПЕТЕРБУРГ');
+    .replace(/\bSAINT\s+PETERSBURG\b/gi, 'САНКТ-ПЕТЕРБУРГ')
+    .replace(/\bBAYFRONT\b/gi, 'BAYFRONT')
+    .replace(/\bHEALTH\b/gi, 'HEALTH');
 }
 
-// Перевод города/округа
 function translateCity(str) {
   if (!str) return '';
   if (/[а-яёА-ЯЁ]{4,}/.test(str)) return str;
@@ -139,12 +145,17 @@ function translateCity(str) {
     .replace(/\bST\.?\s+PETERSBURG\b/gi, 'Г. САНКТ-ПЕТЕРБУРГ')
     .replace(/\bSAINT\s+PETERSBURG\b/gi, 'Г. САНКТ-ПЕТЕРБУРГ')
     .replace(/\bPINELLAS\s+COUNTY\b/gi, 'ОКРУГ ПИНЕЛЛАС')
+    .replace(/\bHILLSBOROUGH\s+COUNTY\b/gi, 'ОКРУГ ХИЛЛСБОРО')
+    .replace(/\bORANGE\s+COUNTY\b/gi, 'ОКРУГ ОРИНДЖ')
+    .replace(/\bBROWARD\s+COUNTY\b/gi, 'ОКРУГ БРОУАРД')
+    .replace(/\bMIAMI.DADE\s+COUNTY\b/gi, 'ОКРУГ МАЙАМИ-ДЕЙД')
     .replace(/\bCOUNTY\b/gi, 'ОКРУГ')
-    .replace(/\bCITY\b/gi, 'ГОРОД')
-    .replace(/\bMIAMI\b/gi, 'МАЙАМИ')
-    .replace(/\bORLANDO\b/gi, 'ОРЛАНДО')
-    .replace(/\bTAMPA\b/gi, 'ТАМПА')
-    .replace(/\bJACKSONVILLE\b/gi, 'ДЖЭКСОНВИЛЛ');
+    .replace(/\bMIAMI\b/gi, 'Г. МАЙАМИ')
+    .replace(/\bORLANDO\b/gi, 'Г. ОРЛАНДО')
+    .replace(/\bTAMPA\b/gi, 'Г. ТАМПА')
+    .replace(/\bJACKSONVILLE\b/gi, 'Г. ДЖЭКСОНВИЛЛ')
+    .replace(/\bFORT LAUDERDALE\b/gi, 'Г. ФОРТ-ЛОДЕРДЕЙЛ')
+    .replace(/\bCLEARWATER\b/gi, 'Г. КЛИРУОТЕР');
 }
 
 export default async function handler(req, res) {
@@ -173,7 +184,7 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: 'gpt-4o',
-        max_tokens: 1000,
+        max_tokens: 1200,
         messages: [{
           role: 'user',
           content: [
@@ -183,23 +194,36 @@ export default async function handler(req, res) {
             },
             {
               type: 'text',
-              text: `Extract ALL data from this US Florida birth certificate. Return ONLY raw JSON, no markdown.
+              text: `You are extracting data from a US Florida birth certificate. Read ALL text carefully.
 
-STRICT RULES:
-1. lastName/firstName/middleName: extract EXACTLY as written in NAME field (keep original spelling, do not translate)
-2. dob: MUST be YYYY-MM-DD format. Example: FEBRUARY 26 2022 → "2022-02-26"
-3. sex: look at SEX field. If it says MALE or M → return exactly "MALE". If FEMALE or F → "FEMALE"
-4. timeOfBirth: extract digits only, format as HH:MM. Example: 1411 → "14:11"
-5. weight: extract as written. Example: 8 LBS 0 OZ → "8 LBS 0 OZ"
-6. hospital: full text from PLACE OF BIRTH field
-7. cityCounty: full text from CITY, COUNTY OF BIRTH field
-8. stateRegNum: STATE FILE NUMBER value
-9. dateIssued: EXACTLY as shown. Example: MARCH 8, 2022 → "MARCH 8, 2022"
-10. dateRegistered: EXACTLY as shown
-11. motherName/fatherName: EXACTLY as written
-12. motherDob/fatherDob: EXACTLY as shown. Example: AUGUST 28, 1990 → "AUGUST 28, 1990"
-13. motherBirthPlace/fatherBirthPlace: EXACTLY as shown
+CRITICAL RULES - follow exactly:
 
+1. NAME field contains child's full name. Split into:
+   - firstName = FIRST name only (e.g. "MARK")  
+   - middleName = MIDDLE name only (e.g. "ALEKSEEVICH") 
+   - lastName = LAST name only (e.g. "KIRZOV")
+
+2. SEX field: read it carefully. If it says "MALE" or "M" → output "MALE". If "FEMALE" or "F" → output "FEMALE". Do NOT guess.
+
+3. DATE OF BIRTH: output as YYYY-MM-DD. Example: FEBRUARY 26, 2022 → "2022-02-26"
+
+4. TIME OF BIRTH: digits only formatted as HH:MM. Example: 1411 → "14:11"
+
+5. WEIGHT: exact text. Example: 8 LBS 0 OZ
+
+6. PLACE OF BIRTH: copy the FULL hospital name exactly as written, including city
+
+7. CITY, COUNTY OF BIRTH: copy the FULL city and county exactly as written
+
+8. STATE FILE NUMBER: exact number
+
+9. DATE ISSUED and DATE FILED/REGISTERED: exact text as written (e.g. "MARCH 8, 2022")
+
+10. MOTHER and FATHER names: copy exactly as written, include all three name parts
+
+11. Mother/Father dates and birthplaces: copy exactly as written
+
+Return ONLY this JSON, no markdown:
 {
   "lastName": "",
   "firstName": "",
@@ -238,8 +262,14 @@ STRICT RULES:
       firstName:       translitName(raw.firstName),
       middleName:      translitName(raw.middleName),
       dob:             raw.dob || '',
-      sex:             (raw.sex || '').toUpperCase().includes('MALE') && !(raw.sex || '').toUpperCase().includes('FEMALE')
-                         ? 'МУЖСКОЙ' : 'ЖЕНСКИЙ',
+      sex:             (() => {
+                         const s = (raw.sex || '').toUpperCase().trim();
+                         if (s === 'FEMALE' || s === 'F') return 'ЖЕНСКИЙ';
+                         if (s === 'MALE' || s === 'M') return 'МУЖСКОЙ';
+                         // fallback: check contains
+                         if (s.includes('FEMALE')) return 'ЖЕНСКИЙ';
+                         return 'МУЖСКОЙ';
+                       })(),
       timeOfBirth:     raw.timeOfBirth || '',
       weight:          (raw.weight || '')
                          .replace(/LBS?/gi, 'фунтов')
