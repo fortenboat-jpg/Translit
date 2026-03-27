@@ -66,24 +66,24 @@ function buildOverlayHtml(d, dobFmt, fullName, num, today, bgUrl) {
 
   // Точные координаты с редактора (size 24px ≈ 12.4pt при 150dpi)
   const fields = [
-    { top:14.9, left:29.2, size:24, val: v(d.stateRegNum)      },
-    { top:14.7, left:63.4, size:24, val: v(d.dateIssued)        },
-    { top:16.7, left:63.4, size:24, val: v(d.dateRegistered)    },
-    { top:21.6, left:34.1, size:24, val: fullName               },
-    { top:26.5, left:34.0, size:24, val: dobFmt                 },
-    { top:26.7, left:79.4, size:24, val: v(d.timeOfBirth)       },
-    { top:30.7, left:33.9, size:24, val: v(d.sex)               },
-    { top:30.8, left:71.6, size:24, val: v(d.weight)            },
-    { top:34.3, left:33.8, size:24, val: v(d.hospital)          },
-    { top:38.1, left:33.9, size:24, val: v(d.cityCounty)        },
-    { top:49.1, left:33.6, size:24, val: v(d.motherName)        },
-    { top:52.8, left:33.5, size:24, val: v(d.motherDob)         },
-    { top:56.0, left:33.3, size:24, val: v(d.motherBirthPlace)  },
-    { top:65.1, left:33.9, size:24, val: v(d.fatherName)        },
-    { top:69.7, left:34.0, size:24, val: v(d.fatherDob)         },
-    { top:73.3, left:34.1, size:24, val: v(d.fatherBirthPlace)  },
-    { top:84.4, left:75.6, size:24, val: barcodeVal             },
-    { top:96.6, left:17.9, size:17, val: barcodeText },
+    { top:14.9, left:29.2, size:16, val: v(d.stateRegNum)      },
+    { top:14.7, left:63.4, size:16, val: v(d.dateIssued)        },
+    { top:16.7, left:63.4, size:16, val: v(d.dateRegistered)    },
+    { top:21.6, left:34.1, size:16, val: fullName               },
+    { top:26.5, left:34.0, size:16, val: dobFmt                 },
+    { top:26.7, left:79.4, size:16, val: v(d.timeOfBirth)       },
+    { top:30.7, left:33.9, size:16, val: v(d.sex)               },
+    { top:30.8, left:71.6, size:16, val: v(d.weight)            },
+    { top:34.3, left:33.8, size:16, val: v(d.hospital)          },
+    { top:38.1, left:33.9, size:16, val: v(d.cityCounty)        },
+    { top:49.1, left:33.6, size:16, val: v(d.motherName)        },
+    { top:52.8, left:33.5, size:16, val: v(d.motherDob)         },
+    { top:56.0, left:33.3, size:16, val: v(d.motherBirthPlace)  },
+    { top:65.1, left:33.9, size:16, val: v(d.fatherName)        },
+    { top:69.7, left:34.0, size:16, val: v(d.fatherDob)         },
+    { top:73.3, left:34.1, size:16, val: v(d.fatherBirthPlace)  },
+    { top:84.4, left:75.6, size:16, val: barcodeVal             },
+    { top:96.6, left:17.9, size:16, val: barcodeText },
   ];
 
   const fieldHtml = fields.map(f => `
@@ -93,7 +93,7 @@ function buildOverlayHtml(d, dobFmt, fullName, num, today, bgUrl) {
       left:${f.left}%;
       font-size:${f.size}px;
       font-weight:700;
-      color:#8B0000;
+      color:#000000;
       font-family:'Times New Roman', Times, serif;
       white-space:nowrap;
       line-height:1;
