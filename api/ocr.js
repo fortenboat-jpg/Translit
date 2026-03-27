@@ -179,11 +179,15 @@ function translateWeight(str) {
 // ПОЛ — детерминированно без GPT
 function translateSex(str) {
   if (!str) return 'МУЖСКОЙ';
-  const s = str.toUpperCase().replace(/\s/g,'');
-  // Сначала проверяем FEMALE — оно содержит MALE
-  if (s === 'FEMALE' || s === 'F' || s.startsWith('FEMALE')) return 'ЖЕНСКИЙ';
-  if (s === 'MALE' || s === 'M' || s.startsWith('MALE')) return 'МУЖСКОЙ';
-  return 'МУЖСКОЙ';
+  const s = str.toUpperCase().replace(/[^A-ZА-ЯЁ]/g,'');
+  console.log('SEX from GPT:', JSON.stringify(str), '→ cleaned:', s);
+  // FEMALE первым — содержит MALE внутри
+  if (s.includes('FEMALE') || s.includes('ЖЕНСКИЙ') || s === 'F') return 'ЖЕНСКИЙ';
+  if (s.includes('MALE') || s.includes('МУЖСКОЙ') || s === 'M') return 'МУЖСКОЙ';
+  // Цифры — возможно 1=male, 2=female в некоторых форматах
+  const n = str.trim();
+  if (n === '2' || n === 'F' || n === 'f') return 'ЖЕНСКИЙ';
+  return 'МУЖСКОЙ'; // default
 }
 
 // ─── HANDLER ──────────────────────────────────────────────
@@ -216,30 +220,33 @@ export default async function handler(req, res) {
           role: 'user',
           content: [
             { type:'image_url', image_url:{ url:`data:${mime};base64,${b64}`, detail:'high' } },
-            { type:'text', text:`Read this US birth certificate carefully. Extract ONLY raw values exactly as printed.
+            { type:'text', text:`Read this US birth certificate carefully. Extract ONLY raw values exactly as printed. Do NOT translate anything.
 
 Return ONLY valid JSON, no markdown:
 {
-  "lastName": "last name only",
-  "firstName": "first name only", 
-  "middleName": "middle name only",
+  "lastName": "LAST name only from NAME field",
+  "firstName": "FIRST name only from NAME field",
+  "middleName": "MIDDLE name only from NAME field (patronymic)",
   "dob": "YYYY-MM-DD",
-  "sex": "MALE or FEMALE only",
-  "timeOfBirth": "HH:MM",
+  "sex": "write exactly: MALE or FEMALE",
+  "timeOfBirth": "HH:MM format",
   "weight": "e.g. 8 LBS 0 OZ",
-  "hospital": "full hospital name",
-  "cityCounty": "full city and county",
-  "stateRegNum": "state file number",
+  "hospital": "full hospital name from PLACE OF BIRTH",
+  "cityCounty": "full city and county from CITY COUNTY OF BIRTH",
+  "stateRegNum": "STATE FILE NUMBER",
   "dateIssued": "e.g. MARCH 8, 2022",
   "dateRegistered": "e.g. FEBRUARY 27, 2022",
-  "motherName": "full name",
+  "motherName": "full name from MOTHER NAME field",
   "motherDob": "e.g. AUGUST 28, 1990",
-  "motherBirthPlace": "country or place",
-  "fatherName": "full name",
+  "motherBirthPlace": "country",
+  "fatherName": "full name from FATHER NAME field",
   "fatherDob": "e.g. NOVEMBER 9, 1982",
-  "fatherBirthPlace": "country or place",
-  "reqNum": "REQ number digits only"
-}` }
+  "fatherBirthPlace": "country",
+  "reqNum": "REQ number at bottom, digits only"
+}
+
+IMPORTANT: For NAME field - the order is usually FIRST MIDDLE LAST. Split correctly:
+Example: "MARK ALEKSEEVICH KIRZOV" → firstName="MARK", middleName="ALEKSEEVICH", lastName="KIRZOV"` }
           ]
         }]
       })
