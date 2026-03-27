@@ -1,312 +1,304 @@
 export const config = { api: { bodyParser: false } };
 
-// ─── СЛОВАРИ ──────────────────────────────────────────────
-
-const MONTHS = {
-  'january':'ЯНВАРЯ','february':'ФЕВРАЛЯ','march':'МАРТА','april':'АПРЕЛЯ',
-  'may':'МАЯ','june':'ИЮНЯ','july':'ИЮЛЯ','august':'АВГУСТА',
-  'september':'СЕНТЯБРЯ','october':'ОКТЯБРЯ','november':'НОЯБРЯ','december':'ДЕКАБРЯ',
-  'jan':'ЯНВАРЯ','feb':'ФЕВРАЛЯ','mar':'МАРТА','apr':'АПРЕЛЯ',
-  'jun':'ИЮНЯ','jul':'ИЮЛЯ','aug':'АВГУСТА','sep':'СЕНТЯБРЯ',
-  'oct':'ОКТЯБРЯ','nov':'НОЯБРЯ','dec':'ДЕКАБРЯ',
-};
-
-const COUNTRIES = {
-  'russia':'РОССИЯ','russian federation':'РОССИЙСКАЯ ФЕДЕРАЦИЯ',
-  'belarus':'БЕЛАРУСЬ','ukraine':'УКРАИНА','kazakhstan':'КАЗАХСТАН',
-  'usa':'США','united states':'США','united states of america':'США',
-  'georgia':'ГРУЗИЯ','moldova':'МОЛДОВА','latvia':'ЛАТВИЯ',
-  'lithuania':'ЛИТВА','estonia':'ЭСТОНИЯ','armenia':'АРМЕНИЯ',
-  'azerbaijan':'АЗЕРБАЙДЖАН','uzbekistan':'УЗБЕКИСТАН',
-  'kyrgyzstan':'КЫРГЫЗСТАН','tajikistan':'ТАДЖИКИСТАН',
-  'turkmenistan':'ТУРКМЕНИСТАН','germany':'ГЕРМАНИЯ',
-  'france':'ФРАНЦИЯ','italy':'ИТАЛИЯ','spain':'ИСПАНИЯ',
-  'poland':'ПОЛЬША','israel':'ИЗРАИЛЬ','china':'КИТАЙ',
-};
-
-const CITIES = {
-  'st petersburg':'Г. САНКТ-ПЕТЕРБУРГ','st. petersburg':'Г. САНКТ-ПЕТЕРБУРГ',
-  'saint petersburg':'Г. САНКТ-ПЕТЕРБУРГ',
-  'miami':'Г. МАЙАМИ','orlando':'Г. ОРЛАНДО','tampa':'Г. ТАМПА',
-  'jacksonville':'Г. ДЖЭКСОНВИЛЛ','clearwater':'Г. КЛИРУОТЕР',
-  'fort lauderdale':'Г. ФОРТ-ЛОДЕРДЕЙЛ','tallahassee':'Г. ТАЛЛАХАССИ',
-  'gainesville':'Г. ГЕЙНСВИЛЛ','pensacola':'Г. ПЕНСАКОЛА',
-};
-
-const COUNTIES = {
-  'pinellas county':'ОКРУГ ПИНЕЛЛАС','hillsborough county':'ОКРУГ ХИЛЛСБОРО',
-  'orange county':'ОКРУГ ОРИНДЖ','miami-dade county':'ОКРУГ МАЙАМИ-ДЕЙД',
-  'broward county':'ОКРУГ БРОУАРД','palm beach county':'ОКРУГ ПАЛМ-БИЧ',
-  'duval county':'ОКРУГ ДЮВАЛЬ','lee county':'ОКРУГ ЛИ',
-  'polk county':'ОКРУГ ПОЛК','volusia county':'ОКРУГ ВОЛУША',
-};
-
-// Словарь имён EN→RU
-const NAMES = {
-  'mark':'МАРК','alekseevich':'АЛЕКСЕЕВИЧ','aleksei':'АЛЕКСЕЙ','aleksey':'АЛЕКСЕЙ',
-  'kirzov':'КИРЗОВ','ekaterina':'ЕКАТЕРИНА','olegovna':'ОЛЕГОВНА','golod':'ГОЛОД',
-  'leonidovich':'ЛЕОНИДОВИЧ','alexander':'АЛЕКСАНДР','alexandra':'АЛЕКСАНДРА',
-  'mikhail':'МИХАИЛ','mikhailovich':'МИХАЙЛОВИЧ','sergei':'СЕРГЕЙ','sergey':'СЕРГЕЙ',
-  'sergeevich':'СЕРГЕЕВИЧ','ivan':'ИВАН','ivanovich':'ИВАНОВИЧ','ivanov':'ИВАНОВ',
-  'ivanova':'ИВАНОВА','anna':'АННА','anatolievna':'АНАТОЛЬЕВНА',
-  'dmitrievna':'ДМИТРИЕВНА','dmitry':'ДМИТРИЙ','dmitri':'ДМИТРИЙ',
-  'nikolai':'НИКОЛАЙ','nikolaevich':'НИКОЛАЕВИЧ','natalia':'НАТАЛЬЯ',
-  'natalya':'НАТАЛЬЯ','vladimir':'ВЛАДИМИР','vladimirovich':'ВЛАДИМИРОВИЧ',
-  'andrei':'АНДРЕЙ','andreevich':'АНДРЕЕВИЧ','elena':'ЕЛЕНА',
-  'evgeny':'ЕВГЕНИЙ','evgenia':'ЕВГЕНИЯ','peter':'ПЁТР','petr':'ПЁТР',
-  'petrovich':'ПЕТРОВИЧ','yuri':'ЮРИЙ','yurii':'ЮРИЙ','yurevich':'ЮРЬЕВИЧ',
-  'tatiana':'ТАТЬЯНА','tatiyana':'ТАТЬЯНА','olga':'ОЛЬГА','olegovich':'ОЛЕГОВИЧ',
-  'maxim':'МАКСИМ','maximovich':'МАКСИМОВИЧ','roman':'РОМАН','romanovich':'РОМАНОВИЧ',
-  'pavel':'ПАВЕЛ','pavlovich':'ПАВЛОВИЧ','artem':'АРТЁМ','artemovich':'АРТЁМОВИЧ',
-  'maria':'МАРИЯ','marina':'МАРИНА','galina':'ГАЛИНА','irina':'ИРИНА',
-  'larisa':'ЛАРИСА','liudmila':'ЛЮДМИЛА','ludmila':'ЛЮДМИЛА','svetlana':'СВЕТЛАНА',
-  'valentina':'ВАЛЕНТИНА','victoria':'ВИКТОРИЯ','viktoria':'ВИКТОРИЯ',
-  'konstantin':'КОНСТАНТИН','konstantinovich':'КОНСТАНТИНОВИЧ',
-  'leonid':'ЛЕОНИД','leonidovna':'ЛЕОНИДОВНА','vadim':'ВАДИМ',
-  'vadimovich':'ВАДИМОВИЧ','viktor':'ВИКТОР','viktorovich':'ВИКТОРОВИЧ',
-  'gennady':'ГЕННАДИЙ','gennadievich':'ГЕННАДЬЕВИЧ',
-  'anatoly':'АНАТОЛИЙ','anatolyevich':'АНАТОЛЬЕВИЧ',
-  'boris':'БОРИС','borisovich':'БОРИСОВИЧ','igor':'ИГОРЬ',
-  'igorevich':'ИГОРЕВИЧ','oleg':'ОЛЕГ',
-};
-
-// ─── ФУНКЦИИ ПЕРЕВОДА ─────────────────────────────────────
-
-function translateName(str) {
-  if (!str) return '';
-  return str.split(' ').map(word => {
-    const key = word.toLowerCase().replace(/[^a-zа-яё]/gi, '');
-    if (NAMES[key]) return NAMES[key];
-    // Если уже русское — вернуть заглавными
-    if (/[а-яё]/i.test(word)) return word.toUpperCase();
-    // Транслит посимвольно
-    return translitWord(word).toUpperCase();
-  }).join(' ');
-}
-
-function translitWord(word) {
-  const map = {
-    'shch':'щ','sch':'щ','zh':'ж','kh':'х','ts':'ц','ch':'ч','sh':'ш',
-    'yu':'ю','ya':'я','yo':'ё','ye':'е',
-    'a':'а','b':'б','c':'к','d':'д','e':'е','f':'ф','g':'г','h':'х',
-    'i':'и','j':'й','k':'к','l':'л','m':'м','n':'н','o':'о','p':'п',
-    'q':'к','r':'р','s':'с','t':'т','u':'у','v':'в','w':'в','x':'кс',
-    'y':'й','z':'з',
-  };
-  let r = '', i = 0, w = word.toLowerCase();
-  while (i < w.length) {
-    if (map[w.slice(i,i+4)]) { r+=map[w.slice(i,i+4)]; i+=4; }
-    else if (map[w.slice(i,i+3)]) { r+=map[w.slice(i,i+3)]; i+=3; }
-    else if (map[w.slice(i,i+2)]) { r+=map[w.slice(i,i+2)]; i+=2; }
-    else { r+=map[w[i]]||w[i]; i++; }
-  }
-  return r.charAt(0).toUpperCase() + r.slice(1);
-}
-
-// Дата: "FEBRUARY 26, 2022" → "26 ФЕВРАЛЯ 2022 г."
-function translateDate(str) {
-  if (!str) return '';
-  if (/[а-яё]/i.test(str) && str.includes('г.')) return str.toUpperCase().replace('Г.','г.');
-  const m = str.match(/(\w+)\s+(\d{1,2})[,\s]+(\d{4})/);
-  if (m) {
-    const ru = MONTHS[m[1].toLowerCase()];
-    if (ru) return `${m[2].padStart(2,'0')} ${ru} ${m[3]} г.`;
-  }
-  // fallback
-  let r = str;
-  for (const [en,ru] of Object.entries(MONTHS)) {
-    r = r.replace(new RegExp('\\b'+en+'\\b','gi'), ru);
-  }
-  if (/\d{4}/.test(r) && !r.includes('г.')) r += ' г.';
-  return r.toUpperCase().replace('Г.','г.');
-}
-
-// Страна
-function translateCountry(str) {
-  if (!str) return '';
-  const key = str.toLowerCase().trim();
-  if (COUNTRIES[key]) return COUNTRIES[key];
-  if (/[а-яё]/i.test(str)) return str.toUpperCase();
-  return str.toUpperCase();
-}
-
-// Город + округ
-function translateCity(str) {
-  if (!str) return '';
-  const low = str.toLowerCase().trim();
-  // Проверяем точные совпадения
-  for (const [en,ru] of Object.entries(CITIES)) {
-    if (low.includes(en)) {
-      // Добавляем округ если есть
-      for (const [cen,cru] of Object.entries(COUNTIES)) {
-        if (low.includes(cen.toLowerCase())) return ru + ', ' + cru;
-      }
-      return ru;
-    }
-  }
-  // Если уже русское
-  if (/[а-яё]/i.test(str)) return str.toUpperCase();
-  // Переводим округ
-  let r = str.toUpperCase();
-  for (const [cen,cru] of Object.entries(COUNTIES)) {
-    r = r.replace(new RegExp(cen,'gi'), cru);
-  }
-  r = r.replace(/\bCOUNTY\b/gi,'ОКРУГ').replace(/\bCITY\b/gi,'Г.');
-  return r;
-}
-
-// Больница
-function translateHospital(str) {
-  if (!str) return '';
-  return str
-    .replace(/\bHOSPITAL\b/gi,'БОЛЬНИЦА')
-    .replace(/\bMEDICAL CENTER\b/gi,'МЕДИЦИНСКИЙ ЦЕНТР')
-    .replace(/\bMEDICAL CENTRE\b/gi,'МЕДИЦИНСКИЙ ЦЕНТР')
-    .replace(/\bST\.?\s*PETERSBURG\b/gi,'СТ. ПИТЕРСБУРГ')
-    .replace(/\bSAINT\s+PETERSBURG\b/gi,'САНКТ-ПЕТЕРБУРГ')
-    .toUpperCase();
-}
-
-// Вес: "8 LBS 0 OZ" → "8 ФУНТОВ 0 УНЦИЙ"
-function translateWeight(str) {
-  if (!str) return '';
-  return str
-    .replace(/\bLBS?\b/gi,'ФУНТОВ')
-    .replace(/\bOZS?\b/gi,'УНЦИЙ')
-    .toUpperCase();
-}
-
-// ПОЛ — детерминированно без GPT
-function translateSex(str) {
-  if (!str) return 'МУЖСКОЙ';
-  const s = str.toUpperCase().replace(/[^A-ZА-ЯЁ]/g,'');
-  console.log('SEX from GPT:', JSON.stringify(str), '→ cleaned:', s);
-  // FEMALE первым — содержит MALE внутри
-  if (s.includes('FEMALE') || s.includes('ЖЕНСКИЙ') || s === 'F') return 'ЖЕНСКИЙ';
-  if (s.includes('MALE') || s.includes('МУЖСКОЙ') || s === 'M') return 'МУЖСКОЙ';
-  // Цифры — возможно 1=male, 2=female в некоторых форматах
-  const n = str.trim();
-  if (n === '2' || n === 'F' || n === 'f') return 'ЖЕНСКИЙ';
-  return 'МУЖСКОЙ'; // default
-}
-
-// ─── HANDLER ──────────────────────────────────────────────
-
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'POST') return res.status(405).json({ ok:false, error:'Method not allowed' });
+  if (req.method !== 'POST') return res.status(405).json({ ok: false, error: 'Method not allowed' });
 
   try {
     const chunks = [];
     for await (const chunk of req) chunks.push(chunk);
     const body = Buffer.concat(chunks);
-    const boundary = (req.headers['content-type']||'').split('boundary=')[1];
-    if (!boundary) return res.status(400).json({ ok:false, error:'No boundary' });
+    const boundary = (req.headers['content-type'] || '').split('boundary=')[1];
+    if (!boundary) return res.status(400).json({ ok: false, error: 'No boundary' });
 
     const { b64, mime } = extractFile(body, boundary);
-    if (!b64) return res.status(400).json({ ok:false, error:'No file' });
+    if (!b64) return res.status(400).json({ ok: false, error: 'No file' });
 
-    // GPT только считывает сырой текст — не переводит
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
-      headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${process.env.OPENAI_API_KEY}` },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+      },
       body: JSON.stringify({
         model: 'gpt-4o',
         max_tokens: 800,
         messages: [{
           role: 'user',
           content: [
-            { type:'image_url', image_url:{ url:`data:${mime};base64,${b64}`, detail:'high' } },
-            { type:'text', text:`Read this US birth certificate carefully. Extract ONLY raw values exactly as printed. Do NOT translate anything.
+            { type: 'image_url', image_url: { url: `data:${mime};base64,${b64}`, detail: 'high' } },
+            {
+              type: 'text',
+              text: `This is a US Florida birth certificate. Read ALL fields carefully and return ONLY this JSON (no markdown, no explanation):
 
-Return ONLY valid JSON, no markdown:
 {
-  "lastName": "LAST name only from NAME field",
-  "firstName": "FIRST name only from NAME field",
-  "middleName": "MIDDLE name only from NAME field (patronymic)",
+  "firstName": "child first name only",
+  "middleName": "child middle name only (patronymic if present)",
+  "lastName": "child last name only",
   "dob": "YYYY-MM-DD",
-  "sex": "write exactly: MALE or FEMALE",
-  "timeOfBirth": "HH:MM format",
-  "weight": "e.g. 8 LBS 0 OZ",
-  "hospital": "full hospital name from PLACE OF BIRTH",
-  "cityCounty": "full city and county from CITY COUNTY OF BIRTH",
-  "stateRegNum": "STATE FILE NUMBER",
-  "dateIssued": "e.g. MARCH 8, 2022",
-  "dateRegistered": "e.g. FEBRUARY 27, 2022",
-  "motherName": "full name from MOTHER NAME field",
-  "motherDob": "e.g. AUGUST 28, 1990",
-  "motherBirthPlace": "country",
-  "fatherName": "full name from FATHER NAME field",
-  "fatherDob": "e.g. NOVEMBER 9, 1982",
-  "fatherBirthPlace": "country",
-  "reqNum": "REQ number at bottom, digits only"
+  "sex": "MALE or FEMALE",
+  "timeOfBirth": "HH:MM",
+  "weightLbs": "number only",
+  "weightOz": "number only",
+  "hospital": "hospital name exactly as written",
+  "city": "city name only",
+  "county": "county name only",
+  "stateRegNum": "state file number",
+  "dateIssued": "MONTH DD, YYYY",
+  "dateRegistered": "MONTH DD, YYYY",
+  "motherFirstName": "mother first name",
+  "motherMiddleName": "mother middle name",
+  "motherLastName": "mother last name",
+  "motherDob": "MONTH DD, YYYY",
+  "motherBirthCountry": "country only",
+  "fatherFirstName": "father first name",
+  "fatherMiddleName": "father middle name",
+  "fatherLastName": "father last name",
+  "fatherDob": "MONTH DD, YYYY",
+  "fatherBirthCountry": "country only",
+  "reqNum": "REQ number digits only"
 }
 
-IMPORTANT: For NAME field - the order is usually FIRST MIDDLE LAST. Split correctly:
-Example: "MARK ALEKSEEVICH KIRZOV" → firstName="MARK", middleName="ALEKSEEVICH", lastName="KIRZOV"` }
+For NAME field: child's name order in US certificates is FIRST MIDDLE LAST.
+Example: "MARK ALEKSEEVICH KIRZOV" → firstName=MARK, middleName=ALEKSEEVICH, lastName=KIRZOV
+For SEX: write exactly "MALE" or "FEMALE" - nothing else.`
+            }
           ]
         }]
       })
     });
 
     const data = await response.json();
-    if (data.error) return res.status(400).json({ ok:false, error:data.error.message });
+    if (data.error) return res.status(400).json({ ok: false, error: data.error.message });
 
-    let txt = (data.choices?.[0]?.message?.content||'{}').replace(/```json|```/g,'').trim();
+    let txt = (data.choices?.[0]?.message?.content || '{}').replace(/```json|```/g, '').trim();
     const raw = JSON.parse(txt);
+    console.log('RAW OCR:', JSON.stringify(raw));
 
-    // Весь перевод — на сервере, без GPT
+    // All translation happens HERE on server - deterministic, no GPT
     const result = {
-      lastName:         translateName(raw.lastName),
-      firstName:        translateName(raw.firstName),
-      middleName:       translateName(raw.middleName),
+      firstName:        nameToRu(raw.firstName),
+      middleName:       nameToRu(raw.middleName),
+      lastName:         nameToRu(raw.lastName),
       dob:              raw.dob || '',
-      sex:              translateSex(raw.sex),
+      sex:              sexToRu(raw.sex),
       timeOfBirth:      raw.timeOfBirth || '',
-      weight:           translateWeight(raw.weight),
-      hospital:         translateHospital(raw.hospital),
-      cityCounty:       translateCity(raw.cityCounty),
+      weight:           weightToRu(raw.weightLbs, raw.weightOz),
+      hospital:         hospitalToRu(raw.hospital),
+      cityCounty:       cityCountyToRu(raw.city, raw.county),
       stateRegNum:      raw.stateRegNum || '',
-      dateIssued:       translateDate(raw.dateIssued),
-      dateRegistered:   translateDate(raw.dateRegistered),
-      motherName:       translateName(raw.motherName),
-      motherDob:        translateDate(raw.motherDob),
-      motherBirthPlace: translateCountry(raw.motherBirthPlace),
-      fatherName:       translateName(raw.fatherName),
-      fatherDob:        translateDate(raw.fatherDob),
-      fatherBirthPlace: translateCountry(raw.fatherBirthPlace),
-      reqNum:           (raw.reqNum||'').replace(/[^0-9]/g,''),
+      dateIssued:       dateToRu(raw.dateIssued),
+      dateRegistered:   dateToRu(raw.dateRegistered),
+      motherFirstName:  nameToRu(raw.motherFirstName),
+      motherMiddleName: nameToRu(raw.motherMiddleName),
+      motherLastName:   nameToRu(raw.motherLastName),
+      motherDob:        dateToRu(raw.motherDob),
+      motherBirthPlace: countryToRu(raw.motherBirthCountry),
+      fatherFirstName:  nameToRu(raw.fatherFirstName),
+      fatherMiddleName: nameToRu(raw.fatherMiddleName),
+      fatherLastName:   nameToRu(raw.fatherLastName),
+      fatherDob:        dateToRu(raw.fatherDob),
+      fatherBirthPlace: countryToRu(raw.fatherBirthCountry),
+      reqNum:           (raw.reqNum || '').replace(/[^0-9]/g, ''),
     };
 
-    return res.status(200).json({ ok:true, data:result });
+    // Combine full names
+    result.childName     = [result.lastName, result.firstName, result.middleName].filter(Boolean).join(' ');
+    result.motherName    = [result.motherLastName, result.motherFirstName, result.motherMiddleName].filter(Boolean).join(' ');
+    result.fatherName    = [result.fatherLastName, result.fatherFirstName, result.fatherMiddleName].filter(Boolean).join(' ');
 
-  } catch(err) {
+    console.log('RESULT:', JSON.stringify(result));
+    return res.status(200).json({ ok: true, data: result });
+
+  } catch (err) {
     console.error('OCR error:', err);
-    return res.status(500).json({ ok:false, error:err.message });
+    return res.status(500).json({ ok: false, error: err.message });
   }
 }
 
+// ── TRANSLATION FUNCTIONS ────────────────────────────────
+
+const MONTHS_EN = {
+  'january':'ЯНВАРЯ','february':'ФЕВРАЛЯ','march':'МАРТА','april':'АПРЕЛЯ',
+  'may':'МАЯ','june':'ИЮНЯ','july':'ИЮЛЯ','august':'АВГУСТА',
+  'september':'СЕНТЯБРЯ','october':'ОКТЯБРЯ','november':'НОЯБРЯ','december':'ДЕКАБРЯ',
+};
+
+const NAMES_DICT = {
+  'mark':'МАРК','alekseevich':'АЛЕКСЕЕВИЧ','kirzov':'КИРЗОВ',
+  'aleksei':'АЛЕКСЕЙ','aleksey':'АЛЕКСЕЙ','alexei':'АЛЕКСЕЙ','alexey':'АЛЕКСЕЙ',
+  'ekaterina':'ЕКАТЕРИНА','katerina':'КАТЕРИНА','katya':'КАТЯ',
+  'olegovna':'ОЛЕГОВНА','olegovich':'ОЛЕГОВИЧ',
+  'golod':'ГОЛОД','kirzova':'КИРЗОВА',
+  'leonidovich':'ЛЕОНИДОВИЧ','leonidovna':'ЛЕОНИДОВНА','leonid':'ЛЕОНИД',
+  'alexander':'АЛЕКСАНДР','alexandra':'АЛЕКСАНДРА',
+  'mikhail':'МИХАИЛ','mikhailovich':'МИХАЙЛОВИЧ','mikhailovna':'МИХАЙЛОВНА',
+  'sergei':'СЕРГЕЙ','sergey':'СЕРГЕЙ','sergeevich':'СЕРГЕЕВИЧ','sergeevna':'СЕРГЕЕВНА',
+  'ivan':'ИВАН','ivanovich':'ИВАНОВИЧ','ivanova':'ИВАНОВА','ivanov':'ИВАНОВ','ivanovna':'ИВАНОВНА',
+  'anna':'АННА','anatolievich':'АНАТОЛЬЕВИЧ','anatolievna':'АНАТОЛЬЕВНА','anatoly':'АНАТОЛИЙ',
+  'dmitrievich':'ДМИТРИЕВИЧ','dmitrievna':'ДМИТРИЕВНА','dmitry':'ДМИТРИЙ','dmitri':'ДМИТРИЙ',
+  'nikolai':'НИКОЛАЙ','nikolaevich':'НИКОЛАЕВИЧ','nikolaevna':'НИКОЛАЕВНА',
+  'natalia':'НАТАЛЬЯ','natalya':'НАТАЛЬЯ','natalievna':'НАТАЛЬЕВНА',
+  'vladimir':'ВЛАДИМИР','vladimirovich':'ВЛАДИМИРОВИЧ','vladimirovna':'ВЛАДИМИРОВНА',
+  'andrei':'АНДРЕЙ','andreevich':'АНДРЕЕВИЧ','andreevna':'АНДРЕЕВНА',
+  'elena':'ЕЛЕНА','evgeny':'ЕВГЕНИЙ','evgenia':'ЕВГЕНИЯ','evgenevich':'ЕВГЕНЬЕВИЧ','evgenevna':'ЕВГЕНЬЕВНА',
+  'petr':'ПЁТР','peter':'ПЁТР','petrovich':'ПЕТРОВИЧ','petrovna':'ПЕТРОВНА',
+  'yuri':'ЮРИЙ','yurii':'ЮРИЙ','yurevich':'ЮРЬЕВИЧ','yurevna':'ЮРЬЕВНА',
+  'tatiana':'ТАТЬЯНА','tatiyana':'ТАТЬЯНА',
+  'olga':'ОЛЬГА','maxim':'МАКСИМ','maximovich':'МАКСИМОВИЧ','maximovna':'МАКСИМОВНА',
+  'roman':'РОМАН','romanovich':'РОМАНОВИЧ','romanovna':'РОМАНОВНА',
+  'pavel':'ПАВЕЛ','pavlovich':'ПАВЛОВИЧ','pavlovna':'ПАВЛОВНА',
+  'artem':'АРТЁМ','artemovich':'АРТЁМОВИЧ','artemovna':'АРТЁМОВНА',
+  'maria':'МАРИЯ','marina':'МАРИНА','galina':'ГАЛИНА','irina':'ИРИНА',
+  'svetlana':'СВЕТЛАНА','valentina':'ВАЛЕНТИНА','victoria':'ВИКТОРИЯ','viktoria':'ВИКТОРИЯ',
+  'konstantin':'КОНСТАНТИН','konstantinovich':'КОНСТАНТИНОВИЧ','konstantinovna':'КОНСТАНТИНОВНА',
+  'vadim':'ВАДИМ','vadimovich':'ВАДИМОВИЧ','vadimovna':'ВАДИМОВНА',
+  'viktor':'ВИКТОР','viktorovich':'ВИКТОРОВИЧ','viktorovna':'ВИКТОРОВНА',
+  'boris':'БОРИС','borisovich':'БОРИСОВИЧ','borisovna':'БОРИСОВНА',
+  'igor':'ИГОРЬ','igorevich':'ИГОРЕВИЧ','igorevna':'ИГОРЕВНА',
+  'oleg':'ОЛЕГ','gennady':'ГЕННАДИЙ','gennadievich':'ГЕННАДЬЕВИЧ',
+};
+
+const COUNTRIES_DICT = {
+  'russia':'РОССИЯ','russian federation':'РОССИЙСКАЯ ФЕДЕРАЦИЯ',
+  'belarus':'БЕЛАРУСЬ','ukraine':'УКРАИНА','kazakhstan':'КАЗАХСТАН',
+  'usa':'США','united states':'США','united states of america':'США',
+  'georgia':'ГРУЗИЯ','moldova':'МОЛДОВА','latvia':'ЛАТВИЯ',
+  'lithuania':'ЛИТВА','estonia':'ЭСТОНИЯ','armenia':'АРМЕНИЯ',
+  'azerbaijan':'АЗЕРБАЙДЖАН','uzbekistan':'УЗБЕКИСТАН','kyrgyzstan':'КЫРГЫЗСТАН',
+  'tajikistan':'ТАДЖИКИСТАН','turkmenistan':'ТУРКМЕНИСТАН','germany':'ГЕРМАНИЯ',
+  'france':'ФРАНЦИЯ','israel':'ИЗРАИЛЬ','china':'КИТАЙ','poland':'ПОЛЬША',
+};
+
+const CITIES_DICT = {
+  'st petersburg':'Г. САНКТ-ПЕТЕРБУРГ','st. petersburg':'Г. САНКТ-ПЕТЕРБУРГ',
+  'saint petersburg':'Г. САНКТ-ПЕТЕРБУРГ',
+  'miami':'Г. МАЙАМИ','orlando':'Г. ОРЛАНДО','tampa':'Г. ТАМПА',
+  'jacksonville':'Г. ДЖЭКСОНВИЛЛ','clearwater':'Г. КЛИРУОТЕР',
+  'fort lauderdale':'Г. ФОРТ-ЛОДЕРДЕЙЛ','tallahassee':'Г. ТАЛЛАХАССИ',
+  'gainesville':'Г. ГЕЙНСВИЛЛ','pensacola':'Г. ПЕНСАКОЛА',
+  'naples':'Г. НЕАПОЛЬ','sarasota':'Г. САРАСОТА',
+};
+
+const COUNTIES_DICT = {
+  'pinellas':'ОКРУГ ПИНЕЛЛАС','hillsborough':'ОКРУГ ХИЛЛСБОРО',
+  'orange':'ОКРУГ ОРИНДЖ','miami-dade':'ОКРУГ МАЙАМИ-ДЕЙД','broward':'ОКРУГ БРОУАРД',
+  'palm beach':'ОКРУГ ПАЛМ-БИЧ','duval':'ОКРУГ ДЮВАЛЬ','lee':'ОКРУГ ЛИ',
+  'polk':'ОКРУГ ПОЛК','volusia':'ОКРУГ ВОЛУША','collier':'ОКРУГ КОЛЬЕ',
+  'sarasota':'ОКРУГ САРАСОТА','manatee':'ОКРУГ МАНАТИ',
+};
+
+function nameToRu(str) {
+  if (!str) return '';
+  return str.split(/[\s-]/).map(word => {
+    const key = word.toLowerCase().replace(/[^a-zа-яё]/gi, '');
+    if (!key) return '';
+    if (NAMES_DICT[key]) return NAMES_DICT[key];
+    if (/[а-яё]/i.test(word)) return word.toUpperCase();
+    return translitWord(word).toUpperCase();
+  }).join(' ').trim();
+}
+
+function translitWord(word) {
+  const pairs = [
+    ['shch','щ'],['sch','щ'],['zh','ж'],['kh','х'],['ts','ц'],
+    ['ch','ч'],['sh','ш'],['yu','ю'],['ya','я'],['yo','ё'],['ye','е'],
+    ['a','а'],['b','б'],['c','к'],['d','д'],['e','е'],['f','ф'],['g','г'],
+    ['h','х'],['i','и'],['j','й'],['k','к'],['l','л'],['m','м'],['n','н'],
+    ['o','о'],['p','п'],['q','к'],['r','р'],['s','с'],['t','т'],['u','у'],
+    ['v','в'],['w','в'],['x','кс'],['y','й'],['z','з'],
+  ];
+  let r = '', i = 0, w = word.toLowerCase();
+  while (i < w.length) {
+    let matched = false;
+    for (const [en, ru] of pairs) {
+      if (w.startsWith(en, i)) { r += ru; i += en.length; matched = true; break; }
+    }
+    if (!matched) { r += w[i]; i++; }
+  }
+  return r.charAt(0).toUpperCase() + r.slice(1);
+}
+
+function sexToRu(str) {
+  if (!str) return 'МУЖСКОЙ';
+  const s = str.toUpperCase().replace(/[^A-ZА-ЯЁ]/g, '');
+  console.log('SEX INPUT:', JSON.stringify(str), 'CLEANED:', s);
+  if (s === 'FEMALE' || s === 'F') return 'ЖЕНСКИЙ';
+  if (s.startsWith('FEMALE')) return 'ЖЕНСКИЙ';
+  if (s === 'MALE' || s === 'M') return 'МУЖСКОЙ';
+  if (s.startsWith('MALE')) return 'МУЖСКОЙ';
+  return 'МУЖСКОЙ';
+}
+
+function weightToRu(lbs, oz) {
+  if (!lbs && !oz) return '';
+  const l = (lbs || '0').toString().trim();
+  const o = (oz || '0').toString().trim();
+  return `${l} ФУНТОВ ${o} УНЦИЙ`;
+}
+
+function dateToRu(str) {
+  if (!str) return '';
+  const m = str.match(/(\w+)\s+(\d{1,2})[,\s]+(\d{4})/);
+  if (m) {
+    const ru = MONTHS_EN[m[1].toLowerCase()];
+    if (ru) return `${m[2].padStart(2,'0')} ${ru} ${m[3]} г.`;
+  }
+  return str;
+}
+
+function countryToRu(str) {
+  if (!str) return '';
+  const key = str.toLowerCase().trim();
+  return COUNTRIES_DICT[key] || ((/[а-яё]/i.test(str)) ? str.toUpperCase() : str.toUpperCase());
+}
+
+function hospitalToRu(str) {
+  if (!str) return '';
+  return str
+    .replace(/\bHOSPITAL\b/gi, 'БОЛЬНИЦА')
+    .replace(/\bMEDICAL CENTER\b/gi, 'МЕДИЦИНСКИЙ ЦЕНТР')
+    .replace(/\bMEDICAL CENTRE\b/gi, 'МЕДИЦИНСКИЙ ЦЕНТР')
+    .replace(/\bHEALTH\b/gi, 'HEALTH')
+    .toUpperCase();
+}
+
+function cityCountyToRu(city, county) {
+  const parts = [];
+  if (city) {
+    const key = city.toLowerCase().trim();
+    const ru = CITIES_DICT[key];
+    parts.push(ru || ((/[а-яё]/i.test(city)) ? city.toUpperCase() : 'Г. ' + city.toUpperCase()));
+  }
+  if (county) {
+    const key = county.toLowerCase().trim().replace(' county','');
+    const ru = COUNTIES_DICT[key] || COUNTIES_DICT[county.toLowerCase().trim()];
+    parts.push(ru || ('ОКРУГ ' + county.toUpperCase().replace(/\bCOUNTY\b/i,'')).trim());
+  }
+  return parts.join(', ');
+}
+
 function extractFile(body, boundary) {
-  const sep = Buffer.from('--'+boundary);
+  const sep = Buffer.from('--' + boundary);
   const parts = splitBuf(body, sep);
   for (const part of parts) {
     const hEnd = part.indexOf('\r\n\r\n');
     if (hEnd === -1) continue;
-    const headers = part.slice(0,hEnd).toString();
+    const headers = part.slice(0, hEnd).toString();
     if (!headers.includes('filename')) continue;
     const mm = headers.match(/Content-Type:\s*([^\r\n]+)/i);
     const mime = mm ? mm[1].trim() : 'image/jpeg';
-    return { b64: part.slice(hEnd+4, part.length-2).toString('base64'), mime };
+    return { b64: part.slice(hEnd + 4, part.length - 2).toString('base64'), mime };
   }
-  return { b64:null, mime:null };
+  return { b64: null, mime: null };
 }
 
 function splitBuf(buf, sep) {
-  const parts=[]; let start=0, idx;
-  while((idx=buf.indexOf(sep,start))!==-1){ parts.push(buf.slice(start,idx)); start=idx+sep.length; }
+  const parts = []; let start = 0, idx;
+  while ((idx = buf.indexOf(sep, start)) !== -1) { parts.push(buf.slice(start, idx)); start = idx + sep.length; }
   parts.push(buf.slice(start));
-  return parts.filter(p=>p.length>4);
+  return parts.filter(p => p.length > 4);
 }
