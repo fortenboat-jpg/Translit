@@ -707,34 +707,35 @@ function doGenerate(){
 
 // ─── ПОКАЗ БЛАНКА С ДАННЫМИ ──────────────────────────────
 function showBlankPreview(d, res) {
-  const BG_W = 794; // px размер бланка
-  const BG_H = 1123;
-  // Контейнер предпросмотра 100% ширины формы ~420px → scale
   const container = document.getElementById('blankPreview');
   const overlayDiv = document.getElementById('overlayFields');
-  const previewH = 420;
-  // Те же % что в сервере
+  const fullName = [d.lastName,d.firstName,d.middleName].filter(Boolean).join(' ');
+  const barcodeVal = (d.reqNum||'').replace(/[^0-9]/g,'');
+  const barcodeText = barcodeVal ? '*'+barcodeVal+'*' : '';
+  // Точные координаты из редактора
   const fields = [
-    { top:18.8, left:35,  bold:true,  val: d.stateRegNum },
-    { top:18.8, left:52,  bold:true,  val: d.dateIssued },
-    { top:21.0, left:52,  bold:true,  val: d.dateRegistered },
-    { top:27.5, left:19,  bold:true,  val: [d.lastName,d.firstName,d.middleName].filter(Boolean).join(' ') },
-    { top:31.8, left:19,  bold:true,  val: res.translationText.split('\n').find(l=>l.startsWith('ДАТА РОЖДЕНИЯ:'))?.replace('ДАТА РОЖДЕНИЯ:','').trim() || d.dob },
-    { top:31.8, left:62,  bold:true,  val: d.timeOfBirth },
-    { top:35.5, left:19,  bold:true,  val: d.sex },
-    { top:35.5, left:62,  bold:true,  val: d.weight },
-    { top:39.0, left:19,  bold:true,  val: d.hospital },
-    { top:42.5, left:19,  bold:true,  val: d.cityCounty },
-    { top:52.5, left:19,  bold:true,  val: d.motherName },
-    { top:56.0, left:19,  bold:true,  val: d.motherDob },
-    { top:59.2, left:19,  bold:true,  val: d.motherBirthPlace },
-    { top:66.5, left:19,  bold:true,  val: d.fatherName },
-    { top:70.0, left:19,  bold:true,  val: d.fatherDob },
-    { top:73.2, left:19,  bold:true,  val: d.fatherBirthPlace },
+    { top:14.9, left:29.2, val: d.stateRegNum },
+    { top:14.7, left:63.4, val: d.dateIssued },
+    { top:16.7, left:63.4, val: d.dateRegistered },
+    { top:21.6, left:34.1, val: fullName },
+    { top:26.5, left:34.0, val: d.dob ? new Date(d.dob+'T12:00:00').toLocaleDateString('ru-RU',{day:'2-digit',month:'long',year:'numeric'}).toUpperCase() : '' },
+    { top:26.7, left:79.4, val: d.timeOfBirth },
+    { top:30.7, left:33.9, val: d.sex },
+    { top:30.8, left:71.6, val: d.weight },
+    { top:34.3, left:33.8, val: d.hospital },
+    { top:38.1, left:33.9, val: d.cityCounty },
+    { top:49.1, left:33.6, val: d.motherName },
+    { top:52.8, left:33.5, val: d.motherDob },
+    { top:56.0, left:33.3, val: d.motherBirthPlace },
+    { top:65.1, left:33.9, val: d.fatherName },
+    { top:69.7, left:34.0, val: d.fatherDob },
+    { top:73.3, left:34.1, val: d.fatherBirthPlace },
+    { top:84.4, left:75.6, val: barcodeVal },
+    { top:96.6, left:17.9, val: barcodeText },
   ];
   overlayDiv.innerHTML = fields.map(f => {
     if(!f.val) return '';
-    return `<div style="position:absolute;top:${f.top}%;left:${f.left}%;font-size:10px;font-weight:${f.bold?'700':'400'};color:#8B0000;font-family:Times New Roman,serif;white-space:nowrap;line-height:1">${f.val}</div>`;
+    return `<div style="position:absolute;top:${f.top}%;left:${f.left}%;font-size:9px;font-weight:700;color:#000;font-family:'Times New Roman',serif;white-space:nowrap;line-height:1">${f.val}</div>`;
   }).join('');
   container.style.display = 'block';
 }
