@@ -358,7 +358,7 @@ footer{background:var(--navy);color:rgba(255,255,255,.5);padding:40px 28px;text-
           <div class="pvbadge" id="pvBadge">⏳ Формируем перевод...</div>
           <div class="pvdl">✉️ придёт на email после оплаты</div>
         </div>
-        <!-- LOADING ANIMATION -->
+        <div id="errBox" style="display:none;color:var(--red);padding:14px;background:#fff0f0;border-radius:8px;font-size:.85rem;margin-bottom:10px"></div>
         <div id="loadingAnim" style="display:none;text-align:center;padding:28px 0">
           <div style="display:flex;justify-content:center;gap:10px;margin-bottom:14px">
             <div class="dot-pulse" style="animation-delay:0s"></div>
@@ -629,7 +629,8 @@ function doGenerate(){
   if(!email){toast('err','⚠️ Укажите email для получения файлов');return}
   goTab(2);
   document.getElementById('loadingAnim').style.display='block';
-  document.getElementById('pvBox').style.display='none';
+  document.getElementById('blankPreview').style.display='none';
+  document.getElementById('errBox').style.display='none';
   document.getElementById('pvButtons').style.display='none';
   document.getElementById('eNote').style.display='none';
   document.getElementById('pvBadge').textContent='⏳ Формируем перевод...';
@@ -682,7 +683,8 @@ function doGenerate(){
         document.getElementById('pvButtons').style.display='flex';
         document.getElementById('pvBadge').textContent='✓ Перевод готов — проверьте данные';
         document.getElementById('eDisp').textContent=email;
-        toast('ok','✓ Перевод сформирован');
+        document.getElementById('eNote').style.display='flex';
+        toast('ok','✓ Файлы отправлены на '+email);
       } else {
         document.getElementById('blankPreview').style.display='none';
         const err = document.createElement('div');
@@ -696,8 +698,9 @@ function doGenerate(){
   .catch(err=>{
     clearInterval(stepIv);
     document.getElementById('loadingAnim').style.display='none';
-    document.getElementById('pvBox').style.display='block';
-    document.getElementById('pvBox').textContent='❌ Ошибка сервера. Проверьте Vercel логи.';
+    document.getElementById('blankPreview').style.display='none';
+    document.getElementById('errBox').style.display='block';
+    document.getElementById('errBox').textContent='❌ Ошибка сервера. Проверьте Vercel логи.';
     toast('err','Ошибка сервера');console.error(err);
   });
 }
