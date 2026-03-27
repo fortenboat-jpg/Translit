@@ -16,27 +16,25 @@ export default async function handler(req, res) {
       : '—';
     const fullName = [d.lastName, d.firstName, d.middleName].filter(Boolean).join(' ');
 
-    const translationText = buildText(d, dobFmt, fullName, num, today);
-    const docxBuffer      = buildDocx(translationText, num);
-    const bgUrl           = process.env.BACKGROUND_URL || '';
-    const styledHtml      = buildStyledHtml(d, dobFmt, fullName, num, today, bgUrl);
+    const bgUrl = process.env.BACKGROUND_URL || 'https://translit-gilt.vercel.app/bg.jpg';
+    const overlayHtml = buildOverlayHtml(d, dobFmt, fullName, num, today, bgUrl);
+    const docxBuffer  = buildDocx(d, dobFmt, fullName, num, today);
 
-    // Send email with both attachments
     if (d.email && process.env.RESEND_API_KEY) {
       const resend = new Resend(process.env.RESEND_API_KEY);
       await resend.emails.send({
         from: 'BirthCert Translation <onboarding@resend.dev>',
         to: d.email,
-        subject: `Ваш перевод свидетельства о рождении — ${fullName} (№ ${num})`,
-        html: buildEmailHtml(fullName, num, translationText),
+        subject: `Перевод свидетельства о рождении — ${fullName} (№ ${num})`,
+        html: buildEmailHtml(fullName, num),
         attachments: [
           {
-            filename: `BirthCert_${num}.docx`,
+            filename: `Перевод_${fullName}_${num}.docx`,
             content: docxBuffer.toString('base64'),
           },
           {
-            filename: `BirthCert_${num}_с_фоном.html`,
-            content: Buffer.from(styledHtml, 'utf-8').toString('base64'),
+            filename: `Перевод_с_бланком_${fullName}_${num}.html`,
+            content: Buffer.from(overlayHtml, 'utf-8').toString('base64'),
           }
         ]
       });
@@ -44,10 +42,10 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       ok: true,
-      translationText,
+      translationText: buildPlainText(d, dobFmt, fullName, num, today),
       orderNum: num,
       docxBase64: docxBuffer.toString('base64'),
-      pdfHtml: styledHtml,
+      pdfHtml: overlayHtml,
     });
 
   } catch (err) {
@@ -56,275 +54,309 @@ export default async function handler(req, res) {
   }
 }
 
-// ─── PLAIN TEXT TRANSLATION ───────────────────────────────
-function buildText(d, dobFmt, fullName, num, today) {
-  return `Перевод с английского языка
-══════════════════════════════════════════════════════
+// ─── HTML: текст поверх бланка ────────────────────────────
+// Бланк bg.jpg пропорции ~794x1123px (A4)
+// Все позиции в % от размера бланка
+function buildOverlayHtml(d, dobFmt, fullName, num, today, bgUrl) {
+  const v = (val) => val || '';
 
-ШТАТ ФЛОРИДА
-БЮРО ЗАПИСИ АКТОВ ГРАЖДАНСКОГО СОСТОЯНИЯ
-СВИДЕТЕЛЬСТВО О РОЖДЕНИИ
+  // Поля: [top%, left%, fontSize, bold, value]
+  const fields = [
+    // Номер регистрации
+    { top: 18.8, left: 12,  size: 11, bold: true,  val: v(d.stateRegNum) },
+    // Дата выдачи — после метки
+    { top: 18.8, left: 52,  size: 11, bold: true,  val: v(d.dateIssued) },
+    // Дата регистрации
+    { top: 21.0, left: 52,  size: 11, bold: true,  val: v(d.dateRegistered) },
 
-══════════════════════════════════════════════════════
-НОМЕР РЕГИСТРАЦИИ В ШТАТЕ: ${d.stateRegNum || '—'}
-ДАТА ВЫДАЧИ:               ${d.dateIssued || '—'}
-ДАТА РЕГИСТРАЦИИ:          ${d.dateRegistered || '—'}
+    // ИМЯ ребёнка
+    { top: 27.5, left: 19,  size: 12, bold: true,  val: fullName },
 
-ИНФОРМАЦИЯ О РЕБЁНКЕ
-──────────────────────────────────────────────────────
-ИМЯ:                   ${fullName}
-ДАТА РОЖДЕНИЯ:         ${dobFmt}
-ВРЕМЯ РОЖДЕНИЯ (24 Ч): ${d.timeOfBirth || '—'}
-ПОЛ:                   ${d.sex || '—'}
-ВЕС ПРИ РОЖДЕНИИ:      ${d.weight || '—'}
-МЕСТО РОЖДЕНИЯ:        ${d.hospital || '—'}
-ГОРОД, ОКРУГ РОЖДЕНИЯ: ${d.cityCounty || '—'}
+    // Дата рождения
+    { top: 31.8, left: 19,  size: 11, bold: true,  val: dobFmt },
+    // Время рождения
+    { top: 31.8, left: 65,  size: 11, bold: true,  val: v(d.timeOfBirth) },
 
-ИНФОРМАЦИЯ О МАТЕРИ / РОДИТЕЛЕ
-(ИМЯ ДО ПЕРВОГО БРАКА, ЕСЛИ ПРИМЕНИМО)
-──────────────────────────────────────────────────────
-ИМЯ:                   ${d.motherName || '—'}
-ДАТА РОЖДЕНИЯ:         ${d.motherDob || '—'}
-МЕСТО РОЖДЕНИЯ:        ${d.motherBirthPlace || '—'}
+    // Пол
+    { top: 35.5, left: 19,  size: 11, bold: true,  val: v(d.sex) },
+    // Вес
+    { top: 35.5, left: 65,  size: 11, bold: true,  val: v(d.weight) },
 
-ИНФОРМАЦИЯ ОБ ОТЦЕ / РОДИТЕЛЕ
-(ИМЯ ДО ПЕРВОГО БРАКА, ЕСЛИ ПРИМЕНИМО)
-──────────────────────────────────────────────────────
-ИМЯ:                   ${d.fatherName || '—'}
-ДАТА РОЖДЕНИЯ:         ${d.fatherDob || '—'}
-МЕСТО РОЖДЕНИЯ:        ${d.fatherBirthPlace || '—'}
+    // Место рождения (больница)
+    { top: 39.0, left: 19,  size: 11, bold: true,  val: v(d.hospital) },
 
-══════════════════════════════════════════════════════
-УДОСТОВЕРЕНИЕ ПЕРЕВОДА
-══════════════════════════════════════════════════════
+    // Город, округ
+    { top: 42.5, left: 19,  size: 11, bold: true,  val: v(d.cityCounty) },
 
-Я, нижеподписавшийся(аяся), сертифицированный переводчик
-с английского языка на русский язык, настоящим удостоверяю,
-что данный перевод является точным и полным переводом
-оригинального документа — свидетельства о рождении,
-выданного компетентным органом штата Флорида, США.
+    // Мать — ИМЯ
+    { top: 52.5, left: 19,  size: 12, bold: true,  val: v(d.motherName) },
+    // Мать — дата рождения
+    { top: 56.0, left: 19,  size: 11, bold: true,  val: v(d.motherDob) },
+    // Мать — место рождения
+    { top: 59.2, left: 19,  size: 11, bold: true,  val: v(d.motherBirthPlace) },
 
-Перевод выполнен в соответствии с требованиями
-Консульства Российской Федерации в США.
+    // Отец — ИМЯ
+    { top: 66.5, left: 19,  size: 12, bold: true,  val: v(d.fatherName) },
+    // Отец — дата рождения
+    { top: 70.0, left: 19,  size: 11, bold: true,  val: v(d.fatherDob) },
+    // Отец — место рождения
+    { top: 73.2, left: 19,  size: 11, bold: true,  val: v(d.fatherBirthPlace) },
 
-Переводчик: _______________________________
-Дата:       ${today}
-№ перевода: ${num}
-Печать:     BirthCert Translation Services
+    // Запрос (номер)
+    { top: 80.8, left: 68,  size: 10, bold: true,  val: num },
+  ];
 
-══════════════════════════════════════════════════════`;
-}
-
-// ─── STYLED HTML WITH BACKGROUND ─────────────────────────
-function buildStyledHtml(d, dobFmt, fullName, num, today, bgUrl) {
-  const hasBg = bgUrl && bgUrl.length > 0;
-
-  // Background style: real image if provided, else decorative gradient
-  const bgStyle = hasBg
-    ? `background: url('${bgUrl}') center center / cover no-repeat;`
-    : `background: linear-gradient(160deg, #f0f2f8 0%, #e8eaf4 100%);`;
-
-  function row(label, value) {
-    return `<tr>
-      <td style="padding:5px 8px 5px 0;color:#4a5568;font-size:10.5px;width:52mm;vertical-align:top;border-bottom:1px solid rgba(0,0,0,0.06)">${label}</td>
-      <td style="padding:5px 0 5px 8px;font-weight:700;color:#1a202c;font-size:10.5px;border-bottom:1px solid rgba(0,0,0,0.06)">${value || '—'}</td>
-    </tr>`;
-  }
+  const fieldHtml = fields.map(f => `
+    <div style="
+      position:absolute;
+      top:${f.top}%;
+      left:${f.left}%;
+      font-size:${f.size}px;
+      font-weight:${f.bold ? '700' : '400'};
+      color:#8B0000;
+      font-family:'Times New Roman', Times, serif;
+      white-space:nowrap;
+      line-height:1;
+    ">${f.val}</div>
+  `).join('');
 
   return `<!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Перевод — ${fullName} (№ ${num})</title>
-<link href="https://fonts.googleapis.com/css2?family=PT+Serif:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<title>Перевод — ${fullName}</title>
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  font-family: 'PT Serif', 'Times New Roman', serif;
-  ${bgStyle}
-  min-height: 100vh;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding: 30px 20px;
-}
-.overlay {
-  position: fixed; inset: 0;
-  ${hasBg ? 'background: rgba(255,255,255,0.82);' : ''}
-  pointer-events: none;
-  z-index: 0;
-}
-.page {
-  position: relative;
-  z-index: 1;
-  width: 210mm;
-  min-height: 297mm;
-  background: rgba(255,255,255,${hasBg ? '0.97' : '1'});
-  box-shadow: 0 8px 48px rgba(0,0,0,0.22);
-  display: flex;
-  flex-direction: column;
-}
-/* Декоративная рамка */
-.frame { position: absolute; inset: 7mm; border: 1.5px solid rgba(200,168,75,0.5); pointer-events: none; z-index: 2; }
-.frame-inner { position: absolute; inset: 9mm; border: 0.5px solid rgba(200,168,75,0.25); pointer-events: none; z-index: 2; }
-.corner { position: absolute; width: 16px; height: 16px; }
-.c-tl { top:5mm; left:5mm; border-top:2.5px solid #c8a84b; border-left:2.5px solid #c8a84b; }
-.c-tr { top:5mm; right:5mm; border-top:2.5px solid #c8a84b; border-right:2.5px solid #c8a84b; }
-.c-bl { bottom:5mm; left:5mm; border-bottom:2.5px solid #c8a84b; border-left:2.5px solid #c8a84b; }
-.c-br { bottom:5mm; right:5mm; border-bottom:2.5px solid #c8a84b; border-right:2.5px solid #c8a84b; }
-/* Шапка */
-.hdr { background: linear-gradient(135deg,#0c1b3a,#1a3266); padding:16px 18mm; text-align:center; position:relative; z-index:3; }
-.hdr-title { color:#fff; font-size:15px; font-weight:700; letter-spacing:2px; text-transform:uppercase; margin-bottom:4px; }
-.hdr-sub { color:rgba(255,255,255,0.55); font-size:9.5px; letter-spacing:0.8px; }
-.gold-bar { height:3px; background:linear-gradient(90deg,transparent,#c8a84b 20%,#f0cc6a 50%,#c8a84b 80%,transparent); }
-/* Контент */
-.body { padding:10mm 16mm 10mm; flex:1; position:relative; z-index:3; }
-.meta-row { display:flex; justify-content:space-between; margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid rgba(200,168,75,0.3); font-size:9px; color:#5a6b90; }
-.sec { margin-bottom:4px; }
-.sec-title { background:linear-gradient(135deg,rgba(12,27,58,0.06),rgba(12,27,58,0.02)); border-left:3px solid #c8a84b; padding:4px 10px; font-size:9.5px; font-weight:700; color:#0c1b3a; letter-spacing:0.5px; text-transform:uppercase; margin:10px 0 4px; }
-table { width:100%; border-collapse:collapse; }
-/* Блок сертификации */
-.cert { margin-top:10px; padding:10px 12px; background:rgba(244,246,251,0.8); border:1px solid rgba(212,218,240,0.8); border-radius:3px; font-size:9.5px; color:#2a3a5a; line-height:1.85; }
-.cert-title { font-weight:700; color:#0c1b3a; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px; display:block; }
-.sign-row { display:flex; justify-content:space-between; margin-top:18px; padding-top:10px; border-top:1px dashed rgba(200,168,75,0.6); }
-.sign-item { text-align:center; }
-.sign-line { border-bottom:1px solid #0c1b3a; width:46mm; margin:0 auto 4px; }
-.sign-label { font-size:8.5px; color:#5a6b90; }
-.stamp-row { display:flex; align-items:center; gap:14px; margin-top:12px; }
-.stamp { width:52px; height:52px; border-radius:50%; border:2px solid #1a46b8; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:6px; font-weight:700; color:#1a46b8; text-align:center; text-transform:uppercase; letter-spacing:0.3px; line-height:1.5; padding:4px; }
-.stamp-text { font-size:9px; color:#5a6b90; line-height:1.7; }
-/* Футер */
-.ftr { background:#0c1b3a; padding:7px 18mm; display:flex; justify-content:space-between; align-items:center; position:relative; z-index:3; }
-.ftr-l { color:rgba(255,255,255,0.45); font-size:7.5px; }
-.ftr-r { color:#c8a84b; font-size:7.5px; font-weight:700; }
-@media print {
-  body { padding:0; background:white !important; }
-  .overlay { display:none; }
-  .page { box-shadow:none; width:100%; }
-}
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: #888;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    padding: 20px;
+  }
+  .page {
+    position: relative;
+    width: 794px;
+    height: 1123px;
+    flex-shrink: 0;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+  }
+  .bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: fill;
+    display: block;
+  }
+  .fields {
+    position: absolute;
+    inset: 0;
+  }
+  @media print {
+    body { background: white; padding: 0; margin: 0; }
+    .page { box-shadow: none; width: 100vw; height: 100vh; }
+    .bg { width: 100%; height: 100%; }
+  }
 </style>
 </head>
 <body>
-${hasBg ? '<div class="overlay"></div>' : ''}
 <div class="page">
-  <div class="frame"></div><div class="frame-inner"></div>
-  <div class="corner c-tl"></div><div class="corner c-tr"></div>
-  <div class="corner c-bl"></div><div class="corner c-br"></div>
-
-  <div class="hdr">
-    <div class="hdr-title">Свидетельство о рождении</div>
-    <div class="hdr-sub">Перевод с английского языка на русский язык &nbsp;·&nbsp; Certificate of Live Birth &nbsp;·&nbsp; штат Флорида, США</div>
+  <img class="bg" src="${bgUrl}" alt="бланк">
+  <div class="fields">
+    ${fieldHtml}
   </div>
-  <div class="gold-bar"></div>
-
-  <div class="body">
-    <div class="meta-row">
-      <span>РЕГ. №: <strong>${d.stateRegNum||'—'}</strong></span>
-      <span>ВЫДАН: <strong>${d.dateIssued||'—'}</strong></span>
-      <span>ЗАРЕГ.: <strong>${d.dateRegistered||'—'}</strong></span>
-    </div>
-
-    <div class="sec">
-      <div class="sec-title">Информация о ребёнке</div>
-      <table>
-        ${row('Фамилия, имя, отчество', [d.lastName,d.firstName,d.middleName].filter(Boolean).join(' '))}
-        ${row('Дата рождения', dobFmt)}
-        ${row('Время рождения (24 ч)', d.timeOfBirth)}
-        ${row('Пол', d.sex)}
-        ${row('Вес при рождении', d.weight)}
-        ${row('Место рождения (больница)', d.hospital)}
-        ${row('Город, округ рождения', d.cityCounty)}
-      </table>
-    </div>
-
-    <div class="sec">
-      <div class="sec-title">Информация о матери / родителе</div>
-      <table>
-        ${row('ФИО (до первого брака)', d.motherName)}
-        ${row('Дата рождения', d.motherDob)}
-        ${row('Место рождения', d.motherBirthPlace)}
-      </table>
-    </div>
-
-    <div class="sec">
-      <div class="sec-title">Информация об отце / родителе</div>
-      <table>
-        ${row('ФИО (до первого брака)', d.fatherName)}
-        ${row('Дата рождения', d.fatherDob)}
-        ${row('Место рождения', d.fatherBirthPlace)}
-      </table>
-    </div>
-
-    <div class="cert">
-      <span class="cert-title">Удостоверение перевода</span>
-      Я, нижеподписавшийся(аяся), сертифицированный переводчик с английского языка на русский язык,
-      настоящим удостоверяю, что данный перевод является точным и полным переводом оригинального документа —
-      свидетельства о рождении, выданного компетентным органом штата Флорида, США.
-      Перевод выполнен в соответствии с требованиями Консульства Российской Федерации в США.
-      <div class="sign-row">
-        <div class="sign-item"><div class="sign-line"></div><div class="sign-label">Подпись переводчика</div></div>
-        <div class="sign-item"><div class="sign-line"></div><div class="sign-label">Дата: ${today}</div></div>
-        <div class="sign-item"><div class="sign-line"></div><div class="sign-label">№ ${num}</div></div>
-      </div>
-      <div class="stamp-row">
-        <div class="stamp">Certified<br>Translator<br>★<br>BirthCert</div>
-        <div class="stamp-text">
-          <strong style="color:#0c1b3a;display:block;margin-bottom:2px">BirthCert Translation Services</strong>
-          Официальный перевод для Консульства РФ в США<br>
-          birthcert-translation.com
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="ftr">
-    <div class="ftr-l">© BirthCert Translation &nbsp;·&nbsp; Принимается консульствами РФ в США</div>
-    <div class="ftr-r">№ ${num}</div>
-  </div>
+</div>
+<div style="margin-top:16px;text-align:center;color:white;font-family:Arial,sans-serif;font-size:13px">
+  Для печати: Ctrl+P → убрать галочку "Колонтитулы" → масштаб 100% → печать
 </div>
 </body>
 </html>`;
 }
 
-// ─── DOCX (pure Office Open XML) ─────────────────────────
-function buildDocx(text, num) {
-  const lines = text.split('\n');
-  const paragraphs = lines.map(line => {
-    const isBold = line.startsWith('ИНФОРМАЦИЯ') || line.startsWith('УДОСТОВЕРЕНИЕ') ||
-                   line.startsWith('ШТАТ') || line.startsWith('БЮРО') ||
-                   line.startsWith('СВИДЕТЕЛЬСТВО') || line.startsWith('Перевод с');
-    const isCenter = line.startsWith('СВИДЕТЕЛЬСТВО') || line.startsWith('ШТАТ') || line.startsWith('БЮРО');
-    const escaped = line.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    return `<w:p>
-      <w:pPr><w:spacing w:line="280" w:lineRule="auto"/>${isCenter ? '<w:jc w:val="center"/>' : ''}</w:pPr>
-      <w:r>
-        <w:rPr>${isBold ? '<w:b/>' : ''}<w:sz w:val="20"/><w:szCs w:val="20"/>
-          <w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:cs="Times New Roman"/>
-        </w:rPr>
-        <w:t xml:space="preserve">${escaped || ' '}</w:t>
-      </w:r>
-    </w:p>`;
-  }).join('');
+// ─── PLAIN TEXT (для предпросмотра) ──────────────────────
+function buildPlainText(d, dobFmt, fullName, num, today) {
+  return `ШТАТ ФЛОРИДА
+БЮРО ЗАПИСИ АКТОВ ГРАЖДАНСКОГО СОСТОЯНИЯ
+СВИДЕТЕЛЬСТВО О РОЖДЕНИИ
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+НОМЕР РЕГИСТРАЦИИ В ШТАТЕ: ${d.stateRegNum || '—'}
+ДАТА ВЫДАЧИ: ${d.dateIssued || '—'}
+ДАТА РЕГИСТРАЦИИ: ${d.dateRegistered || '—'}
+
+ИНФОРМАЦИЯ О РЕБЁНКЕ
+ИМЯ: ${fullName}
+ДАТА РОЖДЕНИЯ: ${dobFmt}   ВРЕМЯ РОЖДЕНИЯ (24 ЧАСА): ${d.timeOfBirth || '—'}
+ПОЛ: ${d.sex || '—'}   ВЕС ПРИ РОЖДЕНИИ: ${d.weight || '—'}
+МЕСТО РОЖДЕНИЯ: ${d.hospital || '—'}
+ГОРОД, ОКРУГ РОЖДЕНИЯ: ${d.cityCounty || '—'}
+
+ИНФОРМАЦИЯ О МАТЕРИ/РОДИТЕЛЕ
+ИМЯ: ${d.motherName || '—'}
+ДАТА РОЖДЕНИЯ: ${d.motherDob || '—'}
+МЕСТО РОЖДЕНИЯ: ${d.motherBirthPlace || '—'}
+
+ИНФОРМАЦИЯ ОБ ОТЦЕ/РОДИТЕЛЕ
+ИМЯ: ${d.fatherName || '—'}
+ДАТА РОЖДЕНИЯ: ${d.fatherDob || '—'}
+МЕСТО РОЖДЕНИЯ: ${d.fatherBirthPlace || '—'}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Перевод № ${num} от ${today}
+BirthCert Translation Services`;
+}
+
+// ─── DOCX: заполненный бланк в Word-таблице ──────────────
+function buildDocx(d, dobFmt, fullName, num, today) {
+
+  function row(label, value, bold = false) {
+    const val = value || '—';
+    return `<w:tr>
+      <w:tc>
+        <w:tcPr><w:tcW w:w="3200" w:type="dxa"/>
+          <w:shd w:val="clear" w:color="auto" w:fill="F5F5F0"/>
+        </w:tcPr>
+        <w:p><w:r><w:rPr>
+          <w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/>
+          <w:sz w:val="20"/><w:szCs w:val="20"/>
+          <w:color w:val="444444"/>
+        </w:rPr><w:t>${esc(label)}</w:t></w:r></w:p>
+      </w:tc>
+      <w:tc>
+        <w:tcPr><w:tcW w:w="5600" w:type="dxa"/></w:tcPr>
+        <w:p><w:r><w:rPr>
+          <w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/>
+          <w:sz w:val="22"/><w:szCs w:val="22"/>
+          ${bold ? '<w:b/>' : ''}
+          <w:color w:val="8B0000"/>
+        </w:rPr><w:t>${esc(val)}</w:t></w:r></w:p>
+      </w:tc>
+    </w:tr>`;
+  }
+
+  function section(title) {
+    return `<w:tr>
+      <w:tc><w:tcPr>
+        <w:tcW w:w="8800" w:type="dxa"/>
+        <w:gridSpan w:val="2"/>
+        <w:shd w:val="clear" w:color="auto" w:fill="1a3266"/>
+      </w:tcPr>
+      <w:p><w:r><w:rPr>
+        <w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/>
+        <w:b/><w:sz w:val="22"/><w:szCs w:val="22"/>
+        <w:color w:val="FFFFFF"/>
+      </w:rPr><w:t>${esc(title)}</w:t></w:r></w:p>
+      </w:tc>
+    </w:tr>`;
+  }
+
+  function esc(s) {
+    return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
 
   const docXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+            xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
 <w:body>
-  <w:p><w:pPr><w:jc w:val="center"/></w:pPr>
-    <w:r><w:rPr><w:b/><w:sz w:val="32"/><w:szCs w:val="32"/>
-      <w:color w:val="0C1B3A"/>
+
+  <!-- Заголовок -->
+  <w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="0" w:after="80"/></w:pPr>
+    <w:r><w:rPr><w:b/><w:sz w:val="14"/><w:color w:val="1a3266"/>
       <w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/>
-    </w:rPr><w:t>СВИДЕТЕЛЬСТВО О РОЖДЕНИИ</w:t></w:r></w:p>
-  <w:p><w:pPr><w:jc w:val="center"/></w:pPr>
-    <w:r><w:rPr><w:sz w:val="18"/><w:szCs w:val="18"/><w:color w:val="5A6B90"/>
+    </w:rPr><w:t>ШТАТ ФЛОРИДА</w:t></w:r>
+  </w:p>
+  <w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="0" w:after="40"/></w:pPr>
+    <w:r><w:rPr><w:sz w:val="18"/><w:color w:val="333333"/>
       <w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/>
-    </w:rPr><w:t>Перевод с английского языка на русский язык | Certificate of Live Birth</w:t></w:r></w:p>
-  <w:p><w:r><w:t> </w:t></w:r></w:p>
-  ${paragraphs}
+    </w:rPr><w:t>БЮРО ЗАПИСИ АКТОВ ГРАЖДАНСКОГО СОСТОЯНИЯ</w:t></w:r>
+  </w:p>
+  <w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="0" w:after="120"/></w:pPr>
+    <w:r><w:rPr><w:b/><w:sz w:val="28"/><w:color w:val="1a3266"/>
+      <w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/>
+    </w:rPr><w:t>СВИДЕТЕЛЬСТВО О РОЖДЕНИИ</w:t></w:r>
+  </w:p>
+  <w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="0" w:after="160"/></w:pPr>
+    <w:r><w:rPr><w:i/><w:sz w:val="18"/><w:color w:val="666666"/>
+      <w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/>
+    </w:rPr><w:t>Перевод с английского языка на русский язык</w:t></w:r>
+  </w:p>
+
+  <!-- Таблица с данными -->
+  <w:tbl>
+    <w:tblPr>
+      <w:tblW w:w="8800" w:type="dxa"/>
+      <w:tblBorders>
+        <w:top w:val="single" w:sz="4" w:color="C8A84B"/>
+        <w:bottom w:val="single" w:sz="4" w:color="C8A84B"/>
+        <w:insideH w:val="single" w:sz="2" w:color="DDDDDD"/>
+      </w:tblBorders>
+      <w:tblCellMar>
+        <w:top w:w="80" w:type="dxa"/>
+        <w:left w:w="140" w:type="dxa"/>
+        <w:bottom w:w="80" w:type="dxa"/>
+        <w:right w:w="140" w:type="dxa"/>
+      </w:tblCellMar>
+    </w:tblPr>
+    <w:tblGrid>
+      <w:gridCol w:w="3200"/>
+      <w:gridCol w:w="5600"/>
+    </w:tblGrid>
+
+    ${section('РЕКВИЗИТЫ ДОКУМЕНТА')}
+    ${row('Номер регистрации в штате', d.stateRegNum, true)}
+    ${row('Дата выдачи', d.dateIssued, true)}
+    ${row('Дата регистрации', d.dateRegistered, true)}
+
+    ${section('ИНФОРМАЦИЯ О РЕБЁНКЕ')}
+    ${row('Имя', fullName, true)}
+    ${row('Дата рождения', dobFmt, true)}
+    ${row('Время рождения (24 ч)', d.timeOfBirth, true)}
+    ${row('Пол', d.sex, true)}
+    ${row('Вес при рождении', d.weight, true)}
+    ${row('Место рождения (больница)', d.hospital, true)}
+    ${row('Город, округ рождения', d.cityCounty, true)}
+
+    ${section('ИНФОРМАЦИЯ О МАТЕРИ / РОДИТЕЛЕ')}
+    ${row('ФИО (имя до первого брака)', d.motherName, true)}
+    ${row('Дата рождения', d.motherDob, true)}
+    ${row('Место рождения', d.motherBirthPlace, true)}
+
+    ${section('ИНФОРМАЦИЯ ОБ ОТЦЕ / РОДИТЕЛЕ')}
+    ${row('ФИО (имя до первого брака)', d.fatherName, true)}
+    ${row('Дата рождения', d.fatherDob, true)}
+    ${row('Место рождения', d.fatherBirthPlace, true)}
+
+  </w:tbl>
+
+  <!-- Удостоверение -->
+  <w:p><w:pPr><w:spacing w:before="240" w:after="80"/></w:pPr></w:p>
+  <w:p><w:pPr><w:spacing w:before="0" w:after="60"/></w:pPr>
+    <w:r><w:rPr><w:b/><w:sz w:val="22"/><w:color w:val="1a3266"/>
+      <w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/>
+    </w:rPr><w:t>УДОСТОВЕРЕНИЕ ПЕРЕВОДА</w:t></w:r>
+  </w:p>
+  <w:p><w:pPr><w:spacing w:before="0" w:after="60"/></w:pPr>
+    <w:r><w:rPr><w:sz w:val="20"/>
+      <w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/>
+    </w:rPr><w:t xml:space="preserve">Я, нижеподписавшийся(аяся), сертифицированный переводчик с английского языка на русский язык, настоящим удостоверяю, что данный перевод является точным и полным переводом оригинального документа — свидетельства о рождении, выданного компетентным органом штата Флорида, США. Перевод выполнен в соответствии с требованиями Консульства Российской Федерации в США.</w:t></w:r>
+  </w:p>
+  <w:p><w:pPr><w:spacing w:before="120" w:after="60"/></w:pPr>
+    <w:r><w:rPr><w:sz w:val="20"/>
+      <w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/>
+    </w:rPr><w:t xml:space="preserve">Переводчик: _______________________________    Дата: ${esc(today)}    № ${esc(num)}</w:t></w:r>
+  </w:p>
+  <w:p><w:pPr><w:spacing w:before="0" w:after="60"/></w:pPr>
+    <w:r><w:rPr><w:sz w:val="18"/><w:color w:val="666666"/>
+      <w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/>
+    </w:rPr><w:t>Печать: BirthCert Translation Services · birthcert-translation.com</w:t></w:r>
+  </w:p>
+
   <w:sectPr>
     <w:pgSz w:w="11906" w:h="16838"/>
-    <w:pgMar w:top="1134" w:right="850" w:bottom="1134" w:left="1701"/>
+    <w:pgMar w:top="720" w:right="720" w:bottom="720" w:left="1080"/>
   </w:sectPr>
-</w:body></w:document>`;
+</w:body>
+</w:document>`;
 
   const relsXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
@@ -353,65 +385,18 @@ function buildDocx(text, num) {
 </Relationships>`;
 
   return buildZip([
-    { name: '[Content_Types].xml',         data: contentTypes },
-    { name: '_rels/.rels',                 data: rootRels },
-    { name: 'word/document.xml',           data: docXml },
-    { name: 'word/_rels/document.xml.rels',data: relsXml },
-    { name: 'word/styles.xml',             data: stylesXml },
+    { name: '[Content_Types].xml',          data: contentTypes },
+    { name: '_rels/.rels',                  data: rootRels },
+    { name: 'word/document.xml',            data: docXml },
+    { name: 'word/_rels/document.xml.rels', data: relsXml },
+    { name: 'word/styles.xml',              data: stylesXml },
   ]);
 }
 
-// ─── ZIP BUILDER (no deps) ────────────────────────────────
-function buildZip(files) {
-  const localParts = [], centralParts = [];
-  let offset = 0;
-  for (const file of files) {
-    const name = Buffer.from(file.name, 'utf-8');
-    const data = Buffer.from(file.data, 'utf-8');
-    const crc  = crc32(data);
-    const local = Buffer.alloc(30 + name.length);
-    local.writeUInt32LE(0x04034b50,0); local.writeUInt16LE(20,4);
-    local.writeUInt16LE(0,6); local.writeUInt16LE(0,8);
-    local.writeUInt16LE(0,10); local.writeUInt16LE(0,12);
-    local.writeUInt32LE(crc,14); local.writeUInt32LE(data.length,18);
-    local.writeUInt32LE(data.length,22); local.writeUInt16LE(name.length,26);
-    local.writeUInt16LE(0,28); name.copy(local,30);
-    localParts.push(local, data);
-    const central = Buffer.alloc(46 + name.length);
-    central.writeUInt32LE(0x02014b50,0); central.writeUInt16LE(20,4);
-    central.writeUInt16LE(20,6); central.writeUInt16LE(0,8);
-    central.writeUInt16LE(0,10); central.writeUInt16LE(0,12);
-    central.writeUInt16LE(0,14); central.writeUInt32LE(crc,16);
-    central.writeUInt32LE(data.length,20); central.writeUInt32LE(data.length,24);
-    central.writeUInt16LE(name.length,28); central.writeUInt16LE(0,30);
-    central.writeUInt16LE(0,32); central.writeUInt16LE(0,34);
-    central.writeUInt16LE(0,36); central.writeUInt32LE(0,38);
-    central.writeUInt32LE(offset,42); name.copy(central,46);
-    centralParts.push(central);
-    offset += 30 + name.length + data.length;
-  }
-  const cd  = Buffer.concat(centralParts);
-  const end = Buffer.alloc(22);
-  end.writeUInt32LE(0x06054b50,0); end.writeUInt16LE(0,4);
-  end.writeUInt16LE(0,6); end.writeUInt16LE(files.length,8);
-  end.writeUInt16LE(files.length,10); end.writeUInt32LE(cd.length,12);
-  end.writeUInt32LE(offset,16); end.writeUInt16LE(0,20);
-  return Buffer.concat([...localParts, cd, end]);
-}
-
-function crc32(buf) {
-  const t = new Uint32Array(256);
-  for (let i=0;i<256;i++){let c=i;for(let j=0;j<8;j++)c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1);t[i]=c;}
-  let crc=0xFFFFFFFF;
-  for (let i=0;i<buf.length;i++) crc=(crc>>>8)^t[(crc^buf[i])&0xFF];
-  return (crc^0xFFFFFFFF)>>>0;
-}
-
 // ─── EMAIL HTML ───────────────────────────────────────────
-function buildEmailHtml(fullName, num, text) {
-  const escaped = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+function buildEmailHtml(fullName, num) {
   return `
-<div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;border-radius:14px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.1)">
+<div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;border-radius:14px;overflow:hidden">
   <div style="background:#0c1b3a;padding:28px;text-align:center">
     <h2 style="color:white;margin:0;font-size:22px">📄 BirthCert Translation</h2>
     <p style="color:rgba(255,255,255,0.6);margin:6px 0 0;font-size:13px">Официальный перевод для Консульства РФ в США</p>
@@ -423,20 +408,72 @@ function buildEmailHtml(fullName, num, text) {
       К письму прикреплены <strong>два файла</strong>:
     </p>
     <div style="background:white;border:1.5px solid #d4daf0;border-radius:10px;padding:16px;margin-bottom:16px">
-      <p style="margin:0 0 8px;color:#0e1c36;font-weight:600;font-size:14px">📎 Вложения:</p>
-      <p style="margin:0 0 6px;font-size:13px">📝 <strong>BirthCert_${num}.docx</strong> — открыть в Microsoft Word</p>
-      <p style="margin:0;font-size:13px">🎨 <strong>BirthCert_${num}_с_фоном.html</strong> — красивый вариант с фоном бланка</p>
-    </div>
-    <div style="background:#e8f8f0;border-left:3px solid #0ea86e;padding:12px 16px;border-radius:0 8px 8px 0;margin-bottom:20px">
-      <p style="margin:0;color:#0a6644;font-size:13px">
-        🖨️ Для подачи в консульство — откройте <strong>HTML файл</strong> в браузере и нажмите <strong>Ctrl+P → Печать</strong>
+      <p style="margin:0 0 10px;color:#0e1c36;font-weight:600">📎 Вложения:</p>
+      <p style="margin:0 0 8px;font-size:14px">
+        📝 <strong>Перевод_${fullName}_${num}.docx</strong><br>
+        <span style="color:#5a6b90;font-size:12px">Открыть в Microsoft Word — таблица с переведёнными данными</span>
+      </p>
+      <p style="margin:0;font-size:14px">
+        🎨 <strong>Перевод_с_бланком_${fullName}_${num}.html</strong><br>
+        <span style="color:#5a6b90;font-size:12px">Открыть в браузере — данные поверх официального бланка Флориды</span>
       </p>
     </div>
-    <details style="margin-bottom:16px">
-      <summary style="cursor:pointer;color:#5a6b90;font-size:13px;margin-bottom:8px">Показать текст перевода</summary>
-      <pre style="font-size:10px;color:#0e1c36;white-space:pre-wrap;font-family:monospace;line-height:1.7;background:white;border:1px solid #d4daf0;border-radius:8px;padding:14px;margin-top:8px">${escaped}</pre>
-    </details>
-    <p style="color:#aab0c8;font-size:12px;margin:0">№ перевода: <strong style="color:#5a6b90">${num}</strong> &nbsp;·&nbsp; © BirthCert Translation</p>
+    <div style="background:#fff8e6;border-left:3px solid #c8a84b;padding:12px 16px;border-radius:0 8px 8px 0;margin-bottom:16px">
+      <p style="margin:0;color:#7a5a00;font-size:13px">
+        🖨️ Для подачи в консульство: откройте <strong>HTML файл</strong> в браузере →
+        <strong>Ctrl+P</strong> → масштаб 100% → убрать колонтитулы → печатать
+      </p>
+    </div>
+    <p style="color:#aab0c8;font-size:12px;margin:0">
+      № перевода: <strong style="color:#5a6b90">${num}</strong> &nbsp;·&nbsp;
+      © BirthCert Translation
+    </p>
   </div>
 </div>`;
+}
+
+// ─── ZIP BUILDER ──────────────────────────────────────────
+function buildZip(files) {
+  const lp = [], cp = [];
+  let offset = 0;
+  for (const f of files) {
+    const name = Buffer.from(f.name, 'utf-8');
+    const data = Buffer.from(f.data, 'utf-8');
+    const crc  = crc32(data);
+    const lh   = Buffer.alloc(30 + name.length);
+    lh.writeUInt32LE(0x04034b50,0); lh.writeUInt16LE(20,4);
+    lh.writeUInt16LE(0,6); lh.writeUInt16LE(0,8);
+    lh.writeUInt16LE(0,10); lh.writeUInt16LE(0,12);
+    lh.writeUInt32LE(crc,14); lh.writeUInt32LE(data.length,18);
+    lh.writeUInt32LE(data.length,22); lh.writeUInt16LE(name.length,26);
+    lh.writeUInt16LE(0,28); name.copy(lh,30);
+    lp.push(lh, data);
+    const ch = Buffer.alloc(46 + name.length);
+    ch.writeUInt32LE(0x02014b50,0); ch.writeUInt16LE(20,4);
+    ch.writeUInt16LE(20,6); ch.writeUInt16LE(0,8);
+    ch.writeUInt16LE(0,10); ch.writeUInt16LE(0,12);
+    ch.writeUInt16LE(0,14); ch.writeUInt32LE(crc,16);
+    ch.writeUInt32LE(data.length,20); ch.writeUInt32LE(data.length,24);
+    ch.writeUInt16LE(name.length,28); ch.writeUInt16LE(0,30);
+    ch.writeUInt16LE(0,32); ch.writeUInt16LE(0,34);
+    ch.writeUInt16LE(0,36); ch.writeUInt32LE(0,38);
+    ch.writeUInt32LE(offset,42); name.copy(ch,46);
+    cp.push(ch);
+    offset += 30 + name.length + data.length;
+  }
+  const cd  = Buffer.concat(cp);
+  const end = Buffer.alloc(22);
+  end.writeUInt32LE(0x06054b50,0); end.writeUInt16LE(0,4);
+  end.writeUInt16LE(0,6); end.writeUInt16LE(files.length,8);
+  end.writeUInt16LE(files.length,10); end.writeUInt32LE(cd.length,12);
+  end.writeUInt32LE(offset,16); end.writeUInt16LE(0,20);
+  return Buffer.concat([...lp, cd, end]);
+}
+
+function crc32(buf) {
+  const t = new Uint32Array(256);
+  for (let i=0;i<256;i++){let c=i;for(let j=0;j<8;j++)c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1);t[i]=c;}
+  let crc=0xFFFFFFFF;
+  for (let i=0;i<buf.length;i++) crc=(crc>>>8)^t[(crc^buf[i])&0xFF];
+  return (crc^0xFFFFFFFF)>>>0;
 }
