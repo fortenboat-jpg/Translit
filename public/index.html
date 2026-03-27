@@ -343,6 +343,7 @@ footer{background:var(--navy);color:rgba(255,255,255,.5);padding:40px 28px;text-
           <div class="fg"><label class="fl">Дата рождения отца</label><input class="fi" id="fDadDob" placeholder="09 НОЯБРЯ 1982 г."/></div>
         </div>
         <div class="fg"><label class="fl">Место рождения отца</label><input class="fi" id="fDadBirth" placeholder="РОССИЯ"/></div>
+        <input type="hidden" id="fReqNum" value="">
 
         <div class="fg"><label class="fl" style="color:var(--gold2)">✉️ Email для получения PDF *</label>
           <input class="fi" id="fEmail" type="email" placeholder="your@email.com" style="border-color:var(--gold2)"/></div>
@@ -355,7 +356,7 @@ footer{background:var(--navy);color:rgba(255,255,255,.5);padding:40px 28px;text-
       <div class="step" id="s2">
         <div class="pvh">
           <div class="pvbadge" id="pvBadge">⏳ Формируем перевод...</div>
-          <div class="pvdl">✉️ придёт на email за 10 мин</div>
+          <div class="pvdl">✉️ придёт на email после оплаты</div>
         </div>
         <!-- LOADING ANIMATION -->
         <div id="loadingAnim" style="display:none;text-align:center;padding:28px 0">
@@ -369,14 +370,25 @@ footer{background:var(--navy);color:rgba(255,255,255,.5);padding:40px 28px;text-
             <div id="loadBar" style="height:100%;background:linear-gradient(90deg,var(--blue),var(--gold2));border-radius:8px;width:0%;transition:width .5s ease"></div>
           </div>
         </div>
-        <div class="pvbox ld" id="pvBox" style="display:none"></div>
-        <div class="brow" id="pvButtons" style="display:none">
-          <button class="bsec" onclick="goTab(1)">← Назад</button>
-          <button class="bsec" onclick="downloadDocx()">📝 Скачать DOCX</button>
-          <button class="bsec" onclick="downloadHtml()">🎨 Скачать с фоном</button>
-          <button class="bgen" style="width:auto;padding:10px 20px;margin:0" onclick="goTab(3)">К оплате →</button>
+        <!-- BLANK PREVIEW -->
+        <div id="blankPreview" style="display:none;position:relative;width:100%;border-radius:10px;overflow:hidden;border:1.5px solid var(--border);box-shadow:var(--shadow)">
+          <div style="font-size:.72rem;color:var(--muted);padding:6px 10px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+            <span>📄 Предпросмотр — данные на бланке</span>
+            <span style="color:var(--green);font-weight:600">✓ Готов к оплате</span>
+          </div>
+          <div style="position:relative;width:100%;height:420px;overflow:hidden">
+            <img id="bgImg" src="https://translit-gilt.vercel.app/bg.jpg" style="width:100%;height:100%;object-fit:cover;object-position:top;display:block">
+            <div id="overlayFields" style="position:absolute;inset:0;pointer-events:none"></div>
+          </div>
+          <div style="font-size:.7rem;color:var(--muted);padding:5px 10px;background:var(--bg2);text-align:center">
+            Полный вид откроется после оплаты · Данные введены корректно
+          </div>
         </div>
-        <div class="enote" id="eNote" style="display:none">✉️ Файлы отправлены на <strong id="eDisp"></strong></div>
+        <div class="brow" id="pvButtons" style="display:none;margin-top:10px">
+          <button class="bsec" onclick="goTab(1)">← Назад</button>
+          <button class="bgen" style="width:auto;padding:10px 22px;margin:0" onclick="goTab(3)">Оплатить и получить PDF →</button>
+        </div>
+        <div class="enote" id="eNote" style="display:none;margin-top:8px">✉️ 3 файла отправлены на <strong id="eDisp"></strong></div>
       </div>
 
       <!-- STEP 3 -->
@@ -577,6 +589,7 @@ function handleUpload(inp){
         af('fDad',j.fatherName);
         af('fDadDob',j.fatherDob);
         af('fDadBirth',j.fatherBirthPlace);
+        if(j.reqNum) af('fReqNum', j.reqNum);
         toast('ok','✓ Данные считаны — проверьте поля');
       } else {
         toast('err','Ошибка OCR: '+(res.error||'неизвестно'));
@@ -647,6 +660,7 @@ function doGenerate(){
     fatherName:document.getElementById('fDad').value.trim(),
     fatherDob:document.getElementById('fDadDob').value.trim(),
     fatherBirthPlace:document.getElementById('fDadBirth').value.trim(),
+    reqNum:           document.getElementById('fReqNum').value.trim(),
     email
   };
   fetch(API+'/api/translate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
@@ -662,16 +676,19 @@ function doGenerate(){
         window._docxBase64=res.docxBase64;
         window._pdfHtml=res.pdfHtml;
         window._orderNum=res.orderNum;
-        const box=document.getElementById('pvBox');
-        box.style.display='block';box.className='pvbox';box.textContent=translationText;
+        window._payload=payload;
+        // Show blank preview with overlay
+        showBlankPreview(payload, res);
         document.getElementById('pvButtons').style.display='flex';
-        document.getElementById('pvBadge').textContent='✓ Перевод готов';
+        document.getElementById('pvBadge').textContent='✓ Перевод готов — проверьте данные';
         document.getElementById('eDisp').textContent=email;
-        document.getElementById('eNote').style.display='flex';
-        toast('ok','✓ Файлы отправлены на '+email);
+        toast('ok','✓ Перевод сформирован');
       } else {
-        document.getElementById('pvBox').style.display='block';
-        document.getElementById('pvBox').textContent='❌ Ошибка: '+(res.error||'');
+        document.getElementById('blankPreview').style.display='none';
+        const err = document.createElement('div');
+        err.className='pvbox'; err.style.display='block';
+        err.textContent='❌ Ошибка: '+(res.error||'');
+        document.getElementById('blankPreview').parentNode.insertBefore(err, document.getElementById('blankPreview'));
         toast('err','Ошибка: '+(res.error||''));
       }
     },400);
@@ -683,6 +700,40 @@ function doGenerate(){
     document.getElementById('pvBox').textContent='❌ Ошибка сервера. Проверьте Vercel логи.';
     toast('err','Ошибка сервера');console.error(err);
   });
+}
+
+// ─── ПОКАЗ БЛАНКА С ДАННЫМИ ──────────────────────────────
+function showBlankPreview(d, res) {
+  const BG_W = 794; // px размер бланка
+  const BG_H = 1123;
+  // Контейнер предпросмотра 100% ширины формы ~420px → scale
+  const container = document.getElementById('blankPreview');
+  const overlayDiv = document.getElementById('overlayFields');
+  const previewH = 420;
+  // Те же % что в сервере
+  const fields = [
+    { top:18.8, left:35,  bold:true,  val: d.stateRegNum },
+    { top:18.8, left:52,  bold:true,  val: d.dateIssued },
+    { top:21.0, left:52,  bold:true,  val: d.dateRegistered },
+    { top:27.5, left:19,  bold:true,  val: [d.lastName,d.firstName,d.middleName].filter(Boolean).join(' ') },
+    { top:31.8, left:19,  bold:true,  val: res.translationText.split('\n').find(l=>l.startsWith('ДАТА РОЖДЕНИЯ:'))?.replace('ДАТА РОЖДЕНИЯ:','').trim() || d.dob },
+    { top:31.8, left:62,  bold:true,  val: d.timeOfBirth },
+    { top:35.5, left:19,  bold:true,  val: d.sex },
+    { top:35.5, left:62,  bold:true,  val: d.weight },
+    { top:39.0, left:19,  bold:true,  val: d.hospital },
+    { top:42.5, left:19,  bold:true,  val: d.cityCounty },
+    { top:52.5, left:19,  bold:true,  val: d.motherName },
+    { top:56.0, left:19,  bold:true,  val: d.motherDob },
+    { top:59.2, left:19,  bold:true,  val: d.motherBirthPlace },
+    { top:66.5, left:19,  bold:true,  val: d.fatherName },
+    { top:70.0, left:19,  bold:true,  val: d.fatherDob },
+    { top:73.2, left:19,  bold:true,  val: d.fatherBirthPlace },
+  ];
+  overlayDiv.innerHTML = fields.map(f => {
+    if(!f.val) return '';
+    return `<div style="position:absolute;top:${f.top}%;left:${f.left}%;font-size:10px;font-weight:${f.bold?'700':'400'};color:#8B0000;font-family:Times New Roman,serif;white-space:nowrap;line-height:1">${f.val}</div>`;
+  }).join('');
+  container.style.display = 'block';
 }
 
 function downloadDocx(){
@@ -713,11 +764,14 @@ function doPayment(){
   const email=document.getElementById('fEmail').value.trim();
   toast('info','💳 Обработка платежа...');
   setTimeout(()=>{
+    // Download all 3 locally too
     downloadDocx();
-    setTimeout(downloadHtml,600);
+    setTimeout(downloadHtml, 500);
+    // Show success
     document.getElementById('succEmail').textContent=email||'ваш email';
+    document.getElementById('eNote').style.display='flex';
     document.getElementById('succModal').classList.add('show');
-    toast('ok','✉️ Файлы отправлены на '+email);
+    toast('ok','✉️ 3 файла отправлены на '+email);
   },1800);
 }
 
