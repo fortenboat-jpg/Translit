@@ -560,6 +560,16 @@ function handleUpload(inp){
   const file=inp.files[0]; if(!file) return;
   document.getElementById('fName').textContent=file.name;
   document.getElementById('fSz').textContent=(file.size/1024).toFixed(1)+' КБ';
+  // Сбрасываем все поля формы перед новым OCR
+  ['fLast','fFirst','fMid','fTime','fWeight','fHosp','fPlace',
+   'fRegNum','fIssued','fRegDate','fMom','fMomDob','fMomBirth',
+   'fDad','fDadDob','fDadBirth','fReqNum'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  window._ocrChildName=''; window._ocrCityCounty='';
+  window._ocrHospital=''; window._ocrMotherName=''; window._ocrFatherName='';
+  document.getElementById('fSex').value='МУЖСКОЙ';
+  document.getElementById('fDob').value='';
   document.getElementById('fChip').classList.add('show');
 
   const zone=document.getElementById('uZone');
@@ -612,6 +622,7 @@ function handleUpload(inp){
         // Сохраняем переведённые значения из OCR напрямую
         window._ocrCityCounty  = j.cityCounty  || '';
         window._ocrHospital    = j.hospital     || '';
+        window._ocrHospitalType = j.hospitalType  || '';
         window._ocrMotherName  = j.motherName   || '';
         window._ocrFatherName  = j.fatherName   || '';
         toast('ok','✓ Данные считаны — проверьте поля');
@@ -674,7 +685,8 @@ function doGenerate(){
     sex:document.getElementById('fSex').value,
     timeOfBirth:document.getElementById('fTime').value.trim(),
     weight:document.getElementById('fWeight').value.trim(),
-    hospital:   window._ocrHospital    || document.getElementById('fHosp').value.trim(),
+    hospital:     window._ocrHospital     || document.getElementById('fHosp').value.trim(),
+    hospitalType: window._ocrHospitalType || '',
     cityCounty: window._ocrCityCounty  || document.getElementById('fPlace').value.trim(),
     stateRegNum:document.getElementById('fRegNum').value.trim(),
     dateIssued:document.getElementById('fIssued').value.trim(),
