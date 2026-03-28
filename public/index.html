@@ -795,7 +795,7 @@ function doPayment(){
   setTimeout(()=>{
     // Download all 3 locally too
     downloadDocx();
-    setTimeout(downloadHtml, 500);
+    setTimeout(downloadHtml, 500); 
     // Show success
     document.getElementById('succEmail').textContent=email||'ваш email';
     document.getElementById('eNote').style.display='flex';
