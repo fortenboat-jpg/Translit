@@ -31,6 +31,14 @@ export default async function handler(req, res) {
 
   try {
     const d = req.body;
+    console.log('TRANSLATE INPUT:', JSON.stringify({
+      childName: d.childName,
+      firstName: d.firstName,
+      lastName: d.lastName,
+      middleName: d.middleName,
+      fatherName: d.fatherName,
+      motherName: d.motherName,
+    }));
     const num = 'BC-' + Date.now().toString().slice(-6);
     const today = new Date().toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
     
