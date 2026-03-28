@@ -202,22 +202,29 @@ export default async function handler(req, res) {
     const bg2Url = process.env.BACKGROUND_URL2 || 'https://translit-gilt.vercel.app/bg2.jpg';
     const styledHtml  = await buildHtml(values, bgUrl,  num, today);
     const styledHtml2 = await buildHtml(values, bg2Url, num, today);
-    const docxBuffer = buildDocx(values, num, today);
+    const docxBuffer  = await buildDocx(values, num, today, bgUrl);
 
     // Email
     if (d.email && process.env.RESEND_API_KEY) {
-      const resend = new Resend(process.env.RESEND_API_KEY);
-      await resend.emails.send({
-        from: 'BirthCert Translation <onboarding@resend.dev>',
-        to: d.email,
-        subject: `Перевод свидетельства — ${d.childName} (№ ${num})`,
-        html: buildEmail(d.childName, num),
-        attachments: [
-          { filename: `Перевод_бланк1_${num}.html`, content: Buffer.from(styledHtml,  'utf-8').toString('base64') },
-          { filename: `Перевод_бланк2_${num}.html`, content: Buffer.from(styledHtml2, 'utf-8').toString('base64') },
-          { filename: `Перевод_${num}.docx`,         content: docxBuffer.toString('base64') },
-        ]
-      });
+      try {
+        const resend = new Resend(process.env.RESEND_API_KEY);
+        const emailResult = await resend.emails.send({
+          from: 'BirthCert Translation <onboarding@resend.dev>',
+          to: d.email,
+          subject: `Перевод свидетельства — ${d.childName || 'документ'} (№ ${num})`,
+          html: buildEmail(d.childName, num),
+          attachments: [
+            { filename: `Перевод_бланк1_${num}.html`, content: Buffer.from(styledHtml,  'utf-8').toString('base64') },
+            { filename: `Перевод_бланк2_${num}.html`, content: Buffer.from(styledHtml2, 'utf-8').toString('base64') },
+            { filename: `Перевод_${num}.docx`,         content: docxBuffer.toString('base64') },
+          ]
+        });
+        console.log('EMAIL RESULT:', JSON.stringify(emailResult));
+      } catch(emailErr) {
+        console.error('EMAIL ERROR:', emailErr.message);
+      }
+    } else {
+      console.log('EMAIL SKIP: email=', d.email, 'key=', !!process.env.RESEND_API_KEY);
     }
 
     return res.status(200).json({
@@ -363,88 +370,160 @@ function buildPlainText(v, num, today) {
 }
 
 // ── DOCX ─────────────────────────────────────────────────
-function buildDocx(v, num, today) {
+async function buildDocx(v, num, today, bgUrl) {
   function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
-  function row(label,val){return`<w:tr>
-    <w:tc><w:tcPr><w:tcW w:w="3500" w:type="dxa"/><w:shd w:val="clear" w:fill="F0F2F8"/></w:tcPr>
-    <w:p><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:sz w:val="20"/><w:color w:val="333355"/></w:rPr><w:t>${esc(label)}</w:t></w:r></w:p></w:tc>
-    <w:tc><w:tcPr><w:tcW w:w="5300" w:type="dxa"/></w:tcPr>
-    <w:p><w:r><w:rPr><w:b/><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:sz w:val="22"/></w:rPr><w:t>${esc(val||'—')}</w:t></w:r></w:p></w:tc>
-  </w:tr>`}
-  function sec(title){return`<w:tr>
-    <w:tc><w:tcPr><w:tcW w:w="8800" w:type="dxa"/><w:gridSpan w:val="2"/><w:shd w:val="clear" w:fill="0C1B3A"/></w:tcPr>
-    <w:p><w:r><w:rPr><w:b/><w:sz w:val="22"/><w:color w:val="FFFFFF"/><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/></w:rPr><w:t>${esc(title)}</w:t></w:r></w:p></w:tc>
-  </w:tr>`}
 
-  const docXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  // Загружаем фон как base64
+  let bgBase64 = '';
+  try {
+    const resp = await fetch(bgUrl);
+    const buf  = await resp.arrayBuffer();
+    bgBase64   = Buffer.from(buf).toString('base64');
+  } catch(e) { console.error('DOCX bg fetch:', e.message); }
+
+  // A4 в EMU: 210mm x 297mm
+  const PW = 7560960, PH = 10692720;
+
+  function txb(val, topPct, leftPct, sizePt) {
+    if (!val) return '';
+    const t  = Math.round(topPct  / 100 * PH);
+    const l  = Math.round(leftPct / 100 * PW);
+    const w  = Math.round(PW * 0.68);
+    const h  = Math.round(PH * 0.035);
+    const sz = Math.round(sizePt * 2);
+    const id = Math.floor(Math.random()*90000+10000);
+    return `<w:p><w:pPr><w:spacing w:before="0" w:after="0"/></w:pPr><w:r><w:rPr><w:noProof/></w:rPr>
+<w:drawing><wp:anchor distT="0" distB="0" distL="0" distR="0" simplePos="0" relativeHeight="251659264" behindDoc="1" locked="0" layoutInCell="1" allowOverlap="1">
+<wp:simplePos x="0" y="0"/>
+<wp:positionH relativeFrom="page"><wp:posOffset>${l}</wp:posOffset></wp:positionH>
+<wp:positionV relativeFrom="page"><wp:posOffset>${t}</wp:posOffset></wp:positionV>
+<wp:extent cx="${w}" cy="${h}"/><wp:effectExtent l="0" t="0" r="0" b="0"/><wp:wrapNone/>
+<wp:docPr id="${id}" name="f${id}"/>
+<a:graphic><a:graphicData uri="http://schemas.microsoft.com/office/word/2010/wordprocessingShape">
+<wps:wsp><wps:spPr>
+<a:xfrm><a:off x="${l}" y="${t}"/><a:ext cx="${w}" cy="${h}"/></a:xfrm>
+<a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/><a:ln><a:noFill/></a:ln>
+</wps:spPr>
+<wps:txbx><w:txbxContent><w:p><w:pPr><w:spacing w:before="0" w:after="0"/></w:pPr>
+<w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:b/><w:sz w:val="${sz}"/><w:szCs w:val="${sz}"/></w:rPr>
+<w:t xml:space="preserve">${esc(val)}</w:t></w:r></w:p></w:txbxContent></wps:txbx>
+<wps:bodyPr><a:noAutofit/></wps:bodyPr></wps:wsp>
+</a:graphicData></a:graphic></wp:anchor></w:drawing></w:r></w:p>`;
+  }
+
+  const bgXml = bgBase64 ? `<w:background w:color="FFFFFF">
+<v:background xmlns:v="urn:schemas-microsoft-com:vml" fill="t">
+<v:fill type="frame" r:id="rIdBg" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"/>
+</v:background></w:background>` : '';
+
+  const docXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document
+  xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+  xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+  xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"
+  xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
+  xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape"
+  xmlns:v="urn:schemas-microsoft-com:vml"
+  mc:Ignorable="w14 w15 wp14"
+  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006">
+${bgXml}
 <w:body>
-<w:p><w:pPr><w:jc w:val="center"/></w:pPr>
-  <w:r><w:rPr><w:b/><w:sz w:val="32"/><w:color w:val="0C1B3A"/><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/></w:rPr>
-  <w:t>СВИДЕТЕЛЬСТВО О РОЖДЕНИИ</w:t></w:r></w:p>
-<w:p><w:pPr><w:jc w:val="center"/></w:pPr>
-  <w:r><w:rPr><w:i/><w:sz w:val="18"/><w:color w:val="666666"/><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/></w:rPr>
-  <w:t>Перевод с английского языка на русский язык | штат Флорида, США</w:t></w:r></w:p>
-<w:p><w:r><w:t> </w:t></w:r></w:p>
-<w:tbl>
-  <w:tblPr>
-    <w:tblW w:w="8800" w:type="dxa"/>
-    <w:tblBorders>
-      <w:top w:val="single" w:sz="6" w:color="C8A84B"/>
-      <w:bottom w:val="single" w:sz="6" w:color="C8A84B"/>
-      <w:insideH w:val="single" w:sz="2" w:color="CCCCCC"/>
-    </w:tblBorders>
-    <w:tblCellMar><w:top w:w="80" w:type="dxa"/><w:left w:w="120" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="120" w:type="dxa"/></w:tblCellMar>
-  </w:tblPr>
-  <w:tblGrid><w:gridCol w:w="3500"/><w:gridCol w:w="5300"/></w:tblGrid>
-  ${sec('РЕКВИЗИТЫ')}
-  ${row('Номер регистрации',v.stateRegNum)}
-  ${row('Дата выдачи',v.dateIssued)}
-  ${row('Дата регистрации',v.dateRegistered)}
-  ${sec('ИНФОРМАЦИЯ О РЕБЁНКЕ')}
-  ${row('ФИО',v.childName)}
-  ${row('Дата рождения',v.dobFormatted)}
-  ${row('Время рождения',v.timeOfBirth)}
-  ${row('Пол',v.sex)}
-  ${row('Вес при рождении',v.weight)}
-  ${row('Место рождения',v.hospital)}
-  ${row('Город, округ',v.cityCounty)}
-  ${sec('ИНФОРМАЦИЯ О МАТЕРИ')}
-  ${row('ФИО',v.motherName)}
-  ${row('Дата рождения',v.motherDob)}
-  ${row('Место рождения',v.motherBirthPlace)}
-  ${sec('ИНФОРМАЦИЯ ОБ ОТЦЕ')}
-  ${row('ФИО',v.fatherName)}
-  ${row('Дата рождения',v.fatherDob)}
-  ${row('Место рождения',v.fatherBirthPlace)}
-</w:tbl>
-<w:p><w:r><w:t> </w:t></w:r></w:p>
-<w:p><w:r><w:rPr><w:b/><w:sz w:val="22"/><w:color w:val="0C1B3A"/><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/></w:rPr>
-  <w:t>УДОСТОВЕРЕНИЕ ПЕРЕВОДА</w:t></w:r></w:p>
-<w:p><w:r><w:rPr><w:sz w:val="20"/><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/></w:rPr>
-  <w:t xml:space="preserve">Я, нижеподписавшийся(аяся), сертифицированный переводчик с английского языка на русский язык, настоящим удостоверяю, что данный перевод является точным и полным переводом оригинального документа.</w:t></w:r></w:p>
-<w:p><w:r><w:rPr><w:sz w:val="20"/><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/></w:rPr>
-  <w:t xml:space="preserve">Переводчик: _______________________   Дата: ${esc(today)}   № ${esc(num)}</w:t></w:r></w:p>
-<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="720" w:right="720" w:bottom="720" w:left="1080"/></w:sectPr>
+${txb(v.stateRegNum,      15.0, 30.1, 12)}
+${txb(v.dateIssued,       14.7, 62.9, 12)}
+${txb(v.dateRegistered,   16.8, 62.9, 12)}
+${txb(v.childName,        21.6, 33.6, 12)}
+${txb(v.dobFormatted,     26.5, 33.6, 12)}
+${txb(v.timeOfBirth,      26.8, 78.7, 12)}
+${txb(v.sex,              30.8, 33.6, 12)}
+${txb(v.weight,           31.0, 70.5, 12)}
+${txb(v.hospital,         34.3, 33.6, 12)}
+${txb(v.hospitalLine2,    36.2, 33.6, 12)}
+${txb(v.cityCounty,       38.1, 33.7, 12)}
+${txb(v.motherName,       49.0, 33.5, 12)}
+${txb(v.motherDob,        52.9, 33.5, 12)}
+${txb(v.motherBirthPlace, 56.1, 33.4, 12)}
+${txb(v.fatherName,       65.2, 33.4, 12)}
+${txb(v.fatherDob,        69.7, 33.4, 12)}
+${txb(v.fatherBirthPlace, 73.2, 33.5, 12)}
+${txb(v.reqNum,           84.6, 75.1, 12)}
+${txb(v.barcode,          96.6, 27.9, 11)}
+<w:p><w:r><w:t xml:space="preserve"> </w:t></w:r></w:p>
+<w:sectPr>
+  <w:pgSz w:w="11906" w:h="16838"/>
+  <w:pgMar w:top="0" w:right="0" w:bottom="0" w:left="0"/>
+</w:sectPr>
 </w:body></w:document>`;
 
-  const rels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`;
-  const styles=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:cs="Times New Roman"/><w:sz w:val="20"/></w:rPr></w:rPrDefault></w:docDefaults></w:styles>`;
-  const ct=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>`;
-  const rootRels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`;
+  const rels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>${bgBase64 ? `
+  <Relationship Id="rIdBg" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/bg.jpg"/>` : ''}
+</Relationships>`;
 
-  return buildZip([
-    {name:'[Content_Types].xml',data:ct},
-    {name:'_rels/.rels',data:rootRels},
-    {name:'word/document.xml',data:docXml},
-    {name:'word/_rels/document.xml.rels',data:rels},
-    {name:'word/styles.xml',data:styles},
-  ]);
+  const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+<w:docDefaults><w:rPrDefault><w:rPr>
+  <w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/>
+  <w:sz w:val="24"/>
+</w:rPr></w:rPrDefault></w:docDefaults></w:styles>`;
+
+  const ct = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml"  ContentType="application/xml"/>
+  <Default Extension="jpg"  ContentType="image/jpeg"/>
+  <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
+  <Override PartName="/word/styles.xml"   ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>
+</Types>`;
+
+  const rootRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
+</Relationships>`;
+
+  const files = [
+    {name:'[Content_Types].xml',          data:ct,       binary:false},
+    {name:'_rels/.rels',                  data:rootRels, binary:false},
+    {name:'word/document.xml',            data:docXml,   binary:false},
+    {name:'word/_rels/document.xml.rels', data:rels,     binary:false},
+    {name:'word/styles.xml',              data:styles,   binary:false},
+  ];
+  if (bgBase64) files.push({name:'word/media/bg.jpg', data:bgBase64, binary:true});
+  return buildZipMixed(files);
 }
-
 function buildEmail(name, num){return`<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto"><div style="background:#0c1b3a;padding:24px;text-align:center"><h2 style="color:white;margin:0">📄 BirthCert Translation</h2><p style="color:rgba(255,255,255,.6);margin:6px 0 0;font-size:13px">Официальный перевод для Консульства РФ</p></div><div style="background:#f4f6fb;padding:28px"><p style="color:#0e1c36;font-size:15px;margin:0 0 10px">Здравствуйте!</p><p style="color:#5a6b90;font-size:14px;margin-bottom:16px">Ваш перевод готов. К письму прикреплены <strong>3 файла</strong>:</p><div style="background:white;border:1px solid #d4daf0;border-radius:8px;padding:14px;margin:0 0 16px"><p style="margin:0 0 8px;font-size:13px">🎨 <strong>Перевод_бланк1_${num}.html</strong> — перевод с цветным фоном</p><p style="margin:0 0 8px;font-size:13px">📄 <strong>Перевод_бланк2_${num}.html</strong> — перевод на белом фоне</p><p style="margin:0;font-size:13px">📝 <strong>Перевод_${num}.docx</strong> — документ Word</p></div><div style="background:#fff8e6;border-left:3px solid #c8a84b;padding:10px 14px;border-radius:0 6px 6px 0;margin-bottom:16px"><p style="margin:0;color:#7a5a00;font-size:13px">🖨️ Для подачи в консульство: откройте HTML файл в браузере → Ctrl+P → масштаб 100% → без полей</p></div><p style="color:#aab0c8;font-size:12px;margin:0">№ ${num} · BirthCert Translation</p></div></div>`;}
 
-function buildZip(files){
+function buildZipMixed(files){
+  const lp=[],cp=[];let offset=0;
+  for(const f of files){
+    const name = Buffer.from(f.name,'utf-8');
+    const data = f.binary ? Buffer.from(f.data,'base64') : Buffer.from(f.data,'utf-8');
+    const crc  = crc32(data);
+    const lh   = Buffer.alloc(30+name.length);
+    lh.writeUInt32LE(0x04034b50,0);lh.writeUInt16LE(20,4);lh.writeUInt16LE(0,6);
+    lh.writeUInt16LE(0,8);lh.writeUInt16LE(0,10);lh.writeUInt16LE(0,12);
+    lh.writeUInt32LE(crc,14);lh.writeUInt32LE(data.length,18);
+    lh.writeUInt32LE(data.length,22);lh.writeUInt16LE(name.length,26);
+    lh.writeUInt16LE(0,28);name.copy(lh,30);
+    lp.push(lh,data);
+    const ch=Buffer.alloc(46+name.length);
+    ch.writeUInt32LE(0x02014b50,0);ch.writeUInt16LE(20,4);ch.writeUInt16LE(20,6);
+    ch.writeUInt16LE(0,8);ch.writeUInt16LE(0,10);ch.writeUInt16LE(0,12);
+    ch.writeUInt16LE(0,14);ch.writeUInt32LE(crc,16);
+    ch.writeUInt32LE(data.length,20);ch.writeUInt32LE(data.length,24);
+    ch.writeUInt16LE(name.length,28);ch.writeUInt16LE(0,30);ch.writeUInt16LE(0,32);
+    ch.writeUInt16LE(0,34);ch.writeUInt16LE(0,36);ch.writeUInt32LE(0,38);
+    ch.writeUInt32LE(offset,42);name.copy(ch,46);
+    cp.push(ch);offset+=30+name.length+data.length;
+  }
+  const cd=Buffer.concat(cp),end=Buffer.alloc(22);
+  end.writeUInt32LE(0x06054b50,0);end.writeUInt16LE(0,4);end.writeUInt16LE(0,6);
+  end.writeUInt16LE(files.length,8);end.writeUInt16LE(files.length,10);
+  end.writeUInt32LE(cd.length,12);end.writeUInt32LE(offset,16);end.writeUInt16LE(0,20);
+  return Buffer.concat([...lp,cd,end]);
+}
+
+function buildZip(files){return buildZipMixed(files.map(f=>({...f,binary:false})));}
   const lp=[],cp=[];let offset=0;
   for(const f of files){
     const name=Buffer.from(f.name,'utf-8'),data=Buffer.from(f.data,'utf-8'),crc=crc32(data);
