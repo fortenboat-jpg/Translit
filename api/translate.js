@@ -202,7 +202,7 @@ export default async function handler(req, res) {
     const bg2Url = process.env.BACKGROUND_URL2 || 'https://translit-gilt.vercel.app/bg2.jpg';
     const styledHtml  = await buildHtml(values, bgUrl,  num, today);
     const styledHtml2 = await buildHtml(values, bg2Url, num, today);
-    const docxBuffer  = await buildDocx(values, num, today, bgUrl);
+    const docxBuffer  = buildDocx(values, num, today);
 
     // Email
     if (d.email && process.env.RESEND_API_KEY) {
@@ -370,108 +370,99 @@ function buildPlainText(v, num, today) {
 }
 
 // ── DOCX ─────────────────────────────────────────────────
-async function buildDocx(v, num, today, bgUrl) {
+function buildDocx(v, num, today) {
   function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
-
-  // Загружаем фон как base64
-  let bgBase64 = '';
-  try {
-    const resp = await fetch(bgUrl);
-    const buf  = await resp.arrayBuffer();
-    bgBase64   = Buffer.from(buf).toString('base64');
-  } catch(e) { console.error('DOCX bg fetch:', e.message); }
-
-  // A4 в EMU: 210mm x 297mm
-  const PW = 7560960, PH = 10692720;
-
-  function txb(val, topPct, leftPct, sizePt) {
-    if (!val) return '';
-    const t  = Math.round(topPct  / 100 * PH);
-    const l  = Math.round(leftPct / 100 * PW);
-    const w  = Math.round(PW * 0.68);
-    const h  = Math.round(PH * 0.035);
-    const sz = Math.round(sizePt * 2);
-    const id = Math.floor(Math.random()*90000+10000);
-    return `<w:p><w:pPr><w:spacing w:before="0" w:after="0"/></w:pPr><w:r><w:rPr><w:noProof/></w:rPr>
-<w:drawing><wp:anchor distT="0" distB="0" distL="0" distR="0" simplePos="0" relativeHeight="251659264" behindDoc="1" locked="0" layoutInCell="1" allowOverlap="1">
-<wp:simplePos x="0" y="0"/>
-<wp:positionH relativeFrom="page"><wp:posOffset>${l}</wp:posOffset></wp:positionH>
-<wp:positionV relativeFrom="page"><wp:posOffset>${t}</wp:posOffset></wp:positionV>
-<wp:extent cx="${w}" cy="${h}"/><wp:effectExtent l="0" t="0" r="0" b="0"/><wp:wrapNone/>
-<wp:docPr id="${id}" name="f${id}"/>
-<a:graphic><a:graphicData uri="http://schemas.microsoft.com/office/word/2010/wordprocessingShape">
-<wps:wsp><wps:spPr>
-<a:xfrm><a:off x="${l}" y="${t}"/><a:ext cx="${w}" cy="${h}"/></a:xfrm>
-<a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/><a:ln><a:noFill/></a:ln>
-</wps:spPr>
-<wps:txbx><w:txbxContent><w:p><w:pPr><w:spacing w:before="0" w:after="0"/></w:pPr>
-<w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:b/><w:sz w:val="${sz}"/><w:szCs w:val="${sz}"/></w:rPr>
-<w:t xml:space="preserve">${esc(val)}</w:t></w:r></w:p></w:txbxContent></wps:txbx>
-<wps:bodyPr><a:noAutofit/></wps:bodyPr></wps:wsp>
-</a:graphicData></a:graphic></wp:anchor></w:drawing></w:r></w:p>`;
+  function row(label,val){
+    return `<w:tr>
+    <w:tc><w:tcPr><w:tcW w:w="3500" w:type="dxa"/><w:shd w:val="clear" w:fill="F0F2F8"/></w:tcPr>
+    <w:p><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:sz w:val="20"/><w:color w:val="555577"/></w:rPr><w:t>${esc(label)}</w:t></w:r></w:p></w:tc>
+    <w:tc><w:tcPr><w:tcW w:w="5300" w:type="dxa"/></w:tcPr>
+    <w:p><w:r><w:rPr><w:b/><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:sz w:val="22"/></w:rPr><w:t xml:space="preserve">${esc(val||'—')}</w:t></w:r></w:p></w:tc>
+  </w:tr>`;
+  }
+  function sec(title){
+    return `<w:tr>
+    <w:tc><w:tcPr><w:tcW w:w="8800" w:type="dxa"/><w:gridSpan w:val="2"/><w:shd w:val="clear" w:fill="0C1B3A"/></w:tcPr>
+    <w:p><w:r><w:rPr><w:b/><w:sz w:val="22"/><w:color w:val="FFFFFF"/><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/></w:rPr><w:t>${esc(title)}</w:t></w:r></w:p></w:tc>
+  </w:tr>`;
   }
 
-  const bgXml = bgBase64 ? `<w:background w:color="FFFFFF">
-<v:background xmlns:v="urn:schemas-microsoft-com:vml" fill="t">
-<v:fill type="frame" r:id="rIdBg" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"/>
-</v:background></w:background>` : '';
-
   const docXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<w:document
-  xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"
-  xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
-  xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"
-  xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
-  xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape"
-  xmlns:v="urn:schemas-microsoft-com:vml"
-  mc:Ignorable="w14 w15 wp14"
-  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006">
-${bgXml}
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
 <w:body>
-${txb(v.stateRegNum,      15.0, 30.1, 12)}
-${txb(v.dateIssued,       14.7, 62.9, 12)}
-${txb(v.dateRegistered,   16.8, 62.9, 12)}
-${txb(v.childName,        21.6, 33.6, 12)}
-${txb(v.dobFormatted,     26.5, 33.6, 12)}
-${txb(v.timeOfBirth,      26.8, 78.7, 12)}
-${txb(v.sex,              30.8, 33.6, 12)}
-${txb(v.weight,           31.0, 70.5, 12)}
-${txb(v.hospital,         34.3, 33.6, 12)}
-${txb(v.hospitalLine2,    36.2, 33.6, 12)}
-${txb(v.cityCounty,       38.1, 33.7, 12)}
-${txb(v.motherName,       49.0, 33.5, 12)}
-${txb(v.motherDob,        52.9, 33.5, 12)}
-${txb(v.motherBirthPlace, 56.1, 33.4, 12)}
-${txb(v.fatherName,       65.2, 33.4, 12)}
-${txb(v.fatherDob,        69.7, 33.4, 12)}
-${txb(v.fatherBirthPlace, 73.2, 33.5, 12)}
-${txb(v.reqNum,           84.6, 75.1, 12)}
-${txb(v.barcode,          96.6, 27.9, 11)}
+<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="0" w:after="120"/></w:pPr>
+  <w:r><w:rPr><w:b/><w:sz w:val="32"/><w:color w:val="0C1B3A"/><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/></w:rPr>
+  <w:t>СВИДЕТЕЛЬСТВО О РОЖДЕНИИ</w:t></w:r></w:p>
+<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="0" w:after="160"/></w:pPr>
+  <w:r><w:rPr><w:i/><w:sz w:val="18"/><w:color w:val="666666"/><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/></w:rPr>
+  <w:t>Перевод с английского языка на русский язык | штат Флорида, США</w:t></w:r></w:p>
+<w:tbl>
+  <w:tblPr>
+    <w:tblW w:w="8800" w:type="dxa"/>
+    <w:tblBorders>
+      <w:top    w:val="single" w:sz="6" w:color="C8A84B"/>
+      <w:bottom w:val="single" w:sz="6" w:color="C8A84B"/>
+      <w:insideH w:val="single" w:sz="2" w:color="CCCCCC"/>
+    </w:tblBorders>
+    <w:tblCellMar>
+      <w:top w:w="80" w:type="dxa"/><w:left w:w="120" w:type="dxa"/>
+      <w:bottom w:w="80" w:type="dxa"/><w:right w:w="120" w:type="dxa"/>
+    </w:tblCellMar>
+  </w:tblPr>
+  <w:tblGrid><w:gridCol w:w="3500"/><w:gridCol w:w="5300"/></w:tblGrid>
+  ${sec('РЕКВИЗИТЫ ДОКУМЕНТА')}
+  ${row('Номер регистрации в штате', v.stateRegNum)}
+  ${row('Дата выдачи', v.dateIssued)}
+  ${row('Дата регистрации', v.dateRegistered)}
+  ${sec('ИНФОРМАЦИЯ О РЕБЁНКЕ')}
+  ${row('ФИО', v.childName)}
+  ${row('Дата рождения', v.dobFormatted)}
+  ${row('Время рождения (24 ч)', v.timeOfBirth)}
+  ${row('Пол', v.sex)}
+  ${row('Вес при рождении', v.weight)}
+  ${row('Место рождения', v.hospital)}
+  ${row('Название / город', v.hospitalLine2)}
+  ${row('Город, округ рождения', v.cityCounty)}
+  ${sec('ИНФОРМАЦИЯ О МАТЕРИ / РОДИТЕЛЕ')}
+  ${row('ФИО', v.motherName)}
+  ${row('Дата рождения', v.motherDob)}
+  ${row('Место рождения', v.motherBirthPlace)}
+  ${sec('ИНФОРМАЦИЯ ОБ ОТЦЕ / РОДИТЕЛЕ')}
+  ${row('ФИО', v.fatherName)}
+  ${row('Дата рождения', v.fatherDob)}
+  ${row('Место рождения', v.fatherBirthPlace)}
+</w:tbl>
 <w:p><w:r><w:t xml:space="preserve"> </w:t></w:r></w:p>
+<w:p><w:r><w:rPr><w:b/><w:sz w:val="24"/><w:color w:val="0C1B3A"/><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/></w:rPr>
+  <w:t>УДОСТОВЕРЕНИЕ ПЕРЕВОДА</w:t></w:r></w:p>
+<w:p><w:pPr><w:spacing w:before="80" w:after="80"/></w:pPr>
+  <w:r><w:rPr><w:sz w:val="20"/><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/></w:rPr>
+  <w:t xml:space="preserve">Я, нижеподписавшийся(аяся), сертифицированный переводчик с английского языка на русский язык, настоящим удостоверяю, что данный перевод является точным и полным переводом оригинального документа — свидетельства о рождении, выданного компетентным органом штата Флорида, США. Перевод выполнен в соответствии с требованиями Консульства Российской Федерации в США.</w:t></w:r></w:p>
+<w:p><w:pPr><w:spacing w:before="160" w:after="60"/></w:pPr>
+  <w:r><w:rPr><w:sz w:val="20"/><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/></w:rPr>
+  <w:t xml:space="preserve">Переводчик: _______________________     Дата: ${esc(today)}     № ${esc(num)}</w:t></w:r></w:p>
 <w:sectPr>
   <w:pgSz w:w="11906" w:h="16838"/>
-  <w:pgMar w:top="0" w:right="0" w:bottom="0" w:left="0"/>
+  <w:pgMar w:top="1080" w:right="850" w:bottom="1080" w:left="1701"/>
 </w:sectPr>
 </w:body></w:document>`;
 
   const rels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>${bgBase64 ? `
-  <Relationship Id="rIdBg" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/bg.jpg"/>` : ''}
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
 </Relationships>`;
 
   const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
 <w:docDefaults><w:rPrDefault><w:rPr>
-  <w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/>
-  <w:sz w:val="24"/>
+  <w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:cs="Times New Roman"/>
+  <w:sz w:val="20"/>
 </w:rPr></w:rPrDefault></w:docDefaults></w:styles>`;
 
   const ct = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
   <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
   <Default Extension="xml"  ContentType="application/xml"/>
-  <Default Extension="jpg"  ContentType="image/jpeg"/>
   <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
   <Override PartName="/word/styles.xml"   ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>
 </Types>`;
@@ -481,15 +472,13 @@ ${txb(v.barcode,          96.6, 27.9, 11)}
   <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
 </Relationships>`;
 
-  const files = [
-    {name:'[Content_Types].xml',          data:ct,       binary:false},
-    {name:'_rels/.rels',                  data:rootRels, binary:false},
-    {name:'word/document.xml',            data:docXml,   binary:false},
-    {name:'word/_rels/document.xml.rels', data:rels,     binary:false},
-    {name:'word/styles.xml',              data:styles,   binary:false},
-  ];
-  if (bgBase64) files.push({name:'word/media/bg.jpg', data:bgBase64, binary:true});
-  return buildZipMixed(files);
+  return buildZip([
+    {name:'[Content_Types].xml',          data:ct},
+    {name:'_rels/.rels',                  data:rootRels},
+    {name:'word/document.xml',            data:docXml},
+    {name:'word/_rels/document.xml.rels', data:rels},
+    {name:'word/styles.xml',              data:styles},
+  ]);
 }
 function buildEmail(name, num){return`<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto"><div style="background:#0c1b3a;padding:24px;text-align:center"><h2 style="color:white;margin:0">📄 BirthCert Translation</h2><p style="color:rgba(255,255,255,.6);margin:6px 0 0;font-size:13px">Официальный перевод для Консульства РФ</p></div><div style="background:#f4f6fb;padding:28px"><p style="color:#0e1c36;font-size:15px;margin:0 0 10px">Здравствуйте!</p><p style="color:#5a6b90;font-size:14px;margin-bottom:16px">Ваш перевод готов. К письму прикреплены <strong>3 файла</strong>:</p><div style="background:white;border:1px solid #d4daf0;border-radius:8px;padding:14px;margin:0 0 16px"><p style="margin:0 0 8px;font-size:13px">🎨 <strong>Перевод_бланк1_${num}.html</strong> — перевод с цветным фоном</p><p style="margin:0 0 8px;font-size:13px">📄 <strong>Перевод_бланк2_${num}.html</strong> — перевод на белом фоне</p><p style="margin:0;font-size:13px">📝 <strong>Перевод_${num}.docx</strong> — документ Word</p></div><div style="background:#fff8e6;border-left:3px solid #c8a84b;padding:10px 14px;border-radius:0 6px 6px 0;margin-bottom:16px"><p style="margin:0;color:#7a5a00;font-size:13px">🖨️ Для подачи в консульство: откройте HTML файл в браузере → Ctrl+P → масштаб 100% → без полей</p></div><p style="color:#aab0c8;font-size:12px;margin:0">№ ${num} · BirthCert Translation</p></div></div>`;}
 
