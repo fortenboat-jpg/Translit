@@ -94,6 +94,7 @@ Example: "MARK ALEKSEEVICH KIRZOV" → firstName=MARK, middleName=ALEKSEEVICH, l
       timeOfBirth:      raw.timeOfBirth || '',
       weight:           weightToRu(raw.weightLbs, raw.weightOz),
       hospital:         hospitalToRu(raw.hospital),
+      hospitalType:     hospitalTypeToRu(raw.hospital),
       cityCounty:       cityCountyToRu(raw.cityCounty || (raw.city && raw.county ? raw.city+', '+raw.county : raw.city || raw.county || '')),
       stateRegNum:      raw.stateRegNum || '',
       dateIssued:       dateToRu(raw.dateIssued),
@@ -264,12 +265,24 @@ function countryToRu(str) {
 
 function hospitalToRu(str) {
   if (!str) return '';
-  return str
-    .replace(/\bHOSPITAL\b/gi, 'БОЛЬНИЦА')
-    .replace(/\bMEDICAL CENTER\b/gi, 'МЕДИЦИНСКИЙ ЦЕНТР')
-    .replace(/\bMEDICAL CENTRE\b/gi, 'МЕДИЦИНСКИЙ ЦЕНТР')
-    .replace(/\bHEALTH\b/gi, 'HEALTH')
-    .toUpperCase();
+  const up = str.toUpperCase().trim();
+  // Убираем тип учреждения из названия — он пойдёт в отдельную строку
+  return up
+    .replace(/^HOSPITAL\s*/i, '')
+    .replace(/^MEDICAL\s+CENT(?:ER|RE)\s*/i, '')
+    .replace(/\bMEDICAL\s+CENT(?:ER|RE)\b/gi, '')
+    .replace(/\bHOSPITAL\b/gi, '')
+    .replace(/\bST\.?\s*PETERSBURG\b/gi, 'Г. САНКТ-ПЕТЕРБУРГ')
+    .replace(/\bSAINT\s+PETERSBURG\b/gi, 'Г. САНКТ-ПЕТЕРБУРГ')
+    .replace(/\s+/g,' ').trim();
+}
+
+function hospitalTypeToRu(str) {
+  if (!str) return 'БОЛЬНИЦА';
+  const up = str.toUpperCase();
+  if (up.includes('MEDICAL CENTER') || up.includes('MEDICAL CENTRE') ||
+      up.includes('МЕДИЦИНСКИЙ ЦЕНТР')) return 'МЕДИЦИНСКИЙ ЦЕНТР';
+  return 'БОЛЬНИЦА';
 }
 
 function cityCountyToRu(str) {
