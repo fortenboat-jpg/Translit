@@ -583,6 +583,10 @@ function handleUpload(inp){
         af('fLast',j.lastName);
         af('fFirst',j.firstName);
         af('fMid',j.middleName);
+        // Сохраняем имя ребёнка из OCR напрямую
+        window._ocrChildName = j.childName || '';
+        window._ocrMotherName = j.motherName || '';
+        window._ocrFatherName = j.fatherName || '';
         if(j.dob){
           const d=new Date(j.dob+'T12:00:00');
           if(!isNaN(d)){
@@ -678,7 +682,8 @@ function doGenerate(){
     fatherBirthPlace:document.getElementById('fDadBirth').value.trim(),
     reqNum:document.getElementById('fReqNum').value.trim(),
     // Имя ребёнка — всегда из полей фамилия+имя+отчество
-    childName:[last, first, document.getElementById('fMid').value.trim()].filter(Boolean).join(' '),
+    // Имя ребёнка — берём из OCR напрямую, не из полей формы
+    childName: window._ocrChildName || [last, first, document.getElementById('fMid').value.trim()].filter(Boolean).join(' '),
     email
   };
   fetch(API+'/api/translate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
