@@ -261,45 +261,54 @@ async function buildHtml(v, bgUrl, num, today) {
 <title>Перевод — ${v.childName}</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-/* Экранный вид */
-body{background:#666;display:flex;flex-direction:column;align-items:center;padding:20px;gap:20px;font-family:'Times New Roman',Times,serif}
+body{font-family:'Times New Roman',Times,serif;background:#666;display:flex;flex-direction:column;align-items:center;padding:20px;gap:20px}
 .sheet{background:white;box-shadow:0 4px 20px rgba(0,0,0,.3)}
-/* Лист 1 — бланк */
-.sheet-blank{position:relative;width:794px}
-.sheet-blank img{display:block;width:794px;height:auto}
-.fields{position:absolute;inset:0}
-/* Лист 2 — удостоверение */
-.sheet-cert{width:794px;min-height:1123px;padding:60px 70px;display:flex;flex-direction:column}
-.cert-title{text-align:center;font-size:16px;font-weight:bold;color:#0c1b3a;letter-spacing:1px;margin-bottom:30px;padding-bottom:14px;border-bottom:2px solid #c8a84b}
-.cert-body{font-size:13px;line-height:2;color:#222;margin-bottom:30px;flex:1}
-.cert-sign{display:flex;justify-content:space-between;margin-top:40px;padding-top:16px;border-top:1px dashed #c8a84b}
-.cert-sign-item{text-align:center;font-size:12px;color:#444}
-.cert-sign-line{border-bottom:1.5px solid #000;width:160px;margin:0 auto 6px}
-.cert-footer{margin-top:auto;padding-top:20px;border-top:1px solid #ddd;text-align:center;font-size:11px;color:#888}
-.hint{color:white;font-size:12px;text-align:center}
-/* Печать — два листа А4 */
+.sheet-blank{position:relative;width:794px;height:1123px;overflow:hidden}
+.sheet-blank img{position:absolute;top:0;left:0;width:794px;height:1123px;object-fit:fill;display:block}
+.fields{position:absolute;inset:0;z-index:1}
+.sheet-cert{width:794px;height:1123px;padding:80px 80px 60px;display:flex;flex-direction:column}
+.cert-title{text-align:center;font-size:18px;font-weight:bold;color:#0c1b3a;letter-spacing:1px;margin-bottom:40px;padding-bottom:16px;border-bottom:2px solid #c8a84b}
+.cert-body{font-size:14px;line-height:2.2;color:#222;flex:1}
+.cert-body p{margin-bottom:20px}
+.cert-sign{display:flex;justify-content:space-between;margin-top:60px;padding-top:20px;border-top:1px dashed #c8a84b}
+.cert-sign-item{text-align:center;font-size:13px;color:#333}
+.cert-sign-line{border-bottom:1.5px solid #000;width:160px;margin:0 auto 8px;height:40px}
+.cert-footer{margin-top:auto;text-align:center;font-size:11px;color:#999;padding-top:20px}
+.hint{color:white;font-size:12px;text-align:center;margin-top:10px}
 @media print{
-  body{background:white;padding:0;gap:0}
-  .sheet{box-shadow:none;page-break-after:always}
-  .sheet-blank{width:210mm;height:297mm;overflow:hidden}
-  .sheet-blank img{width:210mm;height:297mm;object-fit:fill}
-  .sheet-cert{width:210mm;min-height:297mm;padding:20mm 20mm}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  html,body{width:210mm;margin:0;padding:0;background:white;display:block}
   .hint{display:none}
+  .sheet{box-shadow:none;margin:0;display:block}
+  .sheet-blank{
+    width:210mm;height:297mm;
+    page-break-after:always;
+    break-after:page;
+    overflow:hidden
+  }
+  .sheet-blank img{
+    width:210mm;height:297mm;
+    object-fit:fill
+  }
+  .sheet-cert{
+    width:210mm;height:297mm;
+    padding:20mm 20mm 15mm;
+    page-break-after:avoid;
+    break-after:avoid
+  }
 }
+@page{margin:0;size:A4}
 </style></head>
 <body>
-<!-- ЛИСТ 1: БЛАНК -->
 <div class="sheet sheet-blank">
-  <img src="${bgData}" alt="бланк свидетельства о рождении">
+  <img src="${bgData}" alt="бланк">
   <div class="fields">${fieldsHtml}</div>
 </div>
-
-<!-- ЛИСТ 2: УДОСТОВЕРЕНИЕ ПЕРЕВОДА -->
 <div class="sheet sheet-cert">
   <div class="cert-title">УДОСТОВЕРЕНИЕ ПЕРЕВОДА</div>
   <div class="cert-body">
-    <p style="margin-bottom:16px">Я, нижеподписавшийся(аяся), сертифицированный переводчик с английского языка на русский язык, настоящим удостоверяю, что данный перевод является точным и полным переводом оригинального документа — свидетельства о рождении, выданного компетентным органом штата Флорида, США.</p>
-    <p style="margin-bottom:16px">Перевод выполнен в соответствии с требованиями Консульства Российской Федерации в США.</p>
+    <p>Я, нижеподписавшийся(аяся), сертифицированный переводчик с английского языка на русский язык, настоящим удостоверяю, что данный перевод является точным и полным переводом оригинального документа — свидетельства о рождении, выданного компетентным органом штата Флорида, США.</p>
+    <p>Перевод выполнен в соответствии с требованиями Консульства Российской Федерации в США.</p>
     <p>Настоящим подтверждаю, что являюсь компетентным переводчиком русского и английского языков и данный перевод соответствует оригиналу документа.</p>
   </div>
   <div class="cert-sign">
@@ -316,12 +325,9 @@ body{background:#666;display:flex;flex-direction:column;align-items:center;paddi
       № ${num}
     </div>
   </div>
-  <div class="cert-footer">
-    BirthCert Translation Services &nbsp;·&nbsp; Официальный перевод для Консульства РФ в США
-  </div>
+  <div class="cert-footer">BirthCert Translation Services &nbsp;·&nbsp; Официальный перевод для Консульства РФ в США</div>
 </div>
-
-<p class="hint">Для печати: Ctrl+P → масштаб 100% → без колонтитулов → две страницы А4</p>
+<p class="hint">Для печати: Ctrl+P → масштаб 100% → без полей → 2 страницы А4</p>
 </body></html>`;
 }
 
