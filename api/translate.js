@@ -110,6 +110,7 @@ export default async function handler(req, res) {
       docxBase64: docxBuffer.toString('base64'),
       orderNum: num,
       translationText: buildPlainText(values, num, today),
+      _debug: { childName: d.childName, firstName: d.firstName, lastName: d.lastName, fatherName: d.fatherName },
     });
 
   } catch (err) {
