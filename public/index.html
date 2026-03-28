@@ -260,9 +260,9 @@ footer{background:var(--navy);color:rgba(255,255,255,.5);padding:40px 28px;text-
     <div class="hero-left">
       <div class="badge">🇷🇺 Консульство РФ в США</div>
       <h1>Перевод свидетельства<br>о рождении для<br><em>Консульства РФ</em></h1>
-      <p class="hero-desc">Загрузите скан — AI мгновенно считывает все данные и формирует официальный нотариальный PDF. На ваш email за 10 минут.</p>
+      <p class="hero-desc">Загрузите скан — наша система мгновенно считывает все данные и формирует официальный перевод. На ваш email за 10 минут.</p>
       <ul class="hero-checks">
-        <li><div class="chk">✓</div>Автоматическое считывание данных (OpenAI Vision)</li>
+        <li><div class="chk">✓</div>Мгновенное считывание данных из документа</li>
         <li><div class="chk">✓</div>PDF на email за 10 минут после оплаты</li>
         <li><div class="chk">✓</div>Принимается всеми консульствами РФ в США</li>
         <li><div class="chk">✓</div>Точный перевод по стандартам консульства</li>
@@ -278,7 +278,7 @@ footer{background:var(--navy);color:rgba(255,255,255,.5);padding:40px 28px;text-
       <div class="api-banner" id="apiBanner">
         <div style="font-size:1.2rem">🔑</div>
         <div style="flex:1">
-          <div class="api-banner-text"><strong>OpenAI API ключ</strong>Нужен для считывания и перевода документа</div>
+          <div class="api-banner-text"><strong>Ключ активации</strong>Необходим для обработки документа</div>
           <div class="api-key-wrap">
             <input class="api-key-inp" id="apiKeyInp" type="password" placeholder="sk-...">
             <button class="btn-save-key" onclick="saveKey()">Сохранить</button>
@@ -300,9 +300,9 @@ footer{background:var(--navy);color:rgba(255,255,255,.5);padding:40px 28px;text-
           <div class="uzone" id="uZone" onclick="document.getElementById('fInput').click()">
             <div class="uic" id="uIc">⬆️</div>
             <div class="utx" id="uTx">Перетащите JPG, PNG или PDF сюда</div>
-            <div class="uhn" id="uHn">до 10 МБ · Данные считываются автоматически через AI</div>
+            <div class="uhn" id="uHn">до 10 МБ · Данные считываются автоматически</div>
             <div class="abar" id="aBar"><div class="afill" id="aFill"></div></div>
-            <div class="albl" id="aLbl">🔍 OpenAI Vision считывает документ...</div>
+            <div class="albl" id="aLbl">🔍 Считываем данные из документа...</div>
           </div>
           <div class="fchip" id="fChip">
             <span>📄</span>
@@ -439,8 +439,8 @@ footer{background:var(--navy);color:rgba(255,255,255,.5);padding:40px 28px;text-
     <div class="stag">Процесс</div>
     <div class="sh2">Как это работает</div>
     <div class="howg">
-      <div class="hwc"><div class="hwtag">Шаг 1</div><div class="hwi">📤</div><h3>Загрузите скан</h3><p>JPG, PNG или PDF. OpenAI Vision мгновенно считывает все поля — заполнять вручную почти ничего не нужно.</p></div>
-      <div class="hwc"><div class="hwtag">Шаг 2</div><div class="hwi">🤖</div><h3>AI формирует перевод</h3><p>GPT-4 переводит по официальному консульскому шаблону. Проверьте предпросмотр до оплаты.</p></div>
+      <div class="hwc"><div class="hwtag">Шаг 1</div><div class="hwi">📤</div><h3>Загрузите скан</h3><p>JPG, PNG или PDF. Наша система мгновенно считывает все поля — заполнять вручную почти ничего не нужно.</p></div>
+      <div class="hwc"><div class="hwtag">Шаг 2</div><div class="hwi">📝</div><h3>Формируем перевод</h3><p>Перевод выполняется по официальному консульскому шаблону. Проверьте предпросмотр до оплаты.</p></div>
       <div class="hwc"><div class="hwtag">Шаг 3</div><div class="hwi">💳</div><h3>Оплатите онлайн</h3><p>Безопасная оплата через Stripe. Visa, Mastercard, Apple Pay.</p></div>
       <div class="hwc"><div class="hwtag">Шаг 4</div><div class="hwi">📧</div><h3>PDF за 10 минут</h3><p>Готовый нотариальный PDF приходит на email автоматически. Распечатайте и подайте.</p></div>
     </div>
@@ -457,7 +457,7 @@ footer{background:var(--navy);color:rgba(255,255,255,.5);padding:40px 28px;text-
         <div class="tlrow">
           <div class="tlst"><div class="tldot">1</div><div class="tllb"><strong>Загрузка</strong>Ваш скан</div></div>
           <div class="tlln"></div>
-          <div class="tlst"><div class="tldot">2</div><div class="tllb"><strong>AI-перевод</strong>Автоматически</div></div>
+          <div class="tlst"><div class="tldot">2</div><div class="tllb"><strong>Перевод</strong>Мгновенно</div></div>
           <div class="tlln"></div>
           <div class="tlst"><div class="tldot">3</div><div class="tllb"><strong>Email PDF</strong>10 минут</div></div>
         </div>
@@ -507,7 +507,7 @@ footer{background:var(--navy);color:rgba(255,255,255,.5);padding:40px 28px;text-
     <div class="sh2">FAQ</div>
     <div class="faqlist">
       <div class="faqi"><div class="faqq" onclick="faqT(this)">Как быстро придёт перевод? <span class="faqarr">▼</span></div><div class="faqa">После оплаты PDF отправляется автоматически в течение 10 минут.</div></div>
-      <div class="faqi"><div class="faqq" onclick="faqT(this)">Зачем нужен OpenAI API ключ? <span class="faqarr">▼</span></div><div class="faqa">Ключ используется для считывания данных из вашего скана (Vision) и формирования перевода (GPT-4). Ключ хранится только в вашем браузере и никуда не отправляется. Получить ключ можно на platform.openai.com.</div></div>
+      <div class="faqi"><div class="faqq" onclick="faqT(this)">Как происходит считывание документа? <span class="faqarr">▼</span></div><div class="faqa">После загрузки скана наша система автоматически распознаёт все поля документа и заполняет форму перевода. Данные обрабатываются на защищённом сервере.</div></div>
       <div class="faqi"><div class="faqq" onclick="faqT(this)">Примут ли перевод в консульстве? <span class="faqarr">▼</span></div><div class="faqa">Формат соответствует требованиям всех консульств РФ в США. Если откажут из-за формата — полный возврат.</div></div>
       <div class="faqi"><div class="faqq" onclick="faqT(this)">Нужно ли нотариальное заверение? <span class="faqarr">▼</span></div><div class="faqa">PDF включает сертификацию переводчика. При необходимости нотариальное заверение можно сделать у нотариуса в США.</div></div>
     </div>
@@ -583,7 +583,7 @@ function handleUpload(inp){
   zone.classList.add('analyzing');
   document.getElementById('uIc').textContent='🔍';
   document.getElementById('uTx').textContent='Отправляем на сервер...';
-  document.getElementById('uHn').textContent='OpenAI Vision считывает скан';
+  document.getElementById('uHn').textContent='Считываем данные из документа...';
   const bar=document.getElementById('aBar'),fill=document.getElementById('aFill'),lbl=document.getElementById('aLbl');
   bar.classList.add('show'); lbl.classList.add('show');
   let p=0; const iv=setInterval(()=>{p=Math.min(p+2,90);fill.style.width=p+'%'},300);
