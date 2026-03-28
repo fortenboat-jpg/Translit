@@ -389,8 +389,8 @@ footer{background:var(--navy);color:rgba(255,255,255,.5);padding:40px 28px;text-
             <!-- Бланк -->
             <div style="position:relative;width:100%;height:380px;overflow:hidden">
               <img id="bgImg" src="https://translit-gilt.vercel.app/bg.jpg"
-                style="position:absolute;top:0;left:0;width:100%;height:auto;display:block">
-              <div id="overlayFields" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none"></div>
+                style="position:absolute;top:0;left:0;width:100%;height:auto;display:block;filter:blur(1px) brightness(0.85)">
+              <div id="overlayFields" style="position:absolute;top:0;left:0;width:100%;height:100%;"></div>
             </div>
           </div>
           <!-- Подвал -->
@@ -677,10 +677,7 @@ function doGenerate(){
     fatherDob:document.getElementById('fDadDob').value.trim(),
     fatherBirthPlace:document.getElementById('fDadBirth').value.trim(),
     reqNum:           document.getElementById('fReqNum').value.trim(),
-    // Combined names built server-side, but also pass components
-    childName: [document.getElementById('fLast').value.trim(), document.getElementById('fFirst').value.trim(), document.getElementById('fMid').value.trim()].filter(Boolean).join(' '),
-    motherName: [document.getElementById('fMom').value.trim()].filter(Boolean).join(' '),
-    fatherName: [document.getElementById('fDad').value.trim()].filter(Boolean).join(' '),
+    childName:        [document.getElementById('fLast').value.trim(), document.getElementById('fFirst').value.trim(), document.getElementById('fMid').value.trim()].filter(Boolean).join(' '),
     email
   };
   fetch(API+'/api/translate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
@@ -697,8 +694,9 @@ function doGenerate(){
         window._pdfHtml=res.pdfHtml;
         window._orderNum=res.orderNum;
         window._payload=payload;
-        // Рендерим PNG в браузере из HTML
-        renderPreviewPng(res.pdfHtml, res.values || payload, res.fields, res.bgUrl);
+        // Сохраняем HTML и показываем превью
+        window._pdfHtml = res.pdfHtml;
+        showPreview(res.pdfHtml);
         document.getElementById('pvButtons').style.display='flex';
         document.getElementById('pvBadge').textContent='✓ Перевод готов — проверьте данные';
         document.getElementById('eDisp').textContent=email;
@@ -725,96 +723,46 @@ function doGenerate(){
 }
 
 // ─── ПОКАЗ БЛАНКА С ДАННЫМИ ──────────────────────────────
-// ─── РЕНДЕР PNG В БРАУЗЕРЕ ───────────────────────────────
-function renderPreviewPng(pdfHtml, values, serverFields, bgUrl) {
+// ─── ПРЕВЬЮ ДОКУМЕНТА ───────────────────────────────────
+function showPreview(html) {
   const container = document.getElementById('blankPreview');
   const overlayDiv = document.getElementById('overlayFields');
   const bgImg = document.getElementById('bgImg');
 
-  // Показываем контейнер сразу с лоадером
-  container.style.display = 'block';
-  container.style.opacity = '0';
-  overlayDiv.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:380px;color:var(--muted);font-size:.82rem;flex-direction:column;gap:10px"><div class="sp"></div><span>Фиксируем документ...</span></div>';
+  // Прячем старый фон
   if (bgImg) bgImg.style.display = 'none';
 
-  // Создаём скрытый iframe с HTML документа
-  const iframe = document.createElement('iframe');
-  iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:794px;height:1123px;border:none;opacity:0;pointer-events:none';
-  iframe.srcdoc = pdfHtml;
-  document.body.appendChild(iframe);
+  // Показываем кнопку открыть полный документ
+  overlayDiv.innerHTML = `
+    <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(255,255,255,0.15);backdrop-filter:blur(2px)">
+      <div style="background:white;border-radius:14px;padding:20px 28px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.15);max-width:280px">
+        <div style="font-size:2rem;margin-bottom:8px">📄</div>
+        <div style="font-weight:700;color:#0c1b3a;font-size:.95rem;margin-bottom:6px">Документ готов!</div>
+        <div style="font-size:.8rem;color:#5a6b90;margin-bottom:14px">Нажмите чтобы увидеть полный бланк с вашими данными</div>
+        <button onclick="openFullDoc()" style="background:linear-gradient(135deg,#0c1b3a,#2558d4);color:white;border:none;border-radius:9px;padding:10px 22px;font-size:.88rem;font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif;width:100%">
+          👁 Открыть полный бланк
+        </button>
+      </div>
+    </div>`;
 
-  iframe.onload = function() {
-    // Ждём загрузки фона в iframe
-    setTimeout(() => {
-      html2canvas(iframe.contentDocument.querySelector('.page') || iframe.contentDocument.body, {
-        width: 794,
-        height: 1123,
-        scale: 1,
-        useCORS: true,
-        allowTaint: true,
-        logging: false,
-        backgroundColor: '#ffffff',
-      }).then(canvas => {
-        document.body.removeChild(iframe);
-        // Конвертируем в PNG
-        const pngUrl = canvas.toDataURL('image/png');
-        window._previewPng = pngUrl;
-        // Показываем PNG в превью
-        overlayDiv.innerHTML = `<img src="${pngUrl}" style="position:absolute;top:0;left:0;width:100%;height:auto;display:block">`;
-        // Анимация появления
-        container.style.transition = 'opacity .4s, transform .4s';
-        container.style.transform = 'translateY(8px)';
-        requestAnimationFrame(() => {
-          container.style.opacity = '1';
-          container.style.transform = 'translateY(0)';
-        });
-      }).catch(err => {
-        console.error('html2canvas error:', err);
-        document.body.removeChild(iframe);
-        // Fallback — показываем наложение полей
-        showBlankPreview(values, serverFields, bgUrl);
-      });
-    }, 2000); // 2 сек на загрузку фона в iframe
-  };
-}
-
-function showBlankPreview(values, serverFields, bgUrl) {
-  const container = document.getElementById('blankPreview');
-  const overlayDiv = document.getElementById('overlayFields');
-  const bgImg = document.getElementById('bgImg');
-  if (bgImg) { bgImg.style.display = 'block'; if (bgUrl) bgImg.src = bgUrl; }
-  const v = values || {};
-  const fields = serverFields || [
-    { id:'stateRegNum',      top:15.0, left:30.1, size:20 },
-    { id:'dateIssued',       top:15.0, left:64.3, size:20 },
-    { id:'dateRegistered',   top:17.0, left:64.4, size:20 },
-    { id:'childName',        top:21.8, left:33.6, size:20 },
-    { id:'dobFormatted',     top:26.5, left:33.6, size:20 },
-    { id:'timeOfBirth',      top:27.0, left:79.1, size:20 },
-    { id:'sex',              top:31.0, left:33.6, size:20 },
-    { id:'weight',           top:31.0, left:71.1, size:20 },
-    { id:'hospital',         top:34.4, left:33.6, size:20 },
-    { id:'cityCounty',       top:38.3, left:33.7, size:20 },
-    { id:'motherName',       top:49.3, left:33.5, size:20 },
-    { id:'motherDob',        top:53.1, left:33.5, size:20 },
-    { id:'motherBirthPlace', top:56.3, left:33.4, size:20 },
-    { id:'fatherName',       top:65.5, left:33.4, size:20 },
-    { id:'fatherDob',        top:69.9, left:33.4, size:20 },
-    { id:'fatherBirthPlace', top:73.5, left:33.5, size:20 },
-    { id:'reqNum',           top:84.6, left:75.1, size:20 },
-    { id:'barcode',          top:96.6, left:17.9, size:17 },
-  ];
-  const containerW = container.offsetWidth || 460;
-  const scale = containerW / 794;
-  overlayDiv.innerHTML = fields.map(f => {
-    const val = v[f.id]; if (!val) return '';
-    return `<div style="position:absolute;top:${f.top}%;left:${f.left}%;font-size:${Math.max(Math.round(f.size*scale),8)}px;font-weight:700;color:#000;font-family:'Times New Roman',serif;white-space:nowrap;line-height:1">${val}</div>`;
-  }).join('');
   container.style.display = 'block';
   container.style.opacity = '0';
-  container.style.transition = 'opacity .4s';
-  requestAnimationFrame(() => { container.style.opacity = '1'; });
+  container.style.transition = 'opacity .4s, transform .4s';
+  container.style.transform = 'translateY(8px)';
+  requestAnimationFrame(() => {
+    container.style.opacity = '1';
+    container.style.transform = 'translateY(0)';
+  });
 }
+
+function openFullDoc() {
+  if (!window._pdfHtml) { toast('err','Нет документа'); return; }
+  const w = window.open('', '_blank', 'width=860,height=1000,scrollbars=yes');
+  w.document.write(window._pdfHtml);
+  w.document.close();
+}
+
+function showBlankPreview() {} // legacy stub
 
 
 function downloadDocx(){
