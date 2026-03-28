@@ -24,25 +24,25 @@ const FIELDS = [
 
 // ── КООРДИНАТЫ ПОЛЕЙ ДЛЯ ВТОРОГО БЛАНКА (bg2.jpg) ──────
 const FIELDS2 = [
-  { id:'stateRegNum',      top:21.3, left:12.2, size:15 },
-  { id:'dateIssued',       top:19.6, left:67.8, size:15 },
-  { id:'dateRegistered',   top:21.3, left:72.9, size:15 },
+  { id:'stateRegNum',      top:21.3, left:12.8, size:15 },
+  { id:'dateIssued',       top:19.8, left:67.9, size:15 },
+  { id:'dateRegistered',   top:21.6, left:73.0, size:15 },
   { id:'childName',        top:25.8, left:37.5, size:15 },
   { id:'dobFormatted',     top:28.4, left:37.5, size:15 },
-  { id:'timeOfBirth',      top:28.4, left:84.2, size:15 },
+  { id:'timeOfBirth',      top:28.6, left:84.2, size:15 },
   { id:'sex',              top:31.0, left:37.5, size:15 },
-  { id:'weight',           top:31.0, left:75.9, size:15 },
+  { id:'weight',           top:31.3, left:76.2, size:15 },
   { id:'hospital',         top:33.7, left:37.4, size:15 },
   { id:'hospitalLine2',    top:35.5, left:37.3, size:15 },
   { id:'cityCounty',       top:37.3, left:37.2, size:15 },
   { id:'motherName',       top:44.5, left:37.8, size:15 },
-  { id:'motherDob',        top:46.9, left:37.9, size:15 },
+  { id:'motherDob',        top:47.0, left:37.5, size:15 },
   { id:'motherBirthPlace', top:49.5, left:37.5, size:15 },
   { id:'fatherName',       top:57.5, left:37.9, size:15 },
-  { id:'fatherDob',        top:60.0, left:37.9, size:15 },
+  { id:'fatherDob',        top:60.1, left:37.9, size:15 },
   { id:'fatherBirthPlace', top:62.7, left:37.7, size:15 },
-  { id:'reqNum',           top:65.4, left:70.8, size:15 },
-  { id:'barcode',          top:85.6, left:37.9, size:11 },
+  { id:'reqNum',           top:65.6, left:70.8, size:15 },
+  { id:'barcode',          top:85.9, left:41.1, size:11 },
 ];
 
 // ── ПЕРЕВОД ИМЁН (для случая когда OCR не перевёл) ──────
