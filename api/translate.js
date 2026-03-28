@@ -162,26 +162,27 @@ export default async function handler(req, res) {
       .filter(Boolean).join(' ') || '';
 
     // Место рождения — разбиваем на две строки
-    const hospitalRaw = (d.hospital || '').toUpperCase();
+    // OCR уже переводит, просто делаем заглавными и разбиваем
+    const hospitalRaw = (d.hospital || '').toUpperCase().trim();
     let hospitalLine1 = '';
     let hospitalLine2 = '';
     if (hospitalRaw) {
-      if (hospitalRaw.includes('HOSPITAL') || hospitalRaw.includes('БОЛЬНИЦА')) {
+      if (hospitalRaw.includes('БОЛЬНИЦА')) {
         hospitalLine1 = 'БОЛЬНИЦА';
-      } else if (hospitalRaw.includes('MEDICAL CENTER') || hospitalRaw.includes('МЕДИЦИНСКИЙ ЦЕНТР')) {
+        hospitalLine2 = hospitalRaw.replace('БОЛЬНИЦА', '').replace(/\s+/g,' ').trim();
+      } else if (hospitalRaw.includes('МЕДИЦИНСКИЙ ЦЕНТР')) {
         hospitalLine1 = 'МЕДИЦИНСКИЙ ЦЕНТР';
+        hospitalLine2 = hospitalRaw.replace('МЕДИЦИНСКИЙ ЦЕНТР', '').replace(/\s+/g,' ').trim();
+      } else if (hospitalRaw.includes('HOSPITAL')) {
+        hospitalLine1 = 'БОЛЬНИЦА';
+        hospitalLine2 = hospitalRaw.replace('HOSPITAL','').replace(/\s+/g,' ').trim();
+      } else if (hospitalRaw.includes('MEDICAL CENTER')) {
+        hospitalLine1 = 'МЕДИЦИНСКИЙ ЦЕНТР';
+        hospitalLine2 = hospitalRaw.replace('MEDICAL CENTER','').replace(/\s+/g,' ').trim();
       } else {
         hospitalLine1 = 'БОЛЬНИЦА';
+        hospitalLine2 = hospitalRaw;
       }
-      hospitalLine2 = hospitalRaw
-        .replace(/\bHOSPITAL\b/g, '')
-        .replace(/\bMEDICAL CENTER\b/g, '')
-        .replace(/\bMEDICAL CENTRE\b/g, '')
-        .replace(/\bМЕДИЦИНСКИЙ ЦЕНТР\b/g, '')
-        .replace(/\bБОЛЬНИЦА\b/g, '')
-        .replace(/\bST\.?\s*PETERSBURG\b/g, 'Г. САНКТ-ПЕТЕРБУРГ')
-        .replace(/\bSAINT\s+PETERSBURG\b/g, 'Г. САНКТ-ПЕТЕРБУРГ')
-        .replace(/\s+/g, ' ').trim();
     }
 
     const values = {
@@ -195,7 +196,7 @@ export default async function handler(req, res) {
       weight:           d.weight || '',
       hospital:         hospitalLine1,
       hospitalLine2:    hospitalLine2,
-      cityCounty:       translateCityCounty(d.cityCounty || ''),
+      cityCounty:       (d.cityCounty || '').toUpperCase(),
       motherName:       d.motherName || '',
       motherDob:        d.motherDob || '',
       motherBirthPlace: d.motherBirthPlace || '',
