@@ -162,11 +162,12 @@ export default async function handler(req, res) {
       .filter(Boolean).join(' ') || '';
 
     // МЕСТО РОЖДЕНИЯ — две строки:
-    // Строка 1: БОЛЬНИЦА (перевод HOSPITAL с бланка)
+    // Строка 1: из поля hospitalType (БОЛЬНИЦА / МЕДИЦИНСКИЙ ЦЕНТР / РОДДОМ)
     // Строка 2: название госпиталя + город
-    const hospitalRaw = (d.hospital || '').toUpperCase().trim();
+    const hospitalRaw  = (d.hospital     || '').toUpperCase().trim();
+    const hospitalType = (d.hospitalType || 'БОЛЬНИЦА').toUpperCase().trim();
 
-    const hospitalLine1 = 'БОЛЬНИЦА';
+    const hospitalLine1 = hospitalType;
 
     const hospitalLine2 = hospitalRaw
       .replace(/\bMEDICAL\s+CENT(?:ER|RE)\b/gi, '')
