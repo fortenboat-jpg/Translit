@@ -22,6 +22,59 @@ const FIELDS = [
   { id:'barcode',          top:96.6, left:17.9, size:14 },
 ];
 
+// ── ПЕРЕВОД ИМЁН (для случая когда OCR не перевёл) ──────
+const NAMES_DICT = {
+  'mark':'МАРК','alekseevich':'АЛЕКСЕЕВИЧ','kirzov':'КИРЗОВ',
+  'aleksei':'АЛЕКСЕЙ','aleksey':'АЛЕКСЕЙ','alexei':'АЛЕКСЕЙ','alexey':'АЛЕКСЕЙ',
+  'ekaterina':'ЕКАТЕРИНА','katerina':'ЕКАТЕРИНА','olegovna':'ОЛЕГОВНА',
+  'golod':'ГОЛОД','leonidovich':'ЛЕОНИДОВИЧ','leonidovna':'ЛЕОНИДОВНА',
+  'alexander':'АЛЕКСАНДР','alexandra':'АЛЕКСАНДРА',
+  'mikhail':'МИХАИЛ','mikhailovich':'МИХАЙЛОВИЧ','mikhailovna':'МИХАЙЛОВНА',
+  'sergei':'СЕРГЕЙ','sergey':'СЕРГЕЙ','sergeevich':'СЕРГЕЕВИЧ','sergeevna':'СЕРГЕЕВНА',
+  'ivan':'ИВАН','ivanovich':'ИВАНОВИЧ','ivanova':'ИВАНОВА','ivanov':'ИВАНОВ','ivanovna':'ИВАНОВНА',
+  'anna':'АННА','dmitry':'ДМИТРИЙ','dmitri':'ДМИТРИЙ','dmitrievich':'ДМИТРИЕВИЧ','dmitrievna':'ДМИТРИЕВНА',
+  'nikolai':'НИКОЛАЙ','nikolaevich':'НИКОЛАЕВИЧ','nikolaevna':'НИКОЛАЕВНА',
+  'natalia':'НАТАЛЬЯ','natalya':'НАТАЛЬЯ','vladimir':'ВЛАДИМИР','vladimirovich':'ВЛАДИМИРОВИЧ',
+  'andrei':'АНДРЕЙ','andreevich':'АНДРЕЕВИЧ','elena':'ЕЛЕНА',
+  'evgeny':'ЕВГЕНИЙ','evgenia':'ЕВГЕНИЯ','petr':'ПЁТР','peter':'ПЁТР','petrovich':'ПЕТРОВИЧ',
+  'yuri':'ЮРИЙ','yurii':'ЮРИЙ','yurevich':'ЮРЬЕВИЧ','tatiana':'ТАТЬЯНА','olga':'ОЛЬГА',
+  'maxim':'МАКСИМ','roman':'РОМАН','pavel':'ПАВЕЛ','artem':'АРТЁМ',
+  'maria':'МАРИЯ','marina':'МАРИНА','galina':'ГАЛИНА','irina':'ИРИНА',
+  'svetlana':'СВЕТЛАНА','valentina':'ВАЛЕНТИНА','victoria':'ВИКТОРИЯ',
+  'konstantin':'КОНСТАНТИН','konstantinovich':'КОНСТАНТИНОВИЧ',
+  'leonid':'ЛЕОНИД','vadim':'ВАДИМ','viktor':'ВИКТОР','viktorovich':'ВИКТОРОВИЧ',
+  'boris':'БОРИС','borisovich':'БОРИСОВИЧ','igor':'ИГОРЬ','igorevich':'ИГОРЕВИЧ',
+  'oleg':'ОЛЕГ','olegovich':'ОЛЕГОВИЧ','gennady':'ГЕННАДИЙ','anatoly':'АНАТОЛИЙ',
+};
+
+function translateNamePart(str) {
+  if (!str) return '';
+  // Если уже русское — вернуть заглавными
+  if (/[а-яёА-ЯЁ]/.test(str)) return str.toUpperCase();
+  return str.split(' ').map(word => {
+    const key = word.toLowerCase().replace(/[^a-z]/g, '');
+    if (NAMES_DICT[key]) return NAMES_DICT[key];
+    // Транслит
+    const pairs = [
+      ['shch','щ'],['sch','щ'],['zh','ж'],['kh','х'],['ts','ц'],
+      ['ch','ч'],['sh','ш'],['yu','ю'],['ya','я'],['yo','ё'],
+      ['a','а'],['b','б'],['c','к'],['d','д'],['e','е'],['f','ф'],['g','г'],
+      ['h','х'],['i','и'],['j','й'],['k','к'],['l','л'],['m','м'],['n','н'],
+      ['o','о'],['p','п'],['r','р'],['s','с'],['t','т'],['u','у'],
+      ['v','в'],['w','в'],['x','кс'],['y','й'],['z','з'],
+    ];
+    let r = '', i = 0, w = word.toLowerCase();
+    while (i < w.length) {
+      let matched = false;
+      for (const [en,ru] of pairs) {
+        if (w.startsWith(en,i)) { r+=ru; i+=en.length; matched=true; break; }
+      }
+      if (!matched) { r+=w[i]; i++; }
+    }
+    return (r.charAt(0).toUpperCase()+r.slice(1)).toUpperCase();
+  }).join(' ');
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -56,10 +109,18 @@ export default async function handler(req, res) {
     const barcodeNum = (d.reqNum || '').replace(/[^0-9]/g, '');
     const barcodeText = barcodeNum ? '*' + barcodeNum + '*' : '';
 
-    // Данные для подстановки в бланк
-    // childName — собираем из компонентов если пришёл пустым
-    const childName = d.childName ||
-      [d.lastName, d.firstName, d.middleName].filter(Boolean).join(' ') || '';
+    // childName — переводим компоненты на сервере
+    // Берём из отдельных полей если есть, иначе из готовой строки
+    const rawLast  = d.lastName  || '';
+    const rawFirst = d.firstName || '';
+    const rawMid   = d.middleName || '';
+
+    // Импортируем функцию перевода имён (inline здесь)
+    const childLast  = translateNamePart(rawLast);
+    const childFirst = translateNamePart(rawFirst);
+    const childMid   = translateNamePart(rawMid);
+    const childName  = [childLast, childFirst, childMid].filter(Boolean).join(' ')
+                    || d.childName || '';
 
     const values = {
       stateRegNum:      d.stateRegNum || '',
