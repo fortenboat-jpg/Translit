@@ -161,29 +161,28 @@ export default async function handler(req, res) {
       [translateNamePart(rawLast), translateNamePart(rawFirst), translateNamePart(rawMid)]
       .filter(Boolean).join(' ') || '';
 
-    // Место рождения — разбиваем на две строки
-    // OCR уже переводит, просто делаем заглавными и разбиваем
+    // Место рождения — две строки
+    // Строка 1: всегда БОЛЬНИЦА (метка поля на бланке)
+    // Строка 2: тип учреждения + название + город
     const hospitalRaw = (d.hospital || '').toUpperCase().trim();
-    let hospitalLine1 = '';
-    let hospitalLine2 = '';
-    if (hospitalRaw) {
-      if (hospitalRaw.includes('БОЛЬНИЦА')) {
-        hospitalLine1 = 'БОЛЬНИЦА';
-        hospitalLine2 = hospitalRaw.replace('БОЛЬНИЦА', '').replace(/\s+/g,' ').trim();
-      } else if (hospitalRaw.includes('МЕДИЦИНСКИЙ ЦЕНТР')) {
-        hospitalLine1 = 'МЕДИЦИНСКИЙ ЦЕНТР';
-        hospitalLine2 = hospitalRaw.replace('МЕДИЦИНСКИЙ ЦЕНТР', '').replace(/\s+/g,' ').trim();
-      } else if (hospitalRaw.includes('HOSPITAL')) {
-        hospitalLine1 = 'БОЛЬНИЦА';
-        hospitalLine2 = hospitalRaw.replace('HOSPITAL','').replace(/\s+/g,' ').trim();
-      } else if (hospitalRaw.includes('MEDICAL CENTER')) {
-        hospitalLine1 = 'МЕДИЦИНСКИЙ ЦЕНТР';
-        hospitalLine2 = hospitalRaw.replace('MEDICAL CENTER','').replace(/\s+/g,' ').trim();
-      } else {
-        hospitalLine1 = 'БОЛЬНИЦА';
-        hospitalLine2 = hospitalRaw;
-      }
-    }
+    const hospitalTypeRaw = (d.hospitalType || 'БОЛЬНИЦА').toUpperCase().trim();
+
+    const hospitalLine1 = 'БОЛЬНИЦА';
+
+    // Строка 2: тип + название (без типа) + город из cityCounty
+    const hospitalNameOnly = hospitalRaw
+      .replace(/^БОЛЬНИЦА\s*/,'')
+      .replace(/^МЕДИЦИНСКИЙ ЦЕНТР\s*/,'')
+      .replace(/\bMEDICAL\s+CENT(?:ER|RE)\b/gi,'')
+      .replace(/\bHOSPITAL\b/gi,'')
+      .replace(/\bST\.?\s*PETERSBURG\b/gi,'Г. САНКТ-ПЕТЕРБУРГ')
+      .replace(/\bSAINT\s+PETERSBURG\b/gi,'Г. САНКТ-ПЕТЕРБУРГ')
+      .replace(/\s+/g,' ').trim();
+
+    // Город из cityCounty если не вошёл в название
+    const cityPart = (d.cityCounty || '').toUpperCase().split(',')[0].trim();
+    const hospitalLine2 = [hospitalTypeRaw, hospitalNameOnly]
+      .filter(Boolean).join(' ').trim();
 
     const values = {
       stateRegNum:      d.stateRegNum || '',
@@ -208,7 +207,7 @@ export default async function handler(req, res) {
     };
 
     const bgUrl = process.env.BACKGROUND_URL || 'https://translit-gilt.vercel.app/bg.jpg';
-    const styledHtml = buildHtml(values, bgUrl, num, today);
+    const styledHtml = await buildHtml(values, bgUrl, num, today);
     const docxBuffer = buildDocx(values, num, today);
 
     // Email
@@ -245,7 +244,20 @@ export default async function handler(req, res) {
 }
 
 // ── HTML С БЛАНКОМ ───────────────────────────────────────
-function buildHtml(v, bgUrl, num, today) {
+async function buildHtml(v, bgUrl, num, today) {
+  // Загружаем фон как base64 чтобы работало в любом окне
+  let bgData = bgUrl;
+  try {
+    const resp = await fetch(bgUrl);
+    const buf = await resp.arrayBuffer();
+    const b64 = Buffer.from(buf).toString('base64');
+    const mime = resp.headers.get('content-type') || 'image/jpeg';
+    bgData = `data:${mime};base64,${b64}`;
+  } catch(e) {
+    console.error('Could not embed bg:', e.message);
+    // fallback to URL
+  }
+
   const fieldsHtml = FIELDS.map(f => {
     const val = v[f.id];
     if (!val) return '';
@@ -271,7 +283,7 @@ body{background:#888;display:flex;flex-direction:column;align-items:center;paddi
 </style></head>
 <body>
 <div class="page">
-  <img src="${bgUrl}" alt="бланк свидетельства о рождении">
+  <img src="${bgData}" alt="бланк">
   <div class="fields">${fieldsHtml}</div>
 </div>
 <div class="cert">
