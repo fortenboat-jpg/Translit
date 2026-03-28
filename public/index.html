@@ -695,6 +695,8 @@ function doGenerate(){
         window._pdfHtml=res.pdfHtml;
         window._orderNum=res.orderNum;
         window._payload=payload;
+        // DEBUG — удалить после проверки
+        alert('INPUT childName=['+res._debug?.childName+'] firstName=['+res._debug?.firstName+'] lastName=['+res._debug?.lastName+']\nVALUES childName=['+res.values?.childName+'] fatherName=['+res.values?.fatherName+']');
         // Сохраняем HTML и показываем превью
         window._pdfHtml = res.pdfHtml;
         showPreview(res.pdfHtml);
