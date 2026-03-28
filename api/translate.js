@@ -49,11 +49,15 @@ export default async function handler(req, res) {
     const barcodeText = barcodeNum ? '*' + barcodeNum + '*' : '';
 
     // Данные для подстановки в бланк
+    // childName — собираем из компонентов если пришёл пустым
+    const childName = d.childName ||
+      [d.lastName, d.firstName, d.middleName].filter(Boolean).join(' ') || '';
+
     const values = {
       stateRegNum:      d.stateRegNum || '',
       dateIssued:       d.dateIssued || '',
       dateRegistered:   d.dateRegistered || '',
-      childName:        d.childName || '',
+      childName:        childName,
       dobFormatted:     dobFormatted,
       timeOfBirth:      d.timeOfBirth || '',
       sex:              d.sex || '',
