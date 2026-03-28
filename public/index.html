@@ -323,7 +323,8 @@ footer{background:var(--navy);color:rgba(255,255,255,.5);padding:40px 28px;text-
           <div class="fg"><label class="fl">Время рождения</label><input class="fi" id="fTime" placeholder="14:11"/></div>
           <div class="fg"><label class="fl">Вес при рождении</label><input class="fi" id="fWeight" placeholder="8 фунтов 0 унций"/></div>
         </div>
-        <div class="fg"><label class="fl">Больница / место рождения</label><input class="fi" id="fHosp" placeholder="Bayfront Health Medical Center"/></div>
+        <div class="fg"><label class="fl">Больница</label><input class="fi" id="fHospType" placeholder="БОЛЬНИЦА"/></div>
+        <div class="fg"><label class="fl">Место рождения</label><input class="fi" id="fHosp" placeholder="Bayfront Health Г. Санкт-Петербург"/></div>
         <div class="fg"><label class="fl">Город и округ рождения</label><input class="fi" id="fPlace" placeholder="г. Санкт-Петербург, округ Пинеллас"/></div>
         <div class="fg"><label class="fl">Номер регистрации в штате</label><input class="fi" id="fRegNum" placeholder="109-2022-034113"/></div>
         <div class="fr">
@@ -561,7 +562,7 @@ function handleUpload(inp){
   document.getElementById('fName').textContent=file.name;
   document.getElementById('fSz').textContent=(file.size/1024).toFixed(1)+' КБ';
   // Сбрасываем все поля формы перед новым OCR
-  ['fLast','fFirst','fMid','fTime','fWeight','fHosp','fPlace',
+  ['fLast','fFirst','fMid','fTime','fWeight','fHospType','fHosp','fPlace',
    'fRegNum','fIssued','fRegDate','fMom','fMomDob','fMomBirth',
    'fDad','fDadDob','fDadBirth','fReqNum'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.value='';
@@ -607,6 +608,7 @@ function handleUpload(inp){
         if(j.sex) document.getElementById('fSex').value = j.sex;
         af('fTime',j.timeOfBirth);
         af('fWeight',j.weight);
+        af('fHospType', j.hospitalType || 'БОЛЬНИЦА');
         af('fHosp',j.hospital);
         af('fPlace',j.cityCounty);
         af('fRegNum',j.stateRegNum);
@@ -622,7 +624,7 @@ function handleUpload(inp){
         // Сохраняем переведённые значения из OCR напрямую
         window._ocrCityCounty  = j.cityCounty  || '';
         window._ocrHospital    = j.hospital     || '';
-        window._ocrHospitalType = j.hospitalType  || '';
+        window._ocrHospitalType = j.hospitalType  || 'БОЛЬНИЦА';
         window._ocrMotherName  = j.motherName   || '';
         window._ocrFatherName  = j.fatherName   || '';
         toast('ok','✓ Данные считаны — проверьте поля');
@@ -686,7 +688,7 @@ function doGenerate(){
     timeOfBirth:document.getElementById('fTime').value.trim(),
     weight:document.getElementById('fWeight').value.trim(),
     hospital:     window._ocrHospital     || document.getElementById('fHosp').value.trim(),
-    hospitalType: window._ocrHospitalType || '',
+    hospitalType: document.getElementById('fHospType').value.trim() || window._ocrHospitalType || 'БОЛЬНИЦА',
     cityCounty: window._ocrCityCounty  || document.getElementById('fPlace').value.trim(),
     stateRegNum:document.getElementById('fRegNum').value.trim(),
     dateIssued:document.getElementById('fIssued').value.trim(),
