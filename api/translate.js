@@ -11,6 +11,7 @@ const FIELDS = [
   { id:'sex',              top:30.8, left:33.6, size:16 },
   { id:'weight',           top:31.0, left:70.5, size:16 },
   { id:'hospital',         top:34.3, left:33.6, size:16 },
+  { id:'hospitalLine2',    top:36.8, left:33.6, size:16 },
   { id:'cityCounty',       top:38.1, left:33.7, size:16 },
   { id:'motherName',       top:49.0, left:33.5, size:16 },
   { id:'motherDob',        top:52.9, left:33.5, size:16 },
@@ -118,6 +119,29 @@ export default async function handler(req, res) {
       [translateNamePart(rawLast), translateNamePart(rawFirst), translateNamePart(rawMid)]
       .filter(Boolean).join(' ') || '';
 
+    // Место рождения — разбиваем на две строки
+    const hospitalRaw = (d.hospital || '').toUpperCase();
+    let hospitalLine1 = '';
+    let hospitalLine2 = '';
+    if (hospitalRaw) {
+      if (hospitalRaw.includes('HOSPITAL') || hospitalRaw.includes('БОЛЬНИЦА')) {
+        hospitalLine1 = 'БОЛЬНИЦА';
+      } else if (hospitalRaw.includes('MEDICAL CENTER') || hospitalRaw.includes('МЕДИЦИНСКИЙ ЦЕНТР')) {
+        hospitalLine1 = 'МЕДИЦИНСКИЙ ЦЕНТР';
+      } else {
+        hospitalLine1 = 'БОЛЬНИЦА';
+      }
+      hospitalLine2 = hospitalRaw
+        .replace(/\bHOSPITAL\b/g, '')
+        .replace(/\bMEDICAL CENTER\b/g, '')
+        .replace(/\bMEDICAL CENTRE\b/g, '')
+        .replace(/\bМЕДИЦИНСКИЙ ЦЕНТР\b/g, '')
+        .replace(/\bБОЛЬНИЦА\b/g, '')
+        .replace(/\bST\.?\s*PETERSBURG\b/g, 'Г. САНКТ-ПЕТЕРБУРГ')
+        .replace(/\bSAINT\s+PETERSBURG\b/g, 'Г. САНКТ-ПЕТЕРБУРГ')
+        .replace(/\s+/g, ' ').trim();
+    }
+
     const values = {
       stateRegNum:      d.stateRegNum || '',
       dateIssued:       d.dateIssued || '',
@@ -127,7 +151,8 @@ export default async function handler(req, res) {
       timeOfBirth:      d.timeOfBirth || '',
       sex:              d.sex || '',
       weight:           d.weight || '',
-      hospital:         d.hospital || '',
+      hospital:         hospitalLine1,
+      hospitalLine2:    hospitalLine2,
       cityCounty:       d.cityCounty || '',
       motherName:       d.motherName || '',
       motherDob:        d.motherDob || '',
