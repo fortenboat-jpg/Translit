@@ -161,28 +161,19 @@ export default async function handler(req, res) {
       [translateNamePart(rawLast), translateNamePart(rawFirst), translateNamePart(rawMid)]
       .filter(Boolean).join(' ') || '';
 
-    // Место рождения — две строки
-    // Строка 1: всегда БОЛЬНИЦА (метка поля на бланке)
-    // Строка 2: тип учреждения + название + город
+    // МЕСТО РОЖДЕНИЯ — две строки:
+    // Строка 1: БОЛЬНИЦА (перевод HOSPITAL с бланка)
+    // Строка 2: название госпиталя + город
     const hospitalRaw = (d.hospital || '').toUpperCase().trim();
-    const hospitalTypeRaw = (d.hospitalType || 'БОЛЬНИЦА').toUpperCase().trim();
 
     const hospitalLine1 = 'БОЛЬНИЦА';
 
-    // Строка 2: тип + название (без типа) + город из cityCounty
-    const hospitalNameOnly = hospitalRaw
-      .replace(/^БОЛЬНИЦА\s*/,'')
-      .replace(/^МЕДИЦИНСКИЙ ЦЕНТР\s*/,'')
-      .replace(/\bMEDICAL\s+CENT(?:ER|RE)\b/gi,'')
-      .replace(/\bHOSPITAL\b/gi,'')
-      .replace(/\bST\.?\s*PETERSBURG\b/gi,'Г. САНКТ-ПЕТЕРБУРГ')
-      .replace(/\bSAINT\s+PETERSBURG\b/gi,'Г. САНКТ-ПЕТЕРБУРГ')
-      .replace(/\s+/g,' ').trim();
-
-    // Город из cityCounty если не вошёл в название
-    const cityPart = (d.cityCounty || '').toUpperCase().split(',')[0].trim();
-    const hospitalLine2 = [hospitalTypeRaw, hospitalNameOnly]
-      .filter(Boolean).join(' ').trim();
+    const hospitalLine2 = hospitalRaw
+      .replace(/\bMEDICAL\s+CENT(?:ER|RE)\b/gi, '')
+      .replace(/\bHOSPITAL\b/gi, '')
+      .replace(/\bST\.?\s*PETERSBURG\b/gi, 'Г. САНКТ-ПЕТЕРБУРГ')
+      .replace(/\bSAINT\s+PETERSBURG\b/gi, 'Г. САНКТ-ПЕТЕРБУРГ')
+      .replace(/\s+/g, ' ').trim();
 
     const values = {
       stateRegNum:      d.stateRegNum || '',
