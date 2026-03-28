@@ -32,39 +32,45 @@ export default async function handler(req, res) {
             { type: 'image_url', image_url: { url: `data:${mime};base64,${b64}`, detail: 'high' } },
             {
               type: 'text',
-              text: `This is a US Florida birth certificate. Read ALL fields carefully and return ONLY this JSON (no markdown, no explanation):
+              text: `This is a US Florida birth certificate. Extract data and return ONLY valid JSON.
+
+STRICT RULES:
+- cityCounty: copy the EXACT text from "CITY, COUNTY OF BIRTH" field as printed. Do not change anything.
+- hospital: copy the EXACT text from "PLACE OF BIRTH" field as printed. Do not change anything.
+- sex: write only "MALE" or "FEMALE"
+- dob: YYYY-MM-DD format
+- timeOfBirth: HH:MM format
+- weightLbs and weightOz: numbers only
 
 {
-  "firstName": "child first name only",
-  "middleName": "child middle name only (patronymic if present)",
-  "lastName": "child last name only",
+  "firstName": "child first name",
+  "middleName": "child middle name",
+  "lastName": "child last name",
   "dob": "YYYY-MM-DD",
   "sex": "MALE or FEMALE",
   "timeOfBirth": "HH:MM",
-  "weightLbs": "number only",
-  "weightOz": "number only",
-  "hospital": "hospital name exactly as written",
-  "city": "city name only",
-  "county": "county name only",
+  "weightLbs": "number",
+  "weightOz": "number",
+  "hospital": "exact text from document",
+  "cityCounty": "exact text from document",
   "stateRegNum": "state file number",
   "dateIssued": "MONTH DD, YYYY",
   "dateRegistered": "MONTH DD, YYYY",
-  "motherFirstName": "mother first name",
-  "motherMiddleName": "mother middle name",
-  "motherLastName": "mother last name",
+  "motherFirstName": "first name",
+  "motherMiddleName": "middle name",
+  "motherLastName": "last name",
   "motherDob": "MONTH DD, YYYY",
-  "motherBirthCountry": "country only",
-  "fatherFirstName": "father first name",
-  "fatherMiddleName": "father middle name",
-  "fatherLastName": "father last name",
+  "motherBirthCountry": "country",
+  "fatherFirstName": "first name",
+  "fatherMiddleName": "middle name",
+  "fatherLastName": "last name",
   "fatherDob": "MONTH DD, YYYY",
-  "fatherBirthCountry": "country only",
+  "fatherBirthCountry": "country",
   "reqNum": "REQ number digits only"
 }
 
-For NAME field: child's name order in US certificates is FIRST MIDDLE LAST.
-Example: "MARK ALEKSEEVICH KIRZOV" → firstName=MARK, middleName=ALEKSEEVICH, lastName=KIRZOV
-For SEX: write exactly "MALE" or "FEMALE" - nothing else.`
+NAME order in US certificates: FIRST MIDDLE LAST
+Example: "MARK ALEKSEEVICH KIRZOV" → firstName=MARK, middleName=ALEKSEEVICH, lastName=KIRZOV`
             }
           ]
         }]
@@ -88,7 +94,7 @@ For SEX: write exactly "MALE" or "FEMALE" - nothing else.`
       timeOfBirth:      raw.timeOfBirth || '',
       weight:           weightToRu(raw.weightLbs, raw.weightOz),
       hospital:         hospitalToRu(raw.hospital),
-      cityCounty:       cityCountyToRu(raw.city, raw.county),
+      cityCounty:       cityCountyToRu(raw.cityCounty || (raw.city && raw.county ? raw.city+', '+raw.county : raw.city || raw.county || '')),
       stateRegNum:      raw.stateRegNum || '',
       dateIssued:       dateToRu(raw.dateIssued),
       dateRegistered:   dateToRu(raw.dateRegistered),
@@ -266,19 +272,45 @@ function hospitalToRu(str) {
     .toUpperCase();
 }
 
-function cityCountyToRu(city, county) {
-  const parts = [];
-  if (city) {
-    const key = city.toLowerCase().trim();
-    const ru = CITIES_DICT[key];
-    parts.push(ru || ((/[а-яё]/i.test(city)) ? city.toUpperCase() : 'Г. ' + city.toUpperCase()));
-  }
-  if (county) {
-    const key = county.toLowerCase().trim().replace(' county','');
-    const ru = COUNTIES_DICT[key] || COUNTIES_DICT[county.toLowerCase().trim()];
-    parts.push(ru || ('ОКРУГ ' + county.toUpperCase().replace(/\bCOUNTY\b/i,'')).trim());
-  }
-  return parts.join(', ');
+function cityCountyToRu(str) {
+  if (!str) return '';
+  // Если уже русское — вернуть заглавными
+  if (/[А-ЯЁ]{3,}/.test(str)) return str.toUpperCase();
+  
+  let result = str.toUpperCase().trim();
+  
+  // Переводим города
+  const cityReplacements = [
+    [/\bST\.?\s*PETERSBURG\b/g, 'Г. САНКТ-ПЕТЕРБУРГ'],
+    [/\bSAINT\s+PETERSBURG\b/g, 'Г. САНКТ-ПЕТЕРБУРГ'],
+    [/\bMIAMI\b/g, 'Г. МАЙАМИ'],
+    [/\bORLANDO\b/g, 'Г. ОРЛАНДО'],
+    [/\bTAMPA\b/g, 'Г. ТАМПА'],
+    [/\bJACKSONVILLE\b/g, 'Г. ДЖЭКСОНВИЛЛ'],
+    [/\bCLEARWATER\b/g, 'Г. КЛИРУОТЕР'],
+    [/\bFORT\s+LAUDERDALE\b/g, 'Г. ФОРТ-ЛОДЕРДЕЙЛ'],
+    [/\bTALLAHASSEE\b/g, 'Г. ТАЛЛАХАССИ'],
+    [/\bGAINESVILLE\b/g, 'Г. ГЕЙНСВИЛЛ'],
+    [/\bPENSACOLA\b/g, 'Г. ПЕНСАКОЛА'],
+  ];
+  for (const [re, ru] of cityReplacements) result = result.replace(re, ru);
+
+  // Переводим округа
+  const countyReplacements = [
+    [/\bPINELLAS\s+COUNTY\b/g, 'ОКРУГ ПИНЕЛЛАС'],
+    [/\bHILLSBOROUGH\s+COUNTY\b/g, 'ОКРУГ ХИЛЛСБОРО'],
+    [/\bORANGE\s+COUNTY\b/g, 'ОКРУГ ОРИНДЖ'],
+    [/\bMIAMI-DADE\s+COUNTY\b/g, 'ОКРУГ МАЙАМИ-ДЕЙ'],
+    [/\bBROWARD\s+COUNTY\b/g, 'ОКРУГ БРОУАРД'],
+    [/\bPALM\s+BEACH\s+COUNTY\b/g, 'ОКРУГ ПАЛМ-БИЧ'],
+    [/\bDUVAL\s+COUNTY\b/g, 'ОКРУГ ДЮВАЛЬ'],
+    [/\bPOLK\s+COUNTY\b/g, 'ОКРУГ ПОЛК'],
+    [/\bVOLUSIA\s+COUNTY\b/g, 'ОКРУГ ВОЛУША'],
+    [/\bCOUNTY\b/g, 'ОКРУГ'],
+  ];
+  for (const [re, ru] of countyReplacements) result = result.replace(re, ru);
+
+  return result.replace(/\s+/g,' ').trim();
 }
 
 function extractFile(body, boundary) {
