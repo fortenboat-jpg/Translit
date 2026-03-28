@@ -20,7 +20,7 @@ const FIELDS = [
   { id:'fatherDob',        top:69.7, left:33.4, size:16 },
   { id:'fatherBirthPlace', top:73.2, left:33.5, size:16 },
   { id:'reqNum',           top:84.6, left:75.1, size:16 },
-  { id:'barcode',          top:96.6, left:17.9, size:14 },
+  { id:'barcode',          top:96.6, left:20.4, size:14 },
 ];
 
 // ── ПЕРЕВОД ИМЁН (для случая когда OCR не перевёл) ──────
