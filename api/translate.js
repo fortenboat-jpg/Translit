@@ -1,3 +1,4 @@
+
 // ── ТОЧНЫЕ КООРДИНАТЫ ПОЛЕЙ НА БЛАНКЕ (из редактора пользователя) ────
 const FIELDS = [
   { id:'stateRegNum',      top:15.0, left:30.1, size:16 },
@@ -540,5 +541,4 @@ function buildZip(files){return buildZipMixed(files.map(f=>({...f,binary:false})
   end.writeUInt16LE(files.length,8);end.writeUInt16LE(files.length,10);
   end.writeUInt32LE(cd.length,12);end.writeUInt32LE(offset,16);end.writeUInt16LE(0,20);
   return Buffer.concat([...lp,cd,end]);
-}
 function crc32(buf){const t=new Uint32Array(256);for(let i=0;i<256;i++){let c=i;for(let j=0;j<8;j++)c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1);t[i]=c;}let crc=0xFFFFFFFF;for(let i=0;i<buf.length;i++)crc=(crc>>>8)^t[(crc^buf[i])&0xFF];return(crc^0xFFFFFFFF)>>>0;}
