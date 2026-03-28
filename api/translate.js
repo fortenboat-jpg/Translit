@@ -11,7 +11,7 @@ const FIELDS = [
   { id:'sex',              top:30.8, left:33.6, size:16 },
   { id:'weight',           top:31.0, left:70.5, size:16 },
   { id:'hospital',         top:34.3, left:33.6, size:16 },
-  { id:'hospitalLine2',    top:36.8, left:33.6, size:16 },
+  { id:'hospitalLine2',    top:36.2, left:33.6, size:16 },
   { id:'cityCounty',       top:38.1, left:33.7, size:16 },
   { id:'motherName',       top:49.0, left:33.5, size:16 },
   { id:'motherDob',        top:52.9, left:33.5, size:16 },
@@ -74,6 +74,48 @@ function translateNamePart(str) {
     }
     return (r.charAt(0).toUpperCase()+r.slice(1)).toUpperCase();
   }).join(' ');
+}
+
+function translateCityCounty(str) {
+  if (!str) return '';
+  const up = str.toUpperCase().trim();
+  // Уже русское
+  if (/[А-ЯЁ]{3,}/.test(up)) return up;
+
+  const CITIES = {
+    'ST PETERSBURG':'Г. САНКТ-ПЕТЕРБУРГ','ST. PETERSBURG':'Г. САНКТ-ПЕТЕРБУРГ',
+    'SAINT PETERSBURG':'Г. САНКТ-ПЕТЕРБУРГ',
+    'MIAMI':'Г. МАЙАМИ','ORLANDO':'Г. ОРЛАНДО','TAMPA':'Г. ТАМПА',
+    'JACKSONVILLE':'Г. ДЖЭКСОНВИЛЛ','CLEARWATER':'Г. КЛИРУОТЕР',
+    'FORT LAUDERDALE':'Г. ФОРТ-ЛОДЕРДЕЙЛ','TALLAHASSEE':'Г. ТАЛЛАХАССИ',
+    'GAINESVILLE':'Г. ГЕЙНСВИЛЛ','PENSACOLA':'Г. ПЕНСАКОЛА',
+    'NAPLES':'Г. НЕАПОЛЬ','SARASOTA':'Г. САРАСОТА',
+    'HIALEAH':'Г. ХАЙАЛИА','CAPE CORAL':'Г. КЕЙП-КОРАЛ',
+  };
+  const COUNTIES = {
+    'PINELLAS COUNTY':'ОКРУГ ПИНЕЛЛАС','HILLSBOROUGH COUNTY':'ОКРУГ ХИЛЛСБОРО',
+    'ORANGE COUNTY':'ОКРУГ ОРИНДЖ','MIAMI-DADE COUNTY':'ОКРУГ МАЙАМИ-ДЕЙД',
+    'BROWARD COUNTY':'ОКРУГ БРОУАРД','PALM BEACH COUNTY':'ОКРУГ ПАЛМ-БИЧ',
+    'DUVAL COUNTY':'ОКРУГ ДЮВАЛЬ','LEE COUNTY':'ОКРУГ ЛИ',
+    'POLK COUNTY':'ОКРУГ ПОЛК','VOLUSIA COUNTY':'ОКРУГ ВОЛУША',
+    'SARASOTA COUNTY':'ОКРУГ САРАСОТА','MANATEE COUNTY':'ОКРУГ МАНАТИ',
+    'COLLIER COUNTY':'ОКРУГ КОЛЬЕ','BREVARD COUNTY':'ОКРУГ БРЕВАРД',
+    'SEMINOLE COUNTY':'ОКРУГ СЕМИНОЛ','PINELLAS':'ОКРУГ ПИНЕЛЛАС',
+    'HILLSBOROUGH':'ОКРУГ ХИЛЛСБОРО','ORANGE':'ОКРУГ ОРИНДЖ',
+  };
+
+  let result = up;
+  // Заменяем города
+  for (const [en, ru] of Object.entries(CITIES)) {
+    result = result.replace(new RegExp('\\b' + en + '\\b', 'g'), ru);
+  }
+  // Заменяем округа
+  for (const [en, ru] of Object.entries(COUNTIES)) {
+    result = result.replace(new RegExp('\\b' + en + '\\b', 'g'), ru);
+  }
+  // Если осталось COUNTY — общий перевод
+  result = result.replace(/\bCOUNTY\b/g, 'ОКРУГ');
+  return result.replace(/\s+/g, ' ').trim();
 }
 
 export default async function handler(req, res) {
@@ -153,7 +195,7 @@ export default async function handler(req, res) {
       weight:           d.weight || '',
       hospital:         hospitalLine1,
       hospitalLine2:    hospitalLine2,
-      cityCounty:       d.cityCounty || '',
+      cityCounty:       translateCityCounty(d.cityCounty || ''),
       motherName:       d.motherName || '',
       motherDob:        d.motherDob || '',
       motherBirthPlace: d.motherBirthPlace || '',
