@@ -109,18 +109,14 @@ export default async function handler(req, res) {
     const barcodeNum = (d.reqNum || '').replace(/[^0-9]/g, '');
     const barcodeText = barcodeNum ? '*' + barcodeNum + '*' : '';
 
-    // childName — переводим компоненты на сервере
-    // Берём из отдельных полей если есть, иначе из готовой строки
+    // childName — приходит уже переведённым из OCR
+    // Если пустой — собираем из компонентов и переводим
     const rawLast  = d.lastName  || '';
     const rawFirst = d.firstName || '';
     const rawMid   = d.middleName || '';
-
-    // Импортируем функцию перевода имён (inline здесь)
-    const childLast  = translateNamePart(rawLast);
-    const childFirst = translateNamePart(rawFirst);
-    const childMid   = translateNamePart(rawMid);
-    const childName  = [childLast, childFirst, childMid].filter(Boolean).join(' ')
-                    || d.childName || '';
+    const childName = d.childName ||
+      [translateNamePart(rawLast), translateNamePart(rawFirst), translateNamePart(rawMid)]
+      .filter(Boolean).join(' ') || '';
 
     const values = {
       stateRegNum:      d.stateRegNum || '',
