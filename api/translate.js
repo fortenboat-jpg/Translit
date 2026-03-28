@@ -516,7 +516,7 @@ function buildZipMixed(files){
   end.writeUInt32LE(0x06054b50,0);end.writeUInt16LE(0,4);end.writeUInt16LE(0,6);
   end.writeUInt16LE(files.length,8);end.writeUInt16LE(files.length,10);
   end.writeUInt32LE(cd.length,12);end.writeUInt32LE(offset,16);end.writeUInt16LE(0,20);
-  return Buffer.concat([...lp,cd,end]);
+  return Buffer.concat([...lp,cd,end]); 
 }
 
 function buildZip(files){return buildZipMixed(files.map(f=>({...f,binary:false})));}
