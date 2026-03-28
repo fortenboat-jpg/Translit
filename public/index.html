@@ -659,7 +659,7 @@ function doGenerate(){
     }
   },700);
   const payload={
-    lastName:last,firstName:first,
+    lastName:last, firstName:first,
     middleName:document.getElementById('fMid').value.trim(),
     dob:document.getElementById('fDob').value,
     sex:document.getElementById('fSex').value,
@@ -676,8 +676,9 @@ function doGenerate(){
     fatherName:document.getElementById('fDad').value.trim(),
     fatherDob:document.getElementById('fDadDob').value.trim(),
     fatherBirthPlace:document.getElementById('fDadBirth').value.trim(),
-    reqNum:           document.getElementById('fReqNum').value.trim(),
-    childName:        [document.getElementById('fLast').value.trim(), document.getElementById('fFirst').value.trim(), document.getElementById('fMid').value.trim()].filter(Boolean).join(' '),
+    reqNum:document.getElementById('fReqNum').value.trim(),
+    // Имя ребёнка — всегда из полей фамилия+имя+отчество
+    childName:[last, first, document.getElementById('fMid').value.trim()].filter(Boolean).join(' '),
     email
   };
   fetch(API+'/api/translate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
@@ -795,7 +796,7 @@ function doPayment(){
   setTimeout(()=>{
     // Download all 3 locally too
     downloadDocx();
-    setTimeout(downloadHtml, 500); 
+    setTimeout(downloadHtml, 500);
     // Show success
     document.getElementById('succEmail').textContent=email||'ваш email';
     document.getElementById('eNote').style.display='flex';
