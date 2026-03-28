@@ -227,6 +227,10 @@ footer{background:var(--navy);color:rgba(255,255,255,.5);padding:40px 28px;text-
   .docbody{grid-template-columns:1fr}
 }
 </style>
+<style>
+#blankPreview { user-select:none; -webkit-user-select:none; }
+#blankScaleWrap img { pointer-events:none; }
+</style>
 </head>
 <body>
 
@@ -387,16 +391,19 @@ footer{background:var(--navy);color:rgba(255,255,255,.5);padding:40px 28px;text-
             <div style="position:absolute;bottom:10px;left:50%;transform:translateX(-50%);z-index:5;white-space:nowrap;background:white;border:1.5px solid var(--border);border-radius:100px;padding:5px 14px;font-size:.72rem;color:var(--muted);font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,0.1)">
               🔒 Полный документ — после оплаты
             </div>
-            <!-- Масштабируемый бланк 794px → уменьшается до ширины контейнера -->
-            <div id="blankScaleWrap" style="width:794px;transform-origin:top left;position:relative">
-              <img id="bgImg" src="https://translit-gilt.vercel.app/bg.jpg" style="width:794px;height:auto;display:block">
-              <div id="overlayFields" style="position:absolute;top:0;left:0;width:794px;height:100%;pointer-events:none"></div>
+            <!-- Масштабируемый бланк 794px — защищён от скачивания -->
+            <div id="blankScaleWrap" style="width:794px;transform-origin:top left;position:relative;user-select:none">
+              <!-- Фон через CSS — нельзя скачать правой кнопкой -->
+              <div id="bgDiv" style="width:794px;height:1123px;background-image:url('https://translit-gilt.vercel.app/bg.jpg');background-size:cover;background-position:top center;display:block"></div>
+              <!-- Прозрачный щит блокирует правую кнопку на всём бланке -->
+              <div style="position:absolute;inset:0;z-index:10;pointer-events:auto" oncontextmenu="return false" ondragstart="return false"></div>
+              <div id="overlayFields" style="position:absolute;top:0;left:0;width:794px;height:1123px;pointer-events:none;z-index:9"></div>
             </div>
           </div>
           <!-- Подвал -->
           <div style="background:var(--bg2);padding:8px 14px;display:flex;align-items:center;justify-content:space-between">
             <span style="font-size:.72rem;color:var(--muted)">Данные на бланке проверены и сохранены</span>
-            <span style="font-size:.72rem;color:var(--blue);font-weight:600;cursor:pointer" onclick="openFullDoc()">👁 Открыть полный</span>
+            <span style="font-size:.72rem;color:var(--blue);font-weight:600;cursor:pointer" onclick="openFullDoc()">👁 Открыть после оплаты</span>
           </div>
         </div>
         <div class="brow" id="pvButtons" style="display:none;margin-top:10px">
@@ -754,8 +761,6 @@ function showPreview(html) {
   const outer      = document.getElementById('previewOuter');
   const scaleWrap  = document.getElementById('blankScaleWrap');
   const overlayDiv = document.getElementById('overlayFields');
-  const bgImg      = document.getElementById('bgImg');
-
   // Бланк 794px — масштабируем до ширины контейнера
   const containerW = container.offsetWidth || 460;
   const scale = containerW / 794;
@@ -763,10 +768,8 @@ function showPreview(html) {
   scaleWrap.style.transform = `scale(${scale})`;
   scaleWrap.style.width = '794px';
 
-  // Высота outer = половина бланка после масштабирования
-  // Бланк ~1123px высотой, показываем верхние ~55%
-  const blankH = bgImg.naturalHeight || 1123;
-  const visibleH = Math.round(blankH * scale * 0.55);
+  // Показываем только верхние 45% бланка
+  const visibleH = Math.round(1123 * scale * 0.45);
   outer.style.height = visibleH + 'px';
 
   // Поля с сервера уже в res.values — рисуем поверх
