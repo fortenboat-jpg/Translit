@@ -609,6 +609,11 @@ function handleUpload(inp){
         af('fDadDob',j.fatherDob);
         af('fDadBirth',j.fatherBirthPlace);
         if(j.reqNum) af('fReqNum', j.reqNum);
+        // Сохраняем переведённые значения из OCR напрямую
+        window._ocrCityCounty  = j.cityCounty  || '';
+        window._ocrHospital    = j.hospital     || '';
+        window._ocrMotherName  = j.motherName   || '';
+        window._ocrFatherName  = j.fatherName   || '';
         toast('ok','✓ Данные считаны — проверьте поля');
       } else {
         toast('err','Ошибка OCR: '+(res.error||'неизвестно'));
@@ -669,15 +674,15 @@ function doGenerate(){
     sex:document.getElementById('fSex').value,
     timeOfBirth:document.getElementById('fTime').value.trim(),
     weight:document.getElementById('fWeight').value.trim(),
-    hospital:document.getElementById('fHosp').value.trim(),
-    cityCounty:document.getElementById('fPlace').value.trim(),
+    hospital:   window._ocrHospital    || document.getElementById('fHosp').value.trim(),
+    cityCounty: window._ocrCityCounty  || document.getElementById('fPlace').value.trim(),
     stateRegNum:document.getElementById('fRegNum').value.trim(),
     dateIssued:document.getElementById('fIssued').value.trim(),
     dateRegistered:document.getElementById('fRegDate').value.trim(),
-    motherName:document.getElementById('fMom').value.trim(),
+    motherName:  window._ocrMotherName  || document.getElementById('fMom').value.trim(),
     motherDob:document.getElementById('fMomDob').value.trim(),
     motherBirthPlace:document.getElementById('fMomBirth').value.trim(),
-    fatherName:document.getElementById('fDad').value.trim(),
+    fatherName:  window._ocrFatherName  || document.getElementById('fDad').value.trim(),
     fatherDob:document.getElementById('fDadDob').value.trim(),
     fatherBirthPlace:document.getElementById('fDadBirth').value.trim(),
     reqNum:document.getElementById('fReqNum').value.trim(),
