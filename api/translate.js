@@ -22,6 +22,29 @@ const FIELDS = [
   { id:'barcode',          top:96.6, left:27.9, size:14 },
 ];
 
+// ── КООРДИНАТЫ ПОЛЕЙ ДЛЯ ВТОРОГО БЛАНКА (bg2.jpg) ──────
+const FIELDS2 = [
+  { id:'stateRegNum',      top:21.3, left:12.2, size:14 },
+  { id:'dateIssued',       top:19.6, left:67.8, size:14 },
+  { id:'dateRegistered',   top:21.3, left:72.9, size:14 },
+  { id:'childName',        top:25.6, left:37.1, size:14 },
+  { id:'dobFormatted',     top:28.3, left:37.0, size:14 },
+  { id:'timeOfBirth',      top:28.4, left:84.2, size:14 },
+  { id:'sex',              top:30.5, left:37.1, size:14 },
+  { id:'weight',           top:31.0, left:75.9, size:14 },
+  { id:'hospitalType',     top:33.5, left:37.2, size:14 },
+  { id:'hospital',         top:35.2, left:37.3, size:14 },
+  { id:'cityCounty',       top:37.2, left:37.2, size:14 },
+  { id:'motherName',       top:43.8, left:37.8, size:14 },
+  { id:'motherDob',        top:46.6, left:37.9, size:14 },
+  { id:'motherBirthPlace', top:49.2, left:37.7, size:14 },
+  { id:'fatherName',       top:57.2, left:37.8, size:14 },
+  { id:'fatherDob',        top:59.7, left:37.9, size:14 },
+  { id:'fatherBirthPlace', top:62.4, left:37.7, size:14 },
+  { id:'reqNum',           top:65.2, left:70.8, size:14 },
+  { id:'barcode',          top:85.2, left:35.9, size:11 },
+];
+
 // ── ПЕРЕВОД ИМЁН (для случая когда OCR не перевёл) ──────
 const NAMES_DICT = {
   'mark':'МАРК','alekseevich':'АЛЕКСЕЕВИЧ','kirzov':'КИРЗОВ',
@@ -201,7 +224,7 @@ module.exports = async function handler(req, res) {
     const bgUrl  = process.env.BACKGROUND_URL  || 'https://translit-gilt.vercel.app/bg.jpg';
     const bg2Url = process.env.BACKGROUND_URL2 || 'https://translit-gilt.vercel.app/bg2.jpg';
     const styledHtml  = await buildHtml(values, bgUrl,  num, today);
-    const styledHtml2 = await buildHtml(values, bg2Url, num, today);
+    const styledHtml2 = await buildHtml(values, bg2Url, num, today, FIELDS2);
     const docxBuffer  = buildDocx(values, num, today);
 
     // Email
@@ -254,7 +277,8 @@ module.exports = async function handler(req, res) {
 }
 
 // ── HTML С БЛАНКОМ ───────────────────────────────────────
-async function buildHtml(v, bgUrl, num, today) {
+async function buildHtml(v, bgUrl, num, today, fields) {
+  const FLDS = fields || FIELDS;
   // Загружаем фон как base64 чтобы работало в любом окне
   let bgData = bgUrl;
   try {
@@ -268,7 +292,7 @@ async function buildHtml(v, bgUrl, num, today) {
     // fallback to URL
   }
 
-  const fieldsHtml = FIELDS.map(f => {
+  const fieldsHtml = FLDS.map(f => {
     const val = v[f.id];
     if (!val) return '';
     return `<div style="position:absolute;top:${f.top}%;left:${f.left}%;font-size:${f.size}px;font-weight:700;color:#000;font-family:'Times New Roman',Times,serif;white-space:nowrap;line-height:1">${val}</div>`;
