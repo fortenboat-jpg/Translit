@@ -195,9 +195,9 @@ module.exports = async function handler(req, res) {
     const hospitalLine2 = hospitalRaw
       .replace(/\bMEDICAL\s+CENT(?:ER|RE)\b/gi, '')
       .replace(/\bHOSPITAL\b/gi, '')
-      .replace(/\bST\.?\s*PETERSBURG\b/gi, 'Г. САНКТ-ПЕТЕРБУРГ')
-      .replace(/\bSAINT\s+PETERSBURG\b/gi, 'Г. САНКТ-ПЕТЕРБУРГ')
-      .replace(/\s+/g, ' ').trim();
+      .replace(/\bST\.?\s*PETERSBURG\b/gi, ', Г. САНКТ-ПЕТЕРБУРГ')
+      .replace(/\bSAINT\s+PETERSBURG\b/gi, ', Г. САНКТ-ПЕТЕРБУРГ')
+      .replace(/\s+/g, ' ').replace(/^,\s*/, '').replace(/,\s*,/g, ',').trim();
 
     const values = {
       stateRegNum:      d.stateRegNum || '',
