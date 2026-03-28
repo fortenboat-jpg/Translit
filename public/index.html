@@ -379,25 +379,24 @@ footer{background:var(--navy);color:rgba(255,255,255,.5);padding:40px 28px;text-
             <span style="color:white;font-size:.82rem;font-weight:600">📄 Предпросмотр бланка</span>
             <span style="color:#0ea86e;font-size:.76rem;font-weight:700;background:rgba(14,168,110,0.15);padding:3px 10px;border-radius:100px">✓ Данные сохранены</span>
           </div>
-          <!-- Бланк — верхняя половина -->
-          <div style="position:relative;width:100%;overflow:hidden;background:#fff">
-            <!-- Маска fade внизу -->
-            <div style="position:absolute;bottom:0;left:0;right:0;height:80px;background:linear-gradient(to bottom,transparent,rgba(255,255,255,0.95));z-index:2;pointer-events:none"></div>
-            <!-- Замок по центру внизу -->
-            <div style="position:absolute;bottom:12px;left:50%;transform:translateX(-50%);z-index:3;display:flex;align-items:center;gap:6px;background:white;border:1.5px solid var(--border);border-radius:100px;padding:5px 14px;font-size:.72rem;color:var(--muted);font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,0.08)">
+          <!-- Обёртка — задаёт видимую высоту (половина бланка) -->
+          <div id="previewOuter" style="position:relative;width:100%;overflow:hidden;background:#f0f0f0">
+            <!-- Fade снизу -->
+            <div style="position:absolute;bottom:0;left:0;right:0;height:60px;background:linear-gradient(to bottom,transparent,rgba(240,240,240,0.98));z-index:4;pointer-events:none"></div>
+            <!-- Замок -->
+            <div style="position:absolute;bottom:10px;left:50%;transform:translateX(-50%);z-index:5;white-space:nowrap;background:white;border:1.5px solid var(--border);border-radius:100px;padding:5px 14px;font-size:.72rem;color:var(--muted);font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,0.1)">
               🔒 Полный документ — после оплаты
             </div>
-            <!-- Бланк -->
-            <div style="position:relative;width:100%;height:380px;overflow:hidden">
-              <img id="bgImg" src="https://translit-gilt.vercel.app/bg.jpg"
-                style="position:absolute;top:0;left:0;width:100%;height:auto;display:block;filter:blur(1px) brightness(0.85)">
-              <div id="overlayFields" style="position:absolute;top:0;left:0;width:100%;height:100%;"></div>
+            <!-- Масштабируемый бланк 794px → уменьшается до ширины контейнера -->
+            <div id="blankScaleWrap" style="width:794px;transform-origin:top left;position:relative">
+              <img id="bgImg" src="https://translit-gilt.vercel.app/bg.jpg" style="width:794px;height:auto;display:block">
+              <div id="overlayFields" style="position:absolute;top:0;left:0;width:794px;height:100%;pointer-events:none"></div>
             </div>
           </div>
           <!-- Подвал -->
           <div style="background:var(--bg2);padding:8px 14px;display:flex;align-items:center;justify-content:space-between">
             <span style="font-size:.72rem;color:var(--muted)">Данные на бланке проверены и сохранены</span>
-            <span style="font-size:.72rem;color:var(--blue);font-weight:600;cursor:pointer" onclick="downloadHtml()">👁 Скачать полный</span>
+            <span style="font-size:.72rem;color:var(--blue);font-weight:600;cursor:pointer" onclick="openFullDoc()">👁 Открыть полный</span>
           </div>
         </div>
         <div class="brow" id="pvButtons" style="display:none;margin-top:10px">
@@ -719,7 +718,8 @@ function doGenerate(){
         window._pdfHtml=res.pdfHtml;
         window._orderNum=res.orderNum;
         window._payload=payload;
-        // Сохраняем HTML и показываем превью
+        window._lastValues = res.values || {};
+        window._lastFields = res.fields || [];
         window._pdfHtml = res.pdfHtml;
         showPreview(res.pdfHtml);
         document.getElementById('pvButtons').style.display='flex';
@@ -750,35 +750,47 @@ function doGenerate(){
 // ─── ПОКАЗ БЛАНКА С ДАННЫМИ ──────────────────────────────
 // ─── ПРЕВЬЮ ДОКУМЕНТА ───────────────────────────────────
 function showPreview(html) {
-  const container = document.getElementById('blankPreview');
+  const container  = document.getElementById('blankPreview');
+  const outer      = document.getElementById('previewOuter');
+  const scaleWrap  = document.getElementById('blankScaleWrap');
   const overlayDiv = document.getElementById('overlayFields');
-  const bgImg = document.getElementById('bgImg');
+  const bgImg      = document.getElementById('bgImg');
 
-  // Прячем старый фон
-  if (bgImg) bgImg.style.display = 'none';
+  // Бланк 794px — масштабируем до ширины контейнера
+  const containerW = container.offsetWidth || 460;
+  const scale = containerW / 794;
 
-  // Показываем кнопку открыть полный документ
-  overlayDiv.innerHTML = `
-    <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(255,255,255,0.15);backdrop-filter:blur(2px)">
-      <div style="background:white;border-radius:14px;padding:20px 28px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.15);max-width:280px">
-        <div style="font-size:2rem;margin-bottom:8px">📄</div>
-        <div style="font-weight:700;color:#0c1b3a;font-size:.95rem;margin-bottom:6px">Документ готов!</div>
-        <div style="font-size:.8rem;color:#5a6b90;margin-bottom:14px">Нажмите чтобы увидеть полный бланк с вашими данными</div>
-        <button onclick="openFullDoc()" style="background:linear-gradient(135deg,#0c1b3a,#2558d4);color:white;border:none;border-radius:9px;padding:10px 22px;font-size:.88rem;font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif;width:100%">
-          👁 Открыть полный бланк
-        </button>
-      </div>
-    </div>`;
+  scaleWrap.style.transform = `scale(${scale})`;
+  scaleWrap.style.width = '794px';
 
+  // Высота outer = половина бланка после масштабирования
+  // Бланк ~1123px высотой, показываем верхние ~55%
+  const blankH = bgImg.naturalHeight || 1123;
+  const visibleH = Math.round(blankH * scale * 0.55);
+  outer.style.height = visibleH + 'px';
+
+  // Поля с сервера уже в res.values — рисуем поверх
+  if (window._lastValues && window._lastFields) {
+    const vals   = window._lastValues;
+    const fields = window._lastFields;
+    overlayDiv.innerHTML = fields.map(f => {
+      const val = vals[f.id];
+      if (!val) return '';
+      return `<div style="position:absolute;top:${f.top}%;left:${f.left}%;font-size:${f.size}px;font-weight:700;color:#000;font-family:'Times New Roman',serif;white-space:nowrap;line-height:1">${val}</div>`;
+    }).join('');
+  }
+
+  // Показываем с анимацией
   container.style.display = 'block';
   container.style.opacity = '0';
-  container.style.transition = 'opacity .4s, transform .4s';
   container.style.transform = 'translateY(8px)';
+  container.style.transition = 'opacity .4s, transform .4s';
   requestAnimationFrame(() => {
     container.style.opacity = '1';
     container.style.transform = 'translateY(0)';
   });
 }
+
 
 function openFullDoc() {
   if (!window._pdfHtml) { toast('err','Нет документа'); return; }
