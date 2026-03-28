@@ -197,6 +197,23 @@ module.exports = async function handler(req, res) {
       .replace(/\bHOSPITAL\b/gi, '')
       .replace(/\bST\.?\s*PETERSBURG\b/gi, ', Г. САНКТ-ПЕТЕРБУРГ')
       .replace(/\bSAINT\s+PETERSBURG\b/gi, ', Г. САНКТ-ПЕТЕРБУРГ')
+      .replace(/\bORLANDO\b/gi, ', Г. ОРЛАНДО')
+      .replace(/\bTAMPA\b/gi, ', Г. ТАМПА')
+      .replace(/\bMIAMI\b/gi, ', Г. МАЙАМИ')
+      .replace(/\bJACKSONVILLE\b/gi, ', Г. ДЖЭКСОНВИЛЛ')
+      .replace(/\bCLEARWATER\b/gi, ', Г. КЛИРУОТЕР')
+      .replace(/\bFORT\s+LAUDERDALE\b/gi, ', Г. ФОРТ-ЛОДЕРДЕЙЛ')
+      .replace(/\bTALLAHASSEE\b/gi, ', Г. ТАЛЛАХАССИ')
+      .replace(/\bGAINESVILLE\b/gi, ', Г. ГЕЙНСВИЛЛ')
+      .replace(/\bPENSACOLA\b/gi, ', Г. ПЕНСАКОЛА')
+      .replace(/\bSARASATA\b/gi, ', Г. САРАСОТА')
+      .replace(/\bSARASATA\b/gi, ', Г. САРАСОТА')
+      .replace(/\bNAPLES\b/gi, ', Г. НЕАПОЛЬ')
+      .replace(/\bCAPE\s+CORAL\b/gi, ', Г. КЕЙП-КОРАЛ')
+      .replace(/\bFORT\s+MYERS\b/gi, ', Г. ФОРТ-МАЙЕРС')
+      .replace(/\bDAYTONA\s+BEACH\b/gi, ', Г. ДАЙТОНА-БИЧ')
+      .replace(/\bBOCA\s+RATON\b/gi, ', Г. БОКА-РАТОН')
+      .replace(/\bHIALEAH\b/gi, ', Г. ХАЙАЛИА')
       .replace(/\s+/g, ' ').replace(/^,\s*/, '').replace(/,\s*,/g, ',').trim();
 
     const values = {
