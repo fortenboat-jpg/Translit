@@ -16,9 +16,8 @@ module.exports = async function handler(req, res) {
     const { b64, mime } = extractFile(body, boundary);
     if (!b64) return res.status(400).json({ ok: false, error: 'No file' });
 
-    // Проверяем что это изображение — PDF уже конвертирован на клиенте
     if (mime === 'application/pdf') {
-      return res.status(400).json({ ok: false, error: 'PDF не поддерживается напрямую — конвертация должна происходить на клиенте' });
+      return res.status(400).json({ ok: false, error: 'PDF конвертируется на клиенте' });
     }
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -171,7 +170,7 @@ const NAMES_DICT = {
   'oleg':'ОЛЕГ','gennady':'ГЕННАДИЙ','gennadievich':'ГЕННАДЬЕВИЧ',
   'rosa':'РОЗА','rose':'РОЗА','joie':'ДЖОИ','joy':'ДЖОЙ',
   'taylor':'ТЕЙЛОР','jefferson':'ДЖЕФФЕРСОН','alonzo':'АЛОНЗО',
-  'david':'ДЭВИД','harms':'ХАРМС','central':'СЕНТРАЛ',
+  'david':'ДЭВИД','harms':'ХАРМС',
   'brad':'БРЭД','brandon':'БРЭНДОН','brenda':'БРЕНДА','brady':'БРЭДИ',
   'black':'БЛЭК','white':'УАЙТ','green':'ГРИН','brown':'БРАУН',
   'sally':'САЛЛИ','sam':'СЭМ','sean':'ШОН','seth':'СЕТ',
@@ -204,7 +203,7 @@ const NAMES_DICT = {
   'tucker':'ТАКЕР','porter':'ПОРТЕР','hunter':'ХАНТЕР','boyd':'БОЙД',
   'kennedy':'КЕННЕДИ','warren':'УОРРЕН','dixon':'ДИКСОН','ramos':'РАМОС',
   'burns':'БЕРНС','gordon':'ГОРДОН','shaw':'ШОУ','holmes':'ХОЛМЗ',
-  'rice':'РАЙС','hunt':'ХАНТ','barkinson':'БАРКИНСОН',
+  'rice':'РАЙС','hunt':'ХАНТ',
   'michael':'МАЙКЛ','james':'ДЖЕЙМС','john':'ДЖОН','robert':'РОБЕРТ',
   'william':'УИЛЬЯМ','richard':'РИЧАРД','joseph':'ДЖОЗЕФ','thomas':'ТОМАС',
   'charles':'ЧАРЛЬЗ','christopher':'КРИСТОФЕР','daniel':'ДЭНИЕЛ',
@@ -235,6 +234,12 @@ const NAMES_DICT = {
   'jordan':'ДЖОРДАН','wayne':'УЭЙН','alan':'АЛАН','juan':'ХУАН',
   'trinity':'ТРИНИТИ','lynn':'ЛИНН','vosburgh':'ВОСБУРГ',
   'derek':'ДЕРЕК','marie':'МАРИ',
+  // Слова в названиях больниц
+  'health':'ХЕЛС','regional':'РИДЖИНАЛ','bayfront':'БЭЙФРОНТ',
+  'general':'ДЖЕНЕРАЛ','memorial':'МЕМОРИАЛ','community':'КОМЬЮНИТИ',
+  'center':'СЕНТЕР','medical':'МЕДИКАЛ','university':'ЮНИВЕРСИТИ',
+  'south':'САУТ','north':'НОРТ','east':'ИСТ','west':'УЭСТ',
+  'st':'СТ','saint':'СЕЙНТ',
 };
 
 const COUNTRIES_DICT = {
@@ -322,16 +327,24 @@ function countryToRu(str) {
   return COUNTRIES_DICT[key] || ((/[а-яё]/i.test(str)) ? str.toUpperCase() : str.toUpperCase());
 }
 
+// ── hospitalToRu: убираем тип учреждения из начала,
+//    остальное транслитерируем пословно — города НЕ заменяем
 function hospitalToRu(str) {
   if (!str) return '';
-  return str.toUpperCase().trim()
-    .replace(/^HOSPITAL\s*/i, '')
-    .replace(/^MEDICAL\s+CENT(?:ER|RE)\s*/i, '')
-    .replace(/\bMEDICAL\s+CENT(?:ER|RE)\b/gi, '')
-    .replace(/\bHOSPITAL\b/gi, '')
-    .replace(/\bST\.?\s*PETERSBURG\b/gi, 'Г. САНКТ-ПЕТЕРБУРГ')
-    .replace(/\bSAINT\s+PETERSBURG\b/gi, 'Г. САНКТ-ПЕТЕРБУРГ')
-    .replace(/\s+/g,' ').trim();
+  let up = str.toUpperCase().trim();
+  // Убираем тип учреждения только если он первый
+  up = up
+    .replace(/^HOSPITAL\s+/i, '')
+    .replace(/^MEDICAL\s+CENT(?:ER|RE)\s+/i, '')
+    .replace(/\s+/g, ' ').trim();
+  // Транслитерируем каждое слово через словарь или автотранслит
+  // НЕ заменяем города — название больницы передаём как есть
+  return up.split(' ').map(word => {
+    const key = word.toLowerCase().replace(/[^a-z]/g, '');
+    if (!key) return '';
+    if (NAMES_DICT[key]) return NAMES_DICT[key];
+    return translitWord(word).toUpperCase();
+  }).join(' ').trim();
 }
 
 function hospitalTypeToRu(str) {
@@ -357,6 +370,14 @@ function cityCountyToRu(str) {
     [/\bTALLAHASSEE\b/g, 'Г. ТАЛЛАХАССИ'],
     [/\bGAINESVILLE\b/g, 'Г. ГЕЙНСВИЛЛ'],
     [/\bPENSACOLA\b/g, 'Г. ПЕНСАКОЛА'],
+    [/\bNAPLES\b/g, 'Г. НЕАПОЛЬ'],
+    [/\bSARASAOTA\b/g, 'Г. САРАСОТА'],
+    [/\bSARASATA\b/g, 'Г. САРАСОТА'],
+    [/\bFORT\s+MYERS\b/g, 'Г. ФОРТ-МАЙЕРС'],
+    [/\bCAPE\s+CORAL\b/g, 'Г. КЕЙП-КОРАЛ'],
+    [/\bDAYTONA\s+BEACH\b/g, 'Г. ДАЙТОНА-БИЧ'],
+    [/\bBOCA\s+RATON\b/g, 'Г. БОКА-РАТОН'],
+    [/\bHIALEAH\b/g, 'Г. ХАЙАЛИА'],
   ];
   for (const [re, ru] of cityReplacements) result = result.replace(re, ru);
   const countyReplacements = [
@@ -369,6 +390,10 @@ function cityCountyToRu(str) {
     [/\bDUVAL\s+COUNTY\b/g, 'ОКРУГ ДЮВАЛЬ'],
     [/\bPOLK\s+COUNTY\b/g, 'ОКРУГ ПОЛК'],
     [/\bVOLUSIA\s+COUNTY\b/g, 'ОКРУГ ВОЛУША'],
+    [/\bSEMINOLE\s+COUNTY\b/g, 'ОКРУГ СЕМИНОЛ'],
+    [/\bBREVARD\s+COUNTY\b/g, 'ОКРУГ БРЕВАРД'],
+    [/\bLEE\s+COUNTY\b/g, 'ОКРУГ ЛИ'],
+    [/\bCOLLIER\s+COUNTY\b/g, 'ОКРУГ КОЛЬЕ'],
     [/\bCOUNTY\b/g, 'ОКРУГ'],
   ];
   for (const [re, ru] of countyReplacements) result = result.replace(re, ru);
