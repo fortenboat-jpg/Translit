@@ -455,11 +455,18 @@ function cityCountyToRu(str) {
   let result = str.toUpperCase().trim();
 
   // 1. СНАЧАЛА округа — до замены городов!
-  // Иначе MIAMI в MIAMI-DADE заменится на Г. МАЙАМИ и матч сломается
-  result = result.replace(/\b([\w][\w\s-]*?)\s+COUNTY\b/g, (match, countyName) => {
+  // Сначала дефисные округа (MIAMI-DADE и т.д.) — \b не работает с дефисом
+  result = result.replace(/([A-Z][\w]*(?:-[A-Z][\w]*)+)\s+COUNTY/g, (match, countyName) => {
     const key = countyName.trim();
     if (COUNTY_DICT[key]) return 'ОКРУГ ' + COUNTY_DICT[key];
     const translitted = key.split(/[\s-]/).map(w => w ? autoTranslitForCity(w) : '').join('-').replace(/--+/g,'-');
+    return 'ОКРУГ ' + translitted;
+  });
+  // Потом обычные округа без дефиса
+  result = result.replace(/\b([A-Z][A-Z\s]*?)\s+COUNTY\b/g, (match, countyName) => {
+    const key = countyName.trim();
+    if (COUNTY_DICT[key]) return 'ОКРУГ ' + COUNTY_DICT[key];
+    const translitted = key.split(/\s+/).map(w => w ? autoTranslitForCity(w) : '').join(' ');
     return 'ОКРУГ ' + translitted;
   });
   result = result.replace(/\bCOUNTY\b/g, 'ОКРУГ');
