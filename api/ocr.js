@@ -1,3 +1,19 @@
+const pdfjs = require('pdfjs-dist/legacy/build/pdf.js');
+const { createCanvas } = require('canvas');
+
+async function pdfToImageB64(pdfBuffer) {
+  const loadingTask = pdfjs.getDocument({ data: new Uint8Array(pdfBuffer) });
+  const pdf = await loadingTask.promise;
+  const page = await pdf.getPage(1);
+  const scale = 2.0;
+  const viewport = page.getViewport({ scale });
+  const canvas = createCanvas(viewport.width, viewport.height);
+  const ctx = canvas.getContext('2d');
+  await page.render({ canvasContext: ctx, viewport }).promise;
+  const dataUrl = canvas.toDataURL('image/png');
+  return dataUrl.split(',')[1];
+}
+
 module.exports = async function handler(req, res) {
   req.config = { api: { bodyParser: false } };
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -13,8 +29,15 @@ module.exports = async function handler(req, res) {
     const boundary = (req.headers['content-type'] || '').split('boundary=')[1];
     if (!boundary) return res.status(400).json({ ok: false, error: 'No boundary' });
 
-    const { b64, mime } = extractFile(body, boundary);
+    let { b64, mime } = extractFile(body, boundary);
     if (!b64) return res.status(400).json({ ok: false, error: 'No file' });
+
+    // Если PDF — конвертируем в PNG перед отправкой в OpenAI
+    if (mime === 'application/pdf') {
+      const pdfBuffer = Buffer.from(b64, 'base64');
+      b64 = await pdfToImageB64(pdfBuffer);
+      mime = 'image/png';
+    }
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -83,7 +106,6 @@ Example: "MARK ALEKSEEVICH KIRZOV" → firstName=MARK, middleName=ALEKSEEVICH, l
     const raw = JSON.parse(txt);
     console.log('RAW OCR:', JSON.stringify(raw));
 
-    // All translation happens HERE on server - deterministic, no GPT
     const result = {
       firstName:        nameToRu(raw.firstName),
       middleName:       nameToRu(raw.middleName),
@@ -111,10 +133,9 @@ Example: "MARK ALEKSEEVICH KIRZOV" → firstName=MARK, middleName=ALEKSEEVICH, l
       reqNum:           (raw.reqNum || '').replace(/[^0-9]/g, ''),
     };
 
-    // Combine full names
-    result.childName     = [result.lastName, result.firstName, result.middleName].filter(Boolean).join(' ');
-    result.motherName    = [result.motherLastName, result.motherFirstName, result.motherMiddleName].filter(Boolean).join(' ');
-    result.fatherName    = [result.fatherLastName, result.fatherFirstName, result.fatherMiddleName].filter(Boolean).join(' ');
+    result.childName  = [result.lastName, result.firstName, result.middleName].filter(Boolean).join(' ');
+    result.motherName = [result.motherLastName, result.motherFirstName, result.motherMiddleName].filter(Boolean).join(' ');
+    result.fatherName = [result.fatherLastName, result.fatherFirstName, result.fatherMiddleName].filter(Boolean).join(' ');
 
     console.log('RESULT:', JSON.stringify(result));
     return res.status(200).json({ ok: true, data: result });
@@ -166,7 +187,6 @@ const NAMES_DICT = {
   'boris':'БОРИС','borisovich':'БОРИСОВИЧ','borisovna':'БОРИСОВНА',
   'igor':'ИГОРЬ','igorevich':'ИГОРЕВИЧ','igorevna':'ИГОРЕВНА',
   'oleg':'ОЛЕГ','gennady':'ГЕННАДИЙ','gennadievich':'ГЕННАДЬЕВИЧ',
-  // Английские имена
   'rosa':'РОЗА','rose':'РОЗА','joie':'ДЖОИ','joy':'ДЖОЙ',
   'taylor':'ТЕЙЛОР','jefferson':'ДЖЕФФЕРСОН','alonzo':'АЛОНЗО',
   'david':'ДЭВИД','harms':'ХАРМС','central':'СЕНТРАЛ',
@@ -207,30 +227,32 @@ const NAMES_DICT = {
   'william':'УИЛЬЯМ','richard':'РИЧАРД','joseph':'ДЖОЗЕФ','thomas':'ТОМАС',
   'charles':'ЧАРЛЬЗ','christopher':'КРИСТОФЕР','daniel':'ДЭНИЕЛ',
   'matthew':'МЭТТЬЮ','anthony':'ЭНТОНИ','donald':'ДОНАЛЬД',
-  'mark':'МАРК','paul':'ПОЛ','steven':'СТИВЕН','kenneth':'КЕННЕТ',
+  'paul':'ПОЛ','steven':'СТИВЕН','kenneth':'КЕННЕТ',
   'joshua':'ДЖОШУА','kevin':'КЕВИН','brian':'БРАЙАН','george':'ДЖОРДЖ',
   'mary':'МЭРИ','patricia':'ПАТРИЦИЯ','linda':'ЛИНДА','barbara':'БАРБАРА',
-  'elizabeth':'ЭЛИЗАБЕТ','jennifer':'ДЖЕННИФЕР','maria':'МАРИЯ',
+  'elizabeth':'ЭЛИЗАБЕТ','jennifer':'ДЖЕННИФЕР',
   'susan':'СЬЮЗАН','margaret':'МАРГАРЕТ','dorothy':'ДОРОТИ',
   'lisa':'ЛИЗА','nancy':'НЭНСИ','karen':'КАРЕН','betty':'БЕТТИ',
   'helen':'ХЕЛЕН','sandra':'САНДРА','donna':'ДОННА','carol':'КЭРОЛ',
   'ruth':'РУТ','sharon':'ШАРОН','michelle':'МИШЕЛЬ','laura':'ЛОРА',
   'sarah':'САРА','kimberly':'КИМБЕРЛИ','jessica':'ДЖЕССИКА',
   'shirley':'ШИРЛИ','angela':'АНДЖЕЛА','melissa':'МЕЛИССА',
-  'brenda':'БРЕНДА','amy':'ЭЙМ','anna':'АННА','rebecca':'РЕБЕККА',
+  'amy':'ЭЙМ','rebecca':'РЕБЕККА',
   'virginia':'ВИРДЖИНИЯ','kathleen':'КЭТЛИН','pamela':'ПАМЕЛА',
   'martha':'МАРТА','debra':'ДЕБРА','amanda':'АМАНДА','stephanie':'СТЕФАНИ',
   'caroline':'КАРОЛИН','henry':'ГЕНРИ','arthur':'АРТУР','ryan':'РАЙАН',
   'jacob':'ДЖЕЙКОБ','gary':'ГЭРИ','nicholas':'НИКОЛАС','eric':'ЭРИК',
   'jonathan':'ДЖОНАТАН','stephen':'СТИВЕН','larry':'ЛАРРИ','justin':'ДЖАСТИН',
-  'scott':'СКОТТ','brandon':'БРЭНДОН','benjamin':'БЕНДЖАМИН','samuel':'СЭМЮЭЛ',
-  'raymond':'РЕЙМОНД','gregory':'ГРЕГОРИ','frank':'ФРЭНК','alexander':'АЛЕКСАНДР',
+  'scott':'СКОТТ','benjamin':'БЕНДЖАМИН','samuel':'СЭМЮЭЛ',
+  'raymond':'РЕЙМОНД','gregory':'ГРЕГОРИ','frank':'ФРЭНК',
   'patrick':'ПАТРИК','jack':'ДЖЕК','dennis':'ДЕННИС','jerry':'ДЖЕРРИ',
   'tyler':'ТАЙЛЕР','aaron':'ААРОН','jose':'ХОСЕ','adam':'АДАМ',
-  'nathan':'НАТАН','henry':'ГЕНРИ','douglas':'ДУГЛАС','zachary':'ЗАХАРИ',
-  'peter':'ПИТЕР','kyle':'КАЙЛ','ethan':'ИТАН','walter':'УОЛТЕР',
+  'nathan':'НАТАН','douglas':'ДУГЛАС','zachary':'ЗАХАРИ',
+  'kyle':'КАЙЛ','ethan':'ИТАН','walter':'УОЛТЕР',
   'noah':'НОА','jeremy':'ДЖЕРЕМИ','christian':'КРИСТИАН','harold':'ХАРОЛД',
   'jordan':'ДЖОРДАН','wayne':'УЭЙН','alan':'АЛАН','juan':'ХУАН',
+  'trinity':'ТРИНИТИ','lynn':'ЛИНН','vosburgh':'ВОСБУРГ',
+  'derek':'ДЕРЕК','marie':'МАРИ',
 };
 
 const COUNTRIES_DICT = {
@@ -251,24 +273,6 @@ const COUNTRIES_DICT = {
   'tennessee':'ТЕННЕССИ, США','indiana':'ИНДИАНА, США',
   'missouri':'МИССУРИ, США','colorado':'КОЛОРАДО, США',
   'alabama':'АЛАБАМА, США','louisiana':'ЛУИЗИАНА, США',
-};
-
-const CITIES_DICT = {
-  'st petersburg':'Г. САНКТ-ПЕТЕРБУРГ','st. petersburg':'Г. САНКТ-ПЕТЕРБУРГ',
-  'saint petersburg':'Г. САНКТ-ПЕТЕРБУРГ',
-  'miami':'Г. МАЙАМИ','orlando':'Г. ОРЛАНДО','tampa':'Г. ТАМПА',
-  'jacksonville':'Г. ДЖЭКСОНВИЛЛ','clearwater':'Г. КЛИРУОТЕР',
-  'fort lauderdale':'Г. ФОРТ-ЛОДЕРДЕЙЛ','tallahassee':'Г. ТАЛЛАХАССИ',
-  'gainesville':'Г. ГЕЙНСВИЛЛ','pensacola':'Г. ПЕНСАКОЛА',
-  'naples':'Г. НЕАПОЛЬ','sarasota':'Г. САРАСОТА',
-};
-
-const COUNTIES_DICT = {
-  'pinellas':'ОКРУГ ПИНЕЛЛАС','hillsborough':'ОКРУГ ХИЛЛСБОРО',
-  'orange':'ОКРУГ ОРИНДЖ','miami-dade':'ОКРУГ МАЙАМИ-ДЕЙД','broward':'ОКРУГ БРОУАРД',
-  'palm beach':'ОКРУГ ПАЛМ-БИЧ','duval':'ОКРУГ ДЮВАЛЬ','lee':'ОКРУГ ЛИ',
-  'polk':'ОКРУГ ПОЛК','volusia':'ОКРУГ ВОЛУША','collier':'ОКРУГ КОЛЬЕ',
-  'sarasota':'ОКРУГ САРАСОТА','manatee':'ОКРУГ МАНАТИ',
 };
 
 function nameToRu(str) {
@@ -296,7 +300,6 @@ function translitWord(word) {
     ['o','о'],['p','п'],['q','к'],['r','р'],['s','с'],['t','т'],['u','у'],
     ['v','в'],['w','в'],['x','кс'],['y','й'],['z','з'],
   ];
-  // Спецслучаи для Y после согласных = ЕЙ
   const preY = word.toLowerCase().replace(/([bcdfghjklmnpqrstvwxz])y/g, '$1ей');
   let r = '', i = 0, w = preY;
   while (i < w.length) {
@@ -312,19 +315,13 @@ function translitWord(word) {
 function sexToRu(str) {
   if (!str) return 'МУЖСКОЙ';
   const s = str.toUpperCase().replace(/[^A-ZА-ЯЁ]/g, '');
-  console.log('SEX INPUT:', JSON.stringify(str), 'CLEANED:', s);
-  if (s === 'FEMALE' || s === 'F') return 'ЖЕНСКИЙ';
-  if (s.startsWith('FEMALE')) return 'ЖЕНСКИЙ';
-  if (s === 'MALE' || s === 'M') return 'МУЖСКОЙ';
-  if (s.startsWith('MALE')) return 'МУЖСКОЙ';
+  if (s === 'FEMALE' || s === 'F' || s.startsWith('FEMALE')) return 'ЖЕНСКИЙ';
   return 'МУЖСКОЙ';
 }
 
 function weightToRu(lbs, oz) {
   if (!lbs && !oz) return '';
-  const l = (lbs || '0').toString().trim();
-  const o = (oz || '0').toString().trim();
-  return `${l} ФУНТОВ ${o} УНЦИЙ`;
+  return `${(lbs||'0').toString().trim()} ФУНТОВ ${(oz||'0').toString().trim()} УНЦИЙ`;
 }
 
 function dateToRu(str) {
@@ -345,9 +342,7 @@ function countryToRu(str) {
 
 function hospitalToRu(str) {
   if (!str) return '';
-  const up = str.toUpperCase().trim();
-  // Убираем тип учреждения из названия — он пойдёт в отдельную строку
-  return up
+  return str.toUpperCase().trim()
     .replace(/^HOSPITAL\s*/i, '')
     .replace(/^MEDICAL\s+CENT(?:ER|RE)\s*/i, '')
     .replace(/\bMEDICAL\s+CENT(?:ER|RE)\b/gi, '')
@@ -360,19 +355,14 @@ function hospitalToRu(str) {
 function hospitalTypeToRu(str) {
   if (!str) return 'БОЛЬНИЦА';
   const up = str.toUpperCase();
-  if (up.includes('MEDICAL CENTER') || up.includes('MEDICAL CENTRE') ||
-      up.includes('МЕДИЦИНСКИЙ ЦЕНТР')) return 'МЕДИЦИНСКИЙ ЦЕНТР';
+  if (up.includes('MEDICAL CENTER') || up.includes('MEDICAL CENTRE')) return 'МЕДИЦИНСКИЙ ЦЕНТР';
   return 'БОЛЬНИЦА';
 }
 
 function cityCountyToRu(str) {
   if (!str) return '';
-  // Если уже русское — вернуть заглавными
   if (/[А-ЯЁ]{3,}/.test(str)) return str.toUpperCase();
-  
   let result = str.toUpperCase().trim();
-  
-  // Переводим города
   const cityReplacements = [
     [/\bST\.?\s*PETERSBURG\b/g, 'Г. САНКТ-ПЕТЕРБУРГ'],
     [/\bSAINT\s+PETERSBURG\b/g, 'Г. САНКТ-ПЕТЕРБУРГ'],
@@ -387,8 +377,6 @@ function cityCountyToRu(str) {
     [/\bPENSACOLA\b/g, 'Г. ПЕНСАКОЛА'],
   ];
   for (const [re, ru] of cityReplacements) result = result.replace(re, ru);
-
-  // Переводим округа
   const countyReplacements = [
     [/\bPINELLAS\s+COUNTY\b/g, 'ОКРУГ ПИНЕЛЛАС'],
     [/\bHILLSBOROUGH\s+COUNTY\b/g, 'ОКРУГ ХИЛЛСБОРО'],
@@ -402,7 +390,6 @@ function cityCountyToRu(str) {
     [/\bCOUNTY\b/g, 'ОКРУГ'],
   ];
   for (const [re, ru] of countyReplacements) result = result.replace(re, ru);
-
   return result.replace(/\s+/g,' ').trim();
 }
 
