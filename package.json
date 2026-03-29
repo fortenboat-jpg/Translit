@@ -2,5 +2,8 @@
   "name": "birthcert-translation",
   "version": "1.0.0",
   "private": true,
-  "dependencies": {}
+  "dependencies": {
+    "pdfjs-dist": "3.11.174",
+    "canvas": "2.11.2"
+  }
 }
