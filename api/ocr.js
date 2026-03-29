@@ -44,6 +44,7 @@ STRICT RULES:
 - dob: YYYY-MM-DD format
 - timeOfBirth: HH:MM format
 - weightLbs and weightOz: numbers only
+- motherBirthCountry and fatherBirthCountry: translate to RUSSIAN in uppercase. Examples: "RUSSIA" → "РОССИЯ", "COLOMBIA" → "КОЛУМБИЯ", "FLORIDA" → "ФЛОРИДА, США", "BELARUS" → "БЕЛАРУСЬ", "GEORGIA" → "ГРУЗИЯ". If birthplace is a US state — write "STATE, США" in Russian.
 
 {
   "firstName": "child first name",
@@ -63,12 +64,12 @@ STRICT RULES:
   "motherMiddleName": "middle name",
   "motherLastName": "last name",
   "motherDob": "MONTH DD, YYYY",
-  "motherBirthCountry": "country",
+  "motherBirthCountry": "country in RUSSIAN uppercase",
   "fatherFirstName": "first name",
   "fatherMiddleName": "middle name",
   "fatherLastName": "last name",
   "fatherDob": "MONTH DD, YYYY",
-  "fatherBirthCountry": "country",
+  "fatherBirthCountry": "country in RUSSIAN uppercase",
   "reqNum": "REQ number digits only"
 }
 
@@ -260,6 +261,35 @@ const COUNTRIES_DICT = {
   'tennessee':'ТЕННЕССИ, США','indiana':'ИНДИАНА, США',
   'missouri':'МИССУРИ, США','colorado':'КОЛОРАДО, США',
   'alabama':'АЛАБАМА, США','louisiana':'ЛУИЗИАНА, США',
+  // Латинская Америка
+  'colombia':'КОЛУМБИЯ','columbia':'КОЛУМБИЯ',
+  'mexico':'МЕКСИКА','cuba':'КУБА','venezuela':'ВЕНЕСУЭЛА',
+  'argentina':'АРГЕНТИНА','brazil':'БРАЗИЛИЯ','peru':'ПЕРУ',
+  'ecuador':'ЭКВАДОР','chile':'ЧИЛИ','bolivia':'БОЛИВИЯ',
+  'dominican republic':'ДОМИНИКАНСКАЯ РЕСПУБЛИКА',
+  'puerto rico':'ПУЭРТО-РИКО','haiti':'ГАИТИ','jamaica':'ЯМАЙКА',
+  'el salvador':'ЭЛЬ-САЛЬВАДОР','guatemala':'ГВАТЕМАЛА',
+  'honduras':'ГОНДУРАС','nicaragua':'НИКАРАГУА','costa rica':'КОСТА-РИКА',
+  'panama':'ПАНАМА',
+  // Европа
+  'canada':'КАНАДА','england':'АНГЛИЯ',
+  'united kingdom':'ВЕЛИКОБРИТАНИЯ','uk':'ВЕЛИКОБРИТАНИЯ',
+  'spain':'ИСПАНИЯ','italy':'ИТАЛИЯ','portugal':'ПОРТУГАЛИЯ',
+  'romania':'РУМЫНИЯ','hungary':'ВЕНГРИЯ','czech republic':'ЧЕХИЯ',
+  'slovakia':'СЛОВАКИЯ','bulgaria':'БОЛГАРИЯ','serbia':'СЕРБИЯ',
+  'croatia':'ХОРВАТИЯ','greece':'ГРЕЦИЯ','turkey':'ТУРЦИЯ',
+  // Ближний восток / Африка
+  'iran':'ИРАН','iraq':'ИРАК','syria':'СИРИЯ','egypt':'ЕГИПЕТ',
+  'ethiopia':'ЭФИОПИЯ','nigeria':'НИГЕРИЯ','kenya':'КЕНИЯ',
+  'south africa':'ЮАР','ghana':'ГАНА',
+  // Азия
+  'india':'ИНДИЯ','pakistan':'ПАКИСТАН','bangladesh':'БАНГЛАДЕШ',
+  'nepal':'НЕПАЛ','philippines':'ФИЛИППИНЫ','vietnam':'ВЬЕТНАМ',
+  'thailand':'ТАИЛАНД','south korea':'ЮЖНАЯ КОРЕЯ','korea':'КОРЕЯ',
+  'japan':'ЯПОНИЯ','indonesia':'ИНДОНЕЗИЯ','malaysia':'МАЛАЙЗИЯ',
+  'singapore':'СИНГАПУР',
+  // Океания
+  'australia':'АВСТРАЛИЯ','new zealand':'НОВАЯ ЗЕЛАНДИЯ',
 };
 
 function nameToRu(str) {
@@ -321,10 +351,14 @@ function dateToRu(str) {
   return str;
 }
 
+// GPT уже переводит страны на русский — просто возвращаем uppercase как страховка
 function countryToRu(str) {
   if (!str) return '';
+  // Если уже русское — вернуть как есть заглавными
+  if (/[а-яё]/i.test(str)) return str.toUpperCase();
+  // Если вдруг GPT вернул английское — пробуем словарь, иначе uppercase
   const key = str.toLowerCase().trim();
-  return COUNTRIES_DICT[key] || ((/[а-яё]/i.test(str)) ? str.toUpperCase() : str.toUpperCase());
+  return COUNTRIES_DICT[key] || str.toUpperCase();
 }
 
 // ── hospitalToRu: название больницы остаётся на английском как есть
