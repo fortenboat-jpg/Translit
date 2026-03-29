@@ -1,4 +1,3 @@
-
 // ── ТОЧНЫЕ КООРДИНАТЫ ПОЛЕЙ НА БЛАНКЕ (из редактора пользователя) ────
 const FIELDS = [
   { id:'stateRegNum',      top:15.0, left:30.1, size:16 },
@@ -72,12 +71,10 @@ const NAMES_DICT = {
 
 function translateNamePart(str) {
   if (!str) return '';
-  // Если уже русское — вернуть заглавными
   if (/[а-яёА-ЯЁ]/.test(str)) return str.toUpperCase();
   return str.split(' ').map(word => {
     const key = word.toLowerCase().replace(/[^a-z]/g, '');
     if (NAMES_DICT[key]) return NAMES_DICT[key];
-    // Транслит
     const pairs = [
       ['shch','щ'],['sch','щ'],['zh','ж'],['kh','х'],['ts','ц'],
       ['ch','ч'],['sh','ш'],['yu','ю'],['ya','я'],['yo','ё'],
@@ -101,7 +98,6 @@ function translateNamePart(str) {
 function translateCityCounty(str) {
   if (!str) return '';
   const up = str.toUpperCase().trim();
-  // Уже русское
   if (/[А-ЯЁ]{3,}/.test(up)) return up;
 
   const CITIES = {
@@ -113,6 +109,8 @@ function translateCityCounty(str) {
     'GAINESVILLE':'Г. ГЕЙНСВИЛЛ','PENSACOLA':'Г. ПЕНСАКОЛА',
     'NAPLES':'Г. НЕАПОЛЬ','SARASOTA':'Г. САРАСОТА',
     'HIALEAH':'Г. ХАЙАЛИА','CAPE CORAL':'Г. КЕЙП-КОРАЛ',
+    'FORT MYERS':'Г. ФОРТ-МАЙЕРС','DAYTONA BEACH':'Г. ДАЙТОНА-БИЧ',
+    'BOCA RATON':'Г. БОКА-РАТОН',
   };
   const COUNTIES = {
     'PINELLAS COUNTY':'ОКРУГ ПИНЕЛЛАС','HILLSBOROUGH COUNTY':'ОКРУГ ХИЛЛСБОРО',
@@ -122,26 +120,78 @@ function translateCityCounty(str) {
     'POLK COUNTY':'ОКРУГ ПОЛК','VOLUSIA COUNTY':'ОКРУГ ВОЛУША',
     'SARASOTA COUNTY':'ОКРУГ САРАСОТА','MANATEE COUNTY':'ОКРУГ МАНАТИ',
     'COLLIER COUNTY':'ОКРУГ КОЛЬЕ','BREVARD COUNTY':'ОКРУГ БРЕВАРД',
-    'SEMINOLE COUNTY':'ОКРУГ СЕМИНОЛ','PINELLAS':'ОКРУГ ПИНЕЛЛАС',
-    'HILLSBOROUGH':'ОКРУГ ХИЛЛСБОРО','ORANGE':'ОКРУГ ОРИНДЖ',
+    'SEMINOLE COUNTY':'ОКРУГ СЕМИНОЛ',
   };
 
   let result = up;
-  // Заменяем города
   for (const [en, ru] of Object.entries(CITIES)) {
-    result = result.replace(new RegExp('\\b' + en + '\\b', 'g'), ru);
+    result = result.replace(new RegExp('\\b' + en.replace(/\./g,'\\.') + '\\b', 'g'), ru);
   }
-  // Заменяем округа
   for (const [en, ru] of Object.entries(COUNTIES)) {
     result = result.replace(new RegExp('\\b' + en + '\\b', 'g'), ru);
   }
-  // Если осталось COUNTY — общий перевод
   result = result.replace(/\bCOUNTY\b/g, 'ОКРУГ');
   return result.replace(/\s+/g, ' ').trim();
 }
 
+// ── hospitalLine2: транслитерируем название больницы пословно,
+//    НЕ заменяем города внутри названия
+function buildHospitalLine2(hospitalRaw) {
+  if (!hospitalRaw) return '';
+  const up = hospitalRaw.toUpperCase().trim();
+
+  // Убираем тип учреждения только если он первый
+  let name = up
+    .replace(/^HOSPITAL\s+/i, '')
+    .replace(/^MEDICAL\s+CENT(?:ER|RE)\s+/i, '')
+    .replace(/\s+/g, ' ').trim();
+
+  // Словарь для слов в названиях больниц
+  const HOSP_WORDS = {
+    'health':'ХЕЛС','regional':'РИДЖИНАЛ','bayfront':'БЭЙФРОНТ',
+    'general':'ДЖЕНЕРАЛ','memorial':'МЕМОРИАЛ','community':'КОМЬЮНИТИ',
+    'center':'СЕНТЕР','medical':'МЕДИКАЛ','university':'ЮНИВЕРСИТИ',
+    'south':'САУТ','north':'НОРТ','east':'ИСТ','west':'УЭСТ',
+    'st':'СТ','saint':'СЕЙНТ','orlando':'ОРЛАНДО','tampa':'ТАМПА',
+    'miami':'МАЙАМИ','jacksonville':'ДЖЭКСОНВИЛЛ',
+    'clearwater':'КЛИРУОТЕР','tallahassee':'ТАЛЛАХАССИ',
+    'gainesville':'ГЕЙНСВИЛЛ','pensacola':'ПЕНСАКОЛА',
+    'sarasota':'САРАСОТА','naples':'НЕАПОЛЬ',
+    'fort':'ФОРТ','myers':'МАЙЕРС','lauderdale':'ЛОДЕРДЕЙЛ',
+    'cape':'КЕЙП','coral':'КОРАЛ','daytona':'ДАЙТОНА','beach':'БИЧ',
+    'boca':'БОКА','raton':'РАТОН','hialeah':'ХАЙАЛИА',
+    'petersburg':'ПЕТЕРБУРГ',
+  };
+
+  return name.split(' ').map(word => {
+    const key = word.toLowerCase().replace(/[^a-z]/g, '');
+    if (!key) return '';
+    if (HOSP_WORDS[key]) return HOSP_WORDS[key];
+    // автотранслит
+    const pairs = [
+      ['shch','щ'],['sch','щ'],['zh','ж'],['kh','х'],['ph','ф'],['th','т'],
+      ['ts','ц'],['ch','ч'],['sh','ш'],['qu','кв'],
+      ['yu','ю'],['ya','я'],['yo','ё'],['ye','е'],
+      ['wr','р'],['wh','в'],
+      ['a','а'],['b','б'],['c','к'],['d','д'],['e','е'],['f','ф'],['g','г'],
+      ['h','х'],['i','и'],['j','дж'],['k','к'],['l','л'],['m','м'],['n','н'],
+      ['o','о'],['p','п'],['q','к'],['r','р'],['s','с'],['t','т'],['u','у'],
+      ['v','в'],['w','в'],['x','кс'],['y','й'],['z','з'],
+    ];
+    const w2 = word.toLowerCase().replace(/([bcdfghjklmnpqrstvwxz])y/g, '$1ей');
+    let r = '', i = 0;
+    while (i < w2.length) {
+      let matched = false;
+      for (const [en,ru] of pairs) {
+        if (w2.startsWith(en,i)) { r+=ru; i+=en.length; matched=true; break; }
+      }
+      if (!matched) { r+=w2[i]; i++; }
+    }
+    return (r.charAt(0).toUpperCase()+r.slice(1)).toUpperCase();
+  }).join(' ').trim();
+}
+
 module.exports = async function handler(req, res) {
-  // Используем Resend API напрямую через fetch — без import
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -160,8 +210,7 @@ module.exports = async function handler(req, res) {
     }));
     const num = 'BC-' + Date.now().toString().slice(-6);
     const today = new Date().toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
-    
-    // Форматируем дату рождения
+
     const dobFormatted = d.dob
       ? (() => {
           const dt = new Date(d.dob + 'T12:00:00');
@@ -171,12 +220,9 @@ module.exports = async function handler(req, res) {
         })()
       : '';
 
-    // Штрихкод
     const barcodeNum = (d.reqNum || '').replace(/[^0-9]/g, '');
     const barcodeText = barcodeNum ? '*' + barcodeNum + '*' : '';
 
-    // childName — приходит уже переведённым из OCR
-    // Если пустой — собираем из компонентов и переводим
     const rawLast  = d.lastName  || '';
     const rawFirst = d.firstName || '';
     const rawMid   = d.middleName || '';
@@ -184,37 +230,12 @@ module.exports = async function handler(req, res) {
       [translateNamePart(rawLast), translateNamePart(rawFirst), translateNamePart(rawMid)]
       .filter(Boolean).join(' ') || '';
 
-    // МЕСТО РОЖДЕНИЯ — две строки:
-    // Строка 1: из поля hospitalType (БОЛЬНИЦА / МЕДИЦИНСКИЙ ЦЕНТР / РОДДОМ)
-    // Строка 2: название госпиталя + город
     const hospitalRaw  = (d.hospital     || '').toUpperCase().trim();
     const hospitalType = (d.hospitalType || 'БОЛЬНИЦА').toUpperCase().trim();
 
     const hospitalLine1 = hospitalType;
-
-    const hospitalLine2 = hospitalRaw
-      .replace(/\bMEDICAL\s+CENT(?:ER|RE)\b/gi, '')
-      .replace(/\bHOSPITAL\b/gi, '')
-      .replace(/\bST\.?\s*PETERSBURG\b/gi, ', Г. САНКТ-ПЕТЕРБУРГ')
-      .replace(/\bSAINT\s+PETERSBURG\b/gi, ', Г. САНКТ-ПЕТЕРБУРГ')
-      .replace(/\bORLANDO\b/gi, ', Г. ОРЛАНДО')
-      .replace(/\bTAMPA\b/gi, ', Г. ТАМПА')
-      .replace(/\bMIAMI\b/gi, ', Г. МАЙАМИ')
-      .replace(/\bJACKSONVILLE\b/gi, ', Г. ДЖЭКСОНВИЛЛ')
-      .replace(/\bCLEARWATER\b/gi, ', Г. КЛИРУОТЕР')
-      .replace(/\bFORT\s+LAUDERDALE\b/gi, ', Г. ФОРТ-ЛОДЕРДЕЙЛ')
-      .replace(/\bTALLAHASSEE\b/gi, ', Г. ТАЛЛАХАССИ')
-      .replace(/\bGAINESVILLE\b/gi, ', Г. ГЕЙНСВИЛЛ')
-      .replace(/\bPENSACOLA\b/gi, ', Г. ПЕНСАКОЛА')
-      .replace(/\bSARASATA\b/gi, ', Г. САРАСОТА')
-      .replace(/\bSARASATA\b/gi, ', Г. САРАСОТА')
-      .replace(/\bNAPLES\b/gi, ', Г. НЕАПОЛЬ')
-      .replace(/\bCAPE\s+CORAL\b/gi, ', Г. КЕЙП-КОРАЛ')
-      .replace(/\bFORT\s+MYERS\b/gi, ', Г. ФОРТ-МАЙЕРС')
-      .replace(/\bDAYTONA\s+BEACH\b/gi, ', Г. ДАЙТОНА-БИЧ')
-      .replace(/\bBOCA\s+RATON\b/gi, ', Г. БОКА-РАТОН')
-      .replace(/\bHIALEAH\b/gi, ', Г. ХАЙАЛИА')
-      .replace(/\s+/g, ' ').replace(/^,\s*/, '').replace(/,\s*,/g, ',').trim();
+    // ── Строка 2: транслит названия без замены городов ──
+    const hospitalLine2 = buildHospitalLine2(hospitalRaw);
 
     const values = {
       stateRegNum:      d.stateRegNum || '',
@@ -227,7 +248,7 @@ module.exports = async function handler(req, res) {
       weight:           d.weight || '',
       hospital:         hospitalLine1,
       hospitalLine2:    hospitalLine2,
-      cityCounty:       (d.cityCounty || '').toUpperCase(),
+      cityCounty:       translateCityCounty(d.cityCounty || ''),
       motherName:       d.motherName || '',
       motherDob:        d.motherDob || '',
       motherBirthPlace: d.motherBirthPlace || '',
@@ -244,7 +265,6 @@ module.exports = async function handler(req, res) {
     const styledHtml2 = await buildHtml(values, bg2Url, num, today, FIELDS2);
     const docxBuffer  = buildDocx(values, num, today);
 
-    // Email
     if (d.email && process.env.RESEND_API_KEY) {
       try {
         const emailResp = await fetch('https://api.resend.com/emails', {
@@ -296,7 +316,6 @@ module.exports = async function handler(req, res) {
 // ── HTML С БЛАНКОМ ───────────────────────────────────────
 async function buildHtml(v, bgUrl, num, today, fields) {
   const FLDS = fields || FIELDS;
-  // Загружаем фон как base64 чтобы работало в любом окне
   let bgData = bgUrl;
   try {
     const resp = await fetch(bgUrl);
@@ -306,7 +325,6 @@ async function buildHtml(v, bgUrl, num, today, fields) {
     bgData = `data:${mime};base64,${b64}`;
   } catch(e) {
     console.error('Could not embed bg:', e.message);
-    // fallback to URL
   }
 
   const fieldsHtml = FLDS.map(f => {
@@ -339,22 +357,9 @@ body{font-family:'Times New Roman',Times,serif;background:#666;display:flex;flex
   html,body{width:210mm;margin:0;padding:0;background:white;display:block}
   .hint{display:none}
   .sheet{box-shadow:none;margin:0;display:block}
-  .sheet-blank{
-    width:210mm;height:297mm;
-    page-break-after:always;
-    break-after:page;
-    overflow:hidden
-  }
-  .sheet-blank img{
-    width:210mm;height:297mm;
-    object-fit:fill
-  }
-  .sheet-cert{
-    width:210mm;height:297mm;
-    padding:20mm 20mm 15mm;
-    page-break-after:avoid;
-    break-after:avoid
-  }
+  .sheet-blank{width:210mm;height:297mm;page-break-after:always;break-after:page;overflow:hidden}
+  .sheet-blank img{width:210mm;height:297mm;object-fit:fill}
+  .sheet-cert{width:210mm;height:297mm;padding:20mm 20mm 15mm;page-break-after:avoid;break-after:avoid}
 }
 @page{margin:0;size:A4}
 </style></head>
@@ -371,18 +376,9 @@ body{font-family:'Times New Roman',Times,serif;background:#666;display:flex;flex
     <p>Настоящим подтверждаю, что являюсь компетентным переводчиком русского и английского языков и данный перевод соответствует оригиналу документа.</p>
   </div>
   <div class="cert-sign">
-    <div class="cert-sign-item">
-      <div class="cert-sign-line"></div>
-      Подпись переводчика
-    </div>
-    <div class="cert-sign-item">
-      <div class="cert-sign-line"></div>
-      Дата: ${today}
-    </div>
-    <div class="cert-sign-item">
-      <div class="cert-sign-line"></div>
-      № ${num}
-    </div>
+    <div class="cert-sign-item"><div class="cert-sign-line"></div>Подпись переводчика</div>
+    <div class="cert-sign-item"><div class="cert-sign-line"></div>Дата: ${today}</div>
+    <div class="cert-sign-item"><div class="cert-sign-line"></div>№ ${num}</div>
   </div>
   <div class="cert-footer">BirthCert Translation Services &nbsp;·&nbsp; Официальный перевод для Консульства РФ в США</div>
 </div>
@@ -404,6 +400,7 @@ function buildPlainText(v, num, today) {
 ДАТА РОЖДЕНИЯ: ${v.dobFormatted}  ВРЕМЯ: ${v.timeOfBirth}
 ПОЛ: ${v.sex}  ВЕС: ${v.weight}
 МЕСТО РОЖДЕНИЯ: ${v.hospital}
+${v.hospitalLine2}
 ГОРОД, ОКРУГ: ${v.cityCounty}
 
 МАТЬ: ${v.motherName}
@@ -528,6 +525,7 @@ function buildDocx(v, num, today) {
     {name:'word/styles.xml',              data:styles},
   ]);
 }
+
 function buildEmail(name, num){return`<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto"><div style="background:#0c1b3a;padding:24px;text-align:center"><h2 style="color:white;margin:0">📄 BirthCert Translation</h2><p style="color:rgba(255,255,255,.6);margin:6px 0 0;font-size:13px">Официальный перевод для Консульства РФ</p></div><div style="background:#f4f6fb;padding:28px"><p style="color:#0e1c36;font-size:15px;margin:0 0 10px">Здравствуйте!</p><p style="color:#5a6b90;font-size:14px;margin-bottom:16px">Ваш перевод готов. К письму прикреплены <strong>3 файла</strong>:</p><div style="background:white;border:1px solid #d4daf0;border-radius:8px;padding:14px;margin:0 0 16px"><p style="margin:0 0 8px;font-size:13px">🎨 <strong>Перевод_бланк1_${num}.html</strong> — перевод с цветным фоном</p><p style="margin:0 0 8px;font-size:13px">📄 <strong>Перевод_бланк2_${num}.html</strong> — перевод на белом фоне</p><p style="margin:0;font-size:13px">📝 <strong>Перевод_${num}.docx</strong> — документ Word</p></div><div style="background:#fff8e6;border-left:3px solid #c8a84b;padding:10px 14px;border-radius:0 6px 6px 0;margin-bottom:16px"><p style="margin:0;color:#7a5a00;font-size:13px">🖨️ Для подачи в консульство: откройте HTML файл в браузере → Ctrl+P → масштаб 100% → без полей</p></div><p style="color:#aab0c8;font-size:12px;margin:0">№ ${num} · BirthCert Translation</p></div></div>`;}
 
 function buildZipMixed(files){
