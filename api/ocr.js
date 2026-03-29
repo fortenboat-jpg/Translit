@@ -429,40 +429,49 @@ const COUNTY_DICT = {
   'LEE':'ЛИ',
 };
 
+function autoTranslitForCity(word) {
+  const pairs = [
+    ['shch','щ'],['sch','щ'],['zh','ж'],['kh','х'],['ph','ф'],['th','т'],
+    ['ts','ц'],['ch','ч'],['sh','ш'],['qu','кв'],
+    ['yu','ю'],['ya','я'],['yo','ё'],['ye','е'],['wr','р'],['wh','в'],
+    ['a','а'],['b','б'],['c','к'],['d','д'],['e','е'],['f','ф'],['g','г'],
+    ['h','х'],['i','и'],['j','дж'],['k','к'],['l','л'],['m','м'],['n','н'],
+    ['o','о'],['p','п'],['q','к'],['r','р'],['s','с'],['t','т'],['u','у'],
+    ['v','в'],['w','в'],['x','кс'],['y','й'],['z','з'],
+  ];
+  const w = word.toLowerCase().replace(/([bcdfghjklmnpqrstvwxz])y/g,'$1ей');
+  let r='',i=0;
+  while(i<w.length){
+    let matched=false;
+    for(const[en,ru]of pairs){if(w.startsWith(en,i)){r+=ru;i+=en.length;matched=true;break;}}
+    if(!matched){r+=w[i];i++;}
+  }
+  return(r.charAt(0).toUpperCase()+r.slice(1)).toUpperCase();
+}
+
 function cityCountyToRu(str) {
   if (!str) return '';
   if (/[А-ЯЁ]{3,}/.test(str)) return str.toUpperCase();
   let result = str.toUpperCase().trim();
 
-  // 1. Заменяем многословные города из словаря (сначала длинные)
+  // 1. СНАЧАЛА округа — до замены городов!
+  // Иначе MIAMI в MIAMI-DADE заменится на Г. МАЙАМИ и матч сломается
+  result = result.replace(/\b([\w][\w\s-]*?)\s+COUNTY\b/g, (match, countyName) => {
+    const key = countyName.trim();
+    if (COUNTY_DICT[key]) return 'ОКРУГ ' + COUNTY_DICT[key];
+    const translitted = key.split(/[\s-]/).map(w => w ? autoTranslitForCity(w) : '').join('-').replace(/--+/g,'-');
+    return 'ОКРУГ ' + translitted;
+  });
+  result = result.replace(/\bCOUNTY\b/g, 'ОКРУГ');
+
+  // 2. ПОТОМ города из словаря (длинные первыми)
   const cityEntries = Object.entries(CITY_DICT).sort((a,b) => b[0].length - a[0].length);
   for (const [en, ru] of cityEntries) {
     result = result.replace(new RegExp('\\b' + en.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + '\\b', 'g'), ru);
   }
 
-  // 2. Обрабатываем COUNTY — ищем "НАЗВАНИЕ COUNTY"
-  // Сначала пробуем словарь, потом автотранслит
-  result = result.replace(/\b([\w\s-]+?)\s+COUNTY\b/g, (match, countyName) => {
-    const key = countyName.trim();
-    if (COUNTY_DICT[key]) return 'ОКРУГ ' + COUNTY_DICT[key];
-    // Автотранслит названия округа
-    const translitted = key.split(/[\s-]/).map(w => {
-      if (!w) return '';
-      return translitWord(w).toUpperCase();
-    }).join('-').replace(/--+/g, '-');
-    return 'ОКРУГ ' + translitted;
-  });
-
-  // 3. Одиночное слово COUNTY без названия
-  result = result.replace(/\bCOUNTY\b/g, 'ОКРУГ');
-
-  // 4. Города без Г. — одиночные слова транслитерируем
-  // (всё что осталось на латинице)
-  result = result.replace(/\b([A-Z][A-Z]+)\b/g, (match) => {
-    // Пропускаем если уже русское или аббревиатура
-    if (match.length <= 2) return match;
-    return translitWord(match).toUpperCase();
-  });
+  // 3. Оставшиеся латинские слова (3+ букв) — автотранслит
+  result = result.replace(/\b([A-Z]{3,})\b/g, match => autoTranslitForCity(match));
 
   return result.replace(/\s+/g,' ').trim();
 }
