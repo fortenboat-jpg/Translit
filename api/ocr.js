@@ -48,9 +48,9 @@ STRICT RULES:
 - motherBirthCountry and fatherBirthCountry: translate to RUSSIAN uppercase. Always write COUNTRY NAME (noun, not adjective). Examples: "RUSSIA"/"RUSSIAN" -> "РОССИЯ", "COLOMBIA"/"COLOMBIAN" -> "КОЛУМБИЯ", "CUBA"/"CUBAN" -> "КУБА", "MEXICO"/"MEXICAN" -> "МЕКСИКА", "UKRAINE"/"UKRAINIAN" -> "УКРАИНА", "BELARUS"/"BELARUSIAN" -> "БЕЛАРУСЬ", "GEORGIA" -> "ГРУЗИЯ", "FLORIDA" -> "ФЛОРИДА, США". If birthplace is a US state - write Russian name + ", США".
 
 {
-  "firstName": "child first name",
-  "middleName": "child middle name",
-  "lastName": "child last name",
+  "firstName": "child first name in RUSSIAN transliteration uppercase",
+  "middleName": "child middle name in RUSSIAN transliteration uppercase",
+  "lastName": "child last name in RUSSIAN transliteration uppercase",
   "dob": "YYYY-MM-DD",
   "sex": "MALE or FEMALE",
   "timeOfBirth": "HH:MM",
@@ -62,21 +62,26 @@ STRICT RULES:
   "stateRegNum": "state file number",
   "dateIssued": "MONTH DD, YYYY",
   "dateRegistered": "MONTH DD, YYYY",
-  "motherFirstName": "first name",
-  "motherMiddleName": "middle name",
-  "motherLastName": "last name",
+  "motherFirstName": "first name in RUSSIAN transliteration uppercase",
+  "motherMiddleName": "middle name in RUSSIAN transliteration uppercase",
+  "motherLastName": "last name in RUSSIAN transliteration uppercase",
   "motherDob": "MONTH DD, YYYY",
   "motherBirthCountry": "country in RUSSIAN uppercase",
-  "fatherFirstName": "first name",
-  "fatherMiddleName": "middle name",
-  "fatherLastName": "last name",
+  "fatherFirstName": "first name in RUSSIAN transliteration uppercase",
+  "fatherMiddleName": "middle name in RUSSIAN transliteration uppercase",
+  "fatherLastName": "last name in RUSSIAN transliteration uppercase",
   "fatherDob": "MONTH DD, YYYY",
   "fatherBirthCountry": "country in RUSSIAN uppercase",
   "reqNum": "REQ number digits only"
 }
 
 NAME order in US certificates: FIRST MIDDLE LAST
-Example: "MARK ALEKSEEVICH KIRZOV" → firstName=MARK, middleName=ALEKSEEVICH, lastName=KIRZOV`
+Example: "MARK ALEKSEEVICH KIRZOV" → firstName=MARK, middleName=ALEKSEEVICH, lastName=KIRZOV
+
+IMPORTANT - transliterate all names to RUSSIAN uppercase using standard Russian transliteration rules:
+- Use proper Russian phonetic equivalents, not letter-by-letter transliteration
+- Examples: REYES → РЕЙЕС, REES → РИС, KOWALSKI → КОВАЛЬСКИ, SMITH → СМИТ, JOHNSON → ДЖОНСОН, WILLIAMS → УИЛЬЯМС, JESSICA → ДЖЕССИКА, CAROLINA → КАРОЛИНА, MIGUEL → МИГЕЛЬ, ANTONIO → АНТОНИО, SOPHIA → СОФИЯ, ELENA → ЕЛЕНА, TRINITY → ТРИНИТИ, VOSBURGH → ВОСБУРГ, DEREK → ДЕРЕК, ETHAN → ИТАН, ANNA → АННА, PATRICIA → ПАТРИЦИЯ, ROBERT → РОБЕРТ, THOMAS → ТОМАС
+- Russian names already in Latin: keep their standard Russian spelling (ALEKSEI → АЛЕКСЕЙ, EKATERINA → ЕКАТЕРИНА, LEONIDOVICH → ЛЕОНИДОВИЧ)`
             }
           ]
         }]
@@ -90,28 +95,31 @@ Example: "MARK ALEKSEEVICH KIRZOV" → firstName=MARK, middleName=ALEKSEEVICH, l
     const raw = JSON.parse(txt);
     console.log('RAW OCR:', JSON.stringify(raw));
 
+    // GPT уже переводит имена и больницу — просто берём uppercase как страховку
+    function toUp(s) { return (s || '').toUpperCase().trim(); }
+
     const result = {
-      firstName:        nameToRu(raw.firstName),
-      middleName:       nameToRu(raw.middleName),
-      lastName:         nameToRu(raw.lastName),
+      firstName:        toUp(raw.firstName),
+      middleName:       toUp(raw.middleName),
+      lastName:         toUp(raw.lastName),
       dob:              raw.dob || '',
       sex:              sexToRu(raw.sex),
       timeOfBirth:      raw.timeOfBirth || '',
       weight:           weightToRu(raw.weightLbs, raw.weightOz),
-      hospital:         hospitalToRu(raw.hospital),
-      hospitalType:     hospitalTypeToRu(raw.hospital),
+      hospital:         toUp(raw.hospital),
+      hospitalType:     toUp(raw.hospitalType) || hospitalTypeToRu(raw.hospital),
       cityCounty:       cityCountyToRu(raw.cityCounty || (raw.city && raw.county ? raw.city+', '+raw.county : raw.city || raw.county || '')),
       stateRegNum:      raw.stateRegNum || '',
       dateIssued:       dateToRu(raw.dateIssued),
       dateRegistered:   dateToRu(raw.dateRegistered),
-      motherFirstName:  nameToRu(raw.motherFirstName),
-      motherMiddleName: nameToRu(raw.motherMiddleName),
-      motherLastName:   nameToRu(raw.motherLastName),
+      motherFirstName:  toUp(raw.motherFirstName),
+      motherMiddleName: toUp(raw.motherMiddleName),
+      motherLastName:   toUp(raw.motherLastName),
       motherDob:        dateToRu(raw.motherDob),
       motherBirthPlace: countryToRu(raw.motherBirthCountry),
-      fatherFirstName:  nameToRu(raw.fatherFirstName),
-      fatherMiddleName: nameToRu(raw.fatherMiddleName),
-      fatherLastName:   nameToRu(raw.fatherLastName),
+      fatherFirstName:  toUp(raw.fatherFirstName),
+      fatherMiddleName: toUp(raw.fatherMiddleName),
+      fatherLastName:   toUp(raw.fatherLastName),
       fatherDob:        dateToRu(raw.fatherDob),
       fatherBirthPlace: countryToRu(raw.fatherBirthCountry),
       reqNum:           (raw.reqNum || '').replace(/[^0-9]/g, ''),
