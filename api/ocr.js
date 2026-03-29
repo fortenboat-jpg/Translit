@@ -39,7 +39,8 @@ module.exports = async function handler(req, res) {
 
 STRICT RULES:
 - cityCounty: copy the EXACT text from "CITY, COUNTY OF BIRTH" field as printed. Do not change anything.
-- hospital: copy the EXACT text from "PLACE OF BIRTH" field as printed. Do not change anything.
+- hospital: translate to RUSSIAN using transliteration for the hospital name, but translate city names to their proper Russian names. Example: "BAYFRONT HEALTH ST PETERSBURG" -> "БЭЙФРОНТ ХЕЛС, Г. САНКТ-ПЕТЕРБУРГ", "ORLANDO HEALTH ORLANDO REGIONAL MEDICAL CENTER" -> "ОРЛАНДО ХЕЛС ОРЛАНДО РИДЖИНАЛ МЕДИКАЛ СЕНТЕР", "JACKSON MEMORIAL HOSPITAL" -> "ДЖЭКСОН МЕМОРИАЛ". City names: "ST PETERSBURG"/"SAINT PETERSBURG" -> "Г. САНКТ-ПЕТЕРБУРГ", "MIAMI" -> "Г. МАЙАМИ", "ORLANDO" -> "Г. ОРЛАНДО", "TAMPA" -> "Г. ТАМПА", "JACKSONVILLE" -> "Г. ДЖЭКСОНВИЛЛ". Remove the word HOSPITAL or MEDICAL CENTER from the beginning if it appears alone before the name.
+- hospitalType: write only "БОЛЬНИЦА" if place of birth is a hospital, or "МЕДИЦИНСКИЙ ЦЕНТР" if it is a medical center.
 - sex: write only "MALE" or "FEMALE"
 - dob: YYYY-MM-DD format
 - timeOfBirth: HH:MM format
@@ -55,7 +56,8 @@ STRICT RULES:
   "timeOfBirth": "HH:MM",
   "weightLbs": "number",
   "weightOz": "number",
-  "hospital": "exact text from document",
+  "hospital": "hospital name translated to Russian transliteration with city in Russian",
+  "hospitalType": "БОЛЬНИЦА or МЕДИЦИНСКИЙ ЦЕНТР",
   "cityCounty": "exact text from document",
   "stateRegNum": "state file number",
   "dateIssued": "MONTH DD, YYYY",
@@ -384,14 +386,10 @@ function countryToRu(str) {
   return COUNTRIES_DICT[key] || ADJECTIVES[key] || str.toUpperCase();
 }
 
-// ── hospitalToRu: название больницы остаётся на английском как есть
-//    убираем только тип учреждения из начала строки
+// ── hospitalToRu: GPT уже переводит — просто возвращаем как есть
 function hospitalToRu(str) {
   if (!str) return '';
-  return str.toUpperCase().trim()
-    .replace(/^HOSPITAL\s+/i, '')
-    .replace(/^MEDICAL\s+CENT(?:ER|RE)\s+/i, '')
-    .replace(/\s+/g, ' ').trim();
+  return str.toUpperCase().trim();
 }
 
 function hospitalTypeToRu(str) {
