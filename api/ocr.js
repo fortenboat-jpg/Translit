@@ -1,19 +1,3 @@
-const pdfjs = require('pdfjs-dist/legacy/build/pdf.js');
-const { createCanvas } = require('canvas');
-
-async function pdfToImageB64(pdfBuffer) {
-  const loadingTask = pdfjs.getDocument({ data: new Uint8Array(pdfBuffer) });
-  const pdf = await loadingTask.promise;
-  const page = await pdf.getPage(1);
-  const scale = 2.0;
-  const viewport = page.getViewport({ scale });
-  const canvas = createCanvas(viewport.width, viewport.height);
-  const ctx = canvas.getContext('2d');
-  await page.render({ canvasContext: ctx, viewport }).promise;
-  const dataUrl = canvas.toDataURL('image/png');
-  return dataUrl.split(',')[1];
-}
-
 module.exports = async function handler(req, res) {
   req.config = { api: { bodyParser: false } };
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -29,14 +13,12 @@ module.exports = async function handler(req, res) {
     const boundary = (req.headers['content-type'] || '').split('boundary=')[1];
     if (!boundary) return res.status(400).json({ ok: false, error: 'No boundary' });
 
-    let { b64, mime } = extractFile(body, boundary);
+    const { b64, mime } = extractFile(body, boundary);
     if (!b64) return res.status(400).json({ ok: false, error: 'No file' });
 
-    // Если PDF — конвертируем в PNG перед отправкой в OpenAI
+    // Проверяем что это изображение — PDF уже конвертирован на клиенте
     if (mime === 'application/pdf') {
-      const pdfBuffer = Buffer.from(b64, 'base64');
-      b64 = await pdfToImageB64(pdfBuffer);
-      mime = 'image/png';
+      return res.status(400).json({ ok: false, error: 'PDF не поддерживается напрямую — конвертация должна происходить на клиенте' });
     }
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
