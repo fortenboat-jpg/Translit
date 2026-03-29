@@ -8,6 +8,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<!-- PDF.js для конвертации PDF → PNG на клиенте -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
 <style>
 :root{
   --navy:#0c1b3a;--navy2:#162d5c;--blue:#1a46b8;--blue2:#2558d4;
@@ -274,8 +277,8 @@ footer{background:var(--navy);color:rgba(255,255,255,.5);padding:40px 28px;text-
     <!-- FORM -->
     <div class="hero-right" id="form-area">
 
-      <!-- API KEY -->
-      <div class="api-banner" id="apiBanner">
+      <!-- API KEY BANNER - скрыт, ключ на сервере -->
+      <div class="api-banner" id="apiBanner" style="display:none">
         <div style="font-size:1.2rem">🔑</div>
         <div style="flex:1">
           <div class="api-banner-text"><strong>Ключ активации</strong>Необходим для обработки документа</div>
@@ -376,31 +379,22 @@ footer{background:var(--navy);color:rgba(255,255,255,.5);padding:40px 28px;text-
             <div id="loadBar" style="height:100%;background:linear-gradient(90deg,var(--blue),var(--gold2));border-radius:8px;width:0%;transition:width .5s ease"></div>
           </div>
         </div>
-        <!-- BLANK PREVIEW — показывается только после полного ответа сервера -->
         <div id="blankPreview" style="display:none;border-radius:12px;overflow:hidden;border:2px solid var(--green);box-shadow:0 8px 32px rgba(14,168,110,0.15)">
-          <!-- Заголовок -->
           <div style="background:linear-gradient(135deg,#0c1b3a,#1a3266);padding:10px 14px;display:flex;justify-content:space-between;align-items:center">
             <span style="color:white;font-size:.82rem;font-weight:600">📄 Предпросмотр бланка</span>
             <span style="color:#0ea86e;font-size:.76rem;font-weight:700;background:rgba(14,168,110,0.15);padding:3px 10px;border-radius:100px">✓ Данные сохранены</span>
           </div>
-          <!-- Обёртка — задаёт видимую высоту (половина бланка) -->
           <div id="previewOuter" style="position:relative;width:100%;overflow:hidden;background:#f0f0f0">
-            <!-- Fade снизу -->
             <div style="position:absolute;bottom:0;left:0;right:0;height:60px;background:linear-gradient(to bottom,transparent,rgba(240,240,240,0.98));z-index:4;pointer-events:none"></div>
-            <!-- Замок -->
             <div style="position:absolute;bottom:10px;left:50%;transform:translateX(-50%);z-index:5;white-space:nowrap;background:white;border:1.5px solid var(--border);border-radius:100px;padding:5px 14px;font-size:.72rem;color:var(--muted);font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,0.1)">
               🔒 Полный документ — после оплаты
             </div>
-            <!-- Масштабируемый бланк 794px — защищён от скачивания -->
             <div id="blankScaleWrap" style="width:794px;transform-origin:top left;position:relative;user-select:none">
-              <!-- Фон через CSS — нельзя скачать правой кнопкой -->
               <div id="bgDiv" style="width:794px;height:1123px;background-image:url('https://translit-gilt.vercel.app/bg.jpg');background-size:cover;background-position:top center;display:block"></div>
-              <!-- Прозрачный щит блокирует правую кнопку на всём бланке -->
               <div style="position:absolute;inset:0;z-index:10;pointer-events:auto" oncontextmenu="return false" ondragstart="return false"></div>
               <div id="overlayFields" style="position:absolute;top:0;left:0;width:794px;height:1123px;pointer-events:none;z-index:9"></div>
             </div>
           </div>
-          <!-- Подвал -->
           <div style="background:var(--bg2);padding:8px 14px;display:flex;align-items:center;justify-content:space-between">
             <span style="font-size:.72rem;color:var(--muted)">Данные на бланке проверены и сохранены</span>
             <span style="font-size:.72rem;color:var(--blue);font-weight:600;cursor:pointer" onclick="openFullDoc()">👁 Открыть после оплаты</span>
@@ -468,8 +462,6 @@ footer{background:var(--navy);color:rgba(255,255,255,.5);padding:40px 28px;text-
           <li><div class="sclic">⚡</div><div class="sclt"><strong>На email за 10 минут</strong><span>Готовый PDF — распечатать и подать</span></div></li>
         </ul>
       </div>
-
-      <!-- DOC PREVIEW -->
       <div class="docwrap">
         <div class="docback"></div>
         <div class="docpaper">
@@ -539,15 +531,8 @@ footer{background:var(--navy);color:rgba(255,255,255,.5);padding:40px 28px;text-
 // ─────────────────────────────────────────
 //  STATE
 // ─────────────────────────────────────────
-const DEFAULT_KEY = '';   // ключ теперь на бэкенде
 let translationText = '';
-
-// ── BACKEND URL — поменяй если другой адрес ──────────────
 const API = '';
-// ─────────────────────────────────────────────────────────
-
-// Скрыть банер ключа — он не нужен, ключ на сервере
-document.getElementById('apiBanner').style.display = 'none';
 
 // ─── UTILS ───────────────────────────────────────────────
 function scrollToForm(){document.getElementById('form-area').scrollIntoView({behavior:'smooth',block:'start'})}
@@ -562,97 +547,116 @@ function toast(type,msg){
 function af(id,val){if(!val||val==='—')return;const el=document.getElementById(id);if(el){el.value=val;el.classList.add('af');setTimeout(()=>el.classList.remove('af'),3000)}}
 function saveKey(){toast('info','Ключ хранится на сервере')}
 
-// ─── UPLOAD → BACKEND OCR ────────────────────────────────
-function handleUpload(inp){
-  const file=inp.files[0]; if(!file) return;
-  document.getElementById('fName').textContent=file.name;
-  document.getElementById('fSz').textContent=(file.size/1024).toFixed(1)+' КБ';
-  // Сбрасываем все поля формы перед новым OCR
+// ─── UPLOAD → конвертация PDF на клиенте → BACKEND OCR ───
+async function handleUpload(inp) {
+  const file = inp.files[0];
+  if (!file) return;
+
+  document.getElementById('fName').textContent = file.name;
+  document.getElementById('fSz').textContent = (file.size / 1024).toFixed(1) + ' КБ';
+
+  // Сброс полей
   ['fLast','fFirst','fMid','fTime','fWeight','fHospType','fHosp','fPlace',
    'fRegNum','fIssued','fRegDate','fMom','fMomDob','fMomBirth',
-   'fDad','fDadDob','fDadBirth','fReqNum'].forEach(id=>{
-    const el=document.getElementById(id); if(el) el.value='';
+   'fDad','fDadDob','fDadBirth','fReqNum'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
   });
-  window._ocrChildName=''; window._ocrCityCounty='';
-  window._ocrHospital=''; window._ocrMotherName=''; window._ocrFatherName='';
-  document.getElementById('fSex').value='МУЖСКОЙ';
-  document.getElementById('fDob').value='';
+  window._ocrChildName = ''; window._ocrCityCounty = '';
+  window._ocrHospital = ''; window._ocrMotherName = ''; window._ocrFatherName = '';
+  document.getElementById('fSex').value = 'МУЖСКОЙ';
+  document.getElementById('fDob').value = '';
   document.getElementById('fChip').classList.add('show');
 
-  const zone=document.getElementById('uZone');
+  const zone = document.getElementById('uZone');
   zone.classList.add('analyzing');
-  document.getElementById('uIc').textContent='🔍';
-  document.getElementById('uTx').textContent='Отправляем на сервер...';
-  document.getElementById('uHn').textContent='Считываем данные из документа...';
-  const bar=document.getElementById('aBar'),fill=document.getElementById('aFill'),lbl=document.getElementById('aLbl');
+  document.getElementById('uIc').textContent = '🔍';
+  document.getElementById('uTx').textContent = 'Отправляем на сервер...';
+  document.getElementById('uHn').textContent = 'Считываем данные из документа...';
+  const bar = document.getElementById('aBar'), fill = document.getElementById('aFill'), lbl = document.getElementById('aLbl');
   bar.classList.add('show'); lbl.classList.add('show');
-  let p=0; const iv=setInterval(()=>{p=Math.min(p+2,90);fill.style.width=p+'%'},300);
+  let p = 0;
+  const iv = setInterval(() => { p = Math.min(p + 2, 90); fill.style.width = p + '%'; }, 300);
 
-  const formData = new FormData();
-  formData.append('file', file);
+  try {
+    let uploadFile = file;
 
-  fetch(API+'/api/ocr', { method:'POST', body: formData })
-    .then(r=>r.json())
-    .then(res=>{
-      clearInterval(iv); fill.style.width='100%';
-      if(res.ok && res.data){
-        const j=res.data;
-        af('fLast',j.lastName);
-        af('fFirst',j.firstName);
-        af('fMid',j.middleName);
-        // Сохраняем имя ребёнка из OCR напрямую
-        window._ocrChildName = j.childName || '';
-        window._ocrMotherName = j.motherName || '';
-        window._ocrFatherName = j.fatherName || '';
-        if(j.dob){
-          const d=new Date(j.dob+'T12:00:00');
-          if(!isNaN(d)){
-            const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),dd=String(d.getDate()).padStart(2,'0');
-            af('fDob',`${y}-${m}-${dd}`);
-          }
+    // ── Если PDF — конвертируем первую страницу в PNG прямо в браузере ──
+    if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+      document.getElementById('uTx').textContent = 'Конвертируем PDF в изображение...';
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      const page = await pdf.getPage(1);
+      const scale = 2.0;
+      const viewport = page.getViewport({ scale });
+      const canvas = document.createElement('canvas');
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      const ctx = canvas.getContext('2d');
+      await page.render({ canvasContext: ctx, viewport }).promise;
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+      uploadFile = new File([blob], file.name.replace(/\.pdf$/i, '.png'), { type: 'image/png' });
+      document.getElementById('uTx').textContent = 'Отправляем на сервер...';
+    }
+
+    const formData = new FormData();
+    formData.append('file', uploadFile);
+
+    const res = await fetch(API + '/api/ocr', { method: 'POST', body: formData }).then(r => r.json());
+
+    clearInterval(iv); fill.style.width = '100%';
+
+    if (res.ok && res.data) {
+      const j = res.data;
+      af('fLast', j.lastName);
+      af('fFirst', j.firstName);
+      af('fMid', j.middleName);
+      window._ocrChildName   = j.childName    || '';
+      window._ocrMotherName  = j.motherName   || '';
+      window._ocrFatherName  = j.fatherName   || '';
+      if (j.dob) {
+        const d = new Date(j.dob + 'T12:00:00');
+        if (!isNaN(d)) {
+          const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), dd = String(d.getDate()).padStart(2,'0');
+          af('fDob', `${y}-${m}-${dd}`);
         }
-        if(j.sex) document.getElementById('fSex').value = j.sex;
-        af('fTime',j.timeOfBirth);
-        af('fWeight',j.weight);
-        af('fHospType', j.hospitalType || 'БОЛЬНИЦА');
-        af('fHosp',j.hospital);
-        af('fPlace',j.cityCounty);
-        af('fRegNum',j.stateRegNum);
-        af('fIssued',j.dateIssued);
-        af('fRegDate',j.dateRegistered);
-        af('fMom',j.motherName);
-        af('fMomDob',j.motherDob);
-        af('fMomBirth',j.motherBirthPlace);
-        af('fDad',j.fatherName);
-        af('fDadDob',j.fatherDob);
-        af('fDadBirth',j.fatherBirthPlace);
-        if(j.reqNum) af('fReqNum', j.reqNum);
-        // Сохраняем переведённые значения из OCR напрямую
-        window._ocrCityCounty  = j.cityCounty  || '';
-        window._ocrHospital    = j.hospital     || '';
-        window._ocrHospitalType = j.hospitalType  || 'БОЛЬНИЦА';
-        window._ocrMotherName  = j.motherName   || '';
-        window._ocrFatherName  = j.fatherName   || '';
-        toast('ok','✓ Данные считаны — проверьте поля');
-      } else {
-        toast('err','Ошибка OCR: '+(res.error||'неизвестно'));
       }
-    })
-    .catch(err=>{
-      clearInterval(iv);
-      toast('err','Сервер недоступен. Проверьте что бэкенд запущен на бобле.');
-      console.error(err);
-    })
-    .finally(()=>{
-      fill.style.width='100%';
-      setTimeout(()=>{
-        zone.classList.remove('analyzing'); zone.classList.add('uploaded');
-        document.getElementById('uIc').textContent='✅';
-        document.getElementById('uTx').textContent='Файл загружен';
-        document.getElementById('uHn').textContent=file.name;
-        bar.classList.remove('show'); lbl.classList.remove('show');
-      },400);
-    });
+      if (j.sex) document.getElementById('fSex').value = j.sex;
+      af('fTime', j.timeOfBirth);
+      af('fWeight', j.weight);
+      af('fHospType', j.hospitalType || 'БОЛЬНИЦА');
+      af('fHosp', j.hospital);
+      af('fPlace', j.cityCounty);
+      af('fRegNum', j.stateRegNum);
+      af('fIssued', j.dateIssued);
+      af('fRegDate', j.dateRegistered);
+      af('fMom', j.motherName);
+      af('fMomDob', j.motherDob);
+      af('fMomBirth', j.motherBirthPlace);
+      af('fDad', j.fatherName);
+      af('fDadDob', j.fatherDob);
+      af('fDadBirth', j.fatherBirthPlace);
+      if (j.reqNum) af('fReqNum', j.reqNum);
+      window._ocrCityCounty   = j.cityCounty   || '';
+      window._ocrHospital     = j.hospital      || '';
+      window._ocrHospitalType = j.hospitalType  || 'БОЛЬНИЦА';
+      toast('ok', '✓ Данные считаны — проверьте поля');
+    } else {
+      toast('err', 'Ошибка OCR: ' + (res.error || 'неизвестно'));
+    }
+  } catch (err) {
+    clearInterval(iv);
+    toast('err', 'Сервер недоступен.');
+    console.error(err);
+  } finally {
+    fill.style.width = '100%';
+    setTimeout(() => {
+      zone.classList.remove('analyzing'); zone.classList.add('uploaded');
+      document.getElementById('uIc').textContent = '✅';
+      document.getElementById('uTx').textContent = 'Файл загружен';
+      document.getElementById('uHn').textContent = file.name;
+      bar.classList.remove('show'); lbl.classList.remove('show');
+    }, 400);
+  }
 }
 
 // ─── GENERATE ────────────────────────────────────────────
@@ -695,19 +699,17 @@ function doGenerate(){
     weight:document.getElementById('fWeight').value.trim(),
     hospital:     window._ocrHospital     || document.getElementById('fHosp').value.trim(),
     hospitalType: document.getElementById('fHospType').value.trim() || window._ocrHospitalType || 'БОЛЬНИЦА',
-    cityCounty: window._ocrCityCounty  || document.getElementById('fPlace').value.trim(),
+    cityCounty:   window._ocrCityCounty   || document.getElementById('fPlace').value.trim(),
     stateRegNum:document.getElementById('fRegNum').value.trim(),
     dateIssued:document.getElementById('fIssued').value.trim(),
     dateRegistered:document.getElementById('fRegDate').value.trim(),
-    motherName:  window._ocrMotherName  || document.getElementById('fMom').value.trim(),
+    motherName:   window._ocrMotherName   || document.getElementById('fMom').value.trim(),
     motherDob:document.getElementById('fMomDob').value.trim(),
     motherBirthPlace:document.getElementById('fMomBirth').value.trim(),
-    fatherName:  window._ocrFatherName  || document.getElementById('fDad').value.trim(),
+    fatherName:   window._ocrFatherName   || document.getElementById('fDad').value.trim(),
     fatherDob:document.getElementById('fDadDob').value.trim(),
     fatherBirthPlace:document.getElementById('fDadBirth').value.trim(),
     reqNum:document.getElementById('fReqNum').value.trim(),
-    // Имя ребёнка — всегда из полей фамилия+имя+отчество
-    // Имя ребёнка — берём из OCR напрямую, не из полей формы
     childName: window._ocrChildName || [last, first, document.getElementById('fMid').value.trim()].filter(Boolean).join(' '),
     email
   };
@@ -755,24 +757,17 @@ function doGenerate(){
 }
 
 // ─── ПОКАЗ БЛАНКА С ДАННЫМИ ──────────────────────────────
-// ─── ПРЕВЬЮ ДОКУМЕНТА ───────────────────────────────────
 function showPreview(html) {
   const container  = document.getElementById('blankPreview');
   const outer      = document.getElementById('previewOuter');
   const scaleWrap  = document.getElementById('blankScaleWrap');
   const overlayDiv = document.getElementById('overlayFields');
-  // Бланк 794px — масштабируем до ширины контейнера
   const containerW = container.offsetWidth || 460;
   const scale = containerW / 794;
-
   scaleWrap.style.transform = `scale(${scale})`;
   scaleWrap.style.width = '794px';
-
-  // Показываем только верхние 45% бланка
   const visibleH = Math.round(1123 * scale * 0.45);
   outer.style.height = visibleH + 'px';
-
-  // Поля с сервера уже в res.values — рисуем поверх
   if (window._lastValues && window._lastFields) {
     const vals   = window._lastValues;
     const fields = window._lastFields;
@@ -782,8 +777,6 @@ function showPreview(html) {
       return `<div style="position:absolute;top:${f.top}%;left:${f.left}%;font-size:${f.size}px;font-weight:700;color:#000;font-family:'Times New Roman',serif;white-space:nowrap;line-height:1">${val}</div>`;
     }).join('');
   }
-
-  // Показываем с анимацией
   container.style.display = 'block';
   container.style.opacity = '0';
   container.style.transform = 'translateY(8px)';
@@ -794,16 +787,12 @@ function showPreview(html) {
   });
 }
 
-
 function openFullDoc() {
   if (!window._pdfHtml) { toast('err','Нет документа'); return; }
   const w = window.open('', '_blank', 'width=860,height=1000,scrollbars=yes');
   w.document.write(window._pdfHtml);
   w.document.close();
 }
-
-function showBlankPreview() {} // legacy stub
-
 
 function downloadDocx(){
   if(!window._docxBase64){toast('err','Нет файла');return}
@@ -833,10 +822,8 @@ function doPayment(){
   const email=document.getElementById('fEmail').value.trim();
   toast('info','💳 Обработка платежа...');
   setTimeout(()=>{
-    // Download all 3 locally too
     downloadDocx();
     setTimeout(downloadHtml, 500);
-    // Show success
     document.getElementById('succEmail').textContent=email||'ваш email';
     document.getElementById('eNote').style.display='flex';
     document.getElementById('succModal').classList.add('show');
@@ -853,9 +840,6 @@ uz.addEventListener('drop',e=>{
   const f=e.dataTransfer.files[0];
   if(f){const dt=new DataTransfer();dt.items.add(f);document.getElementById('fInput').files=dt.files;handleUpload(document.getElementById('fInput'))}
 });
-
-
-
 </script>
 </body>
 </html>
