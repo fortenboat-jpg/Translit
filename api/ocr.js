@@ -361,7 +361,7 @@ function cityCountyToRu(str) {
     [/\bPOLK\s+COUNTY\b/g, 'ОКРУГ ПОЛК'],
     [/\bVOLUSIA\s+COUNTY\b/g, 'ОКРУГ ВОЛУША'],
     [/\bCOUNTY\b/g, 'ОКРУГ'],
-  ];
+  ]; 
   for (const [re, ru] of countyReplacements) result = result.replace(re, ru);
 
   return result.replace(/\s+/g,' ').trim();
