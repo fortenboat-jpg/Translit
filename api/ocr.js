@@ -44,7 +44,7 @@ STRICT RULES:
 - dob: YYYY-MM-DD format
 - timeOfBirth: HH:MM format
 - weightLbs and weightOz: numbers only
-- motherBirthCountry and fatherBirthCountry: translate to RUSSIAN in uppercase. Examples: "RUSSIA" → "РОССИЯ", "COLOMBIA" → "КОЛУМБИЯ", "FLORIDA" → "ФЛОРИДА, США", "BELARUS" → "БЕЛАРУСЬ", "GEORGIA" → "ГРУЗИЯ". If birthplace is a US state — write "STATE, США" in Russian.
+- motherBirthCountry and fatherBirthCountry: translate to RUSSIAN uppercase. Always write COUNTRY NAME (noun, not adjective). Examples: "RUSSIA"/"RUSSIAN" -> "РОССИЯ", "COLOMBIA"/"COLOMBIAN" -> "КОЛУМБИЯ", "CUBA"/"CUBAN" -> "КУБА", "MEXICO"/"MEXICAN" -> "МЕКСИКА", "UKRAINE"/"UKRAINIAN" -> "УКРАИНА", "BELARUS"/"BELARUSIAN" -> "БЕЛАРУСЬ", "GEORGIA" -> "ГРУЗИЯ", "FLORIDA" -> "ФЛОРИДА, США". If birthplace is a US state - write Russian name + ", США".
 
 {
   "firstName": "child first name",
@@ -354,11 +354,34 @@ function dateToRu(str) {
 // GPT уже переводит страны на русский — просто возвращаем uppercase как страховка
 function countryToRu(str) {
   if (!str) return '';
-  // Если уже русское — вернуть как есть заглавными
   if (/[а-яё]/i.test(str)) return str.toUpperCase();
-  // Если вдруг GPT вернул английское — пробуем словарь, иначе uppercase
+  // Страховка на случай если GPT вернул прилагательное на английском
+  const ADJECTIVES = {
+    'colombian':'КОЛУМБИЯ','cuban':'КУБА','mexican':'МЕКСИКА',
+    'russian':'РОССИЯ','ukrainian':'УКРАИНА','belarusian':'БЕЛАРУСЬ',
+    'georgian':'ГРУЗИЯ','armenian':'АРМЕНИЯ','azerbaijani':'АЗЕРБАЙДЖАН',
+    'kazakh':'КАЗАХСТАН','uzbek':'УЗБЕКИСТАН','moldovan':'МОЛДОВА',
+    'latvian':'ЛАТВИЯ','lithuanian':'ЛИТВА','estonian':'ЭСТОНИЯ',
+    'american':'США','venezuelan':'ВЕНЕСУЭЛА','peruvian':'ПЕРУ',
+    'ecuadorian':'ЭКВАДОР','bolivian':'БОЛИВИЯ','chilean':'ЧИЛИ',
+    'argentinian':'АРГЕНТИНА','brazilian':'БРАЗИЛИЯ',
+    'dominican':'ДОМИНИКАНСКАЯ РЕСПУБЛИКА','haitian':'ГАИТИ',
+    'jamaican':'ЯМАЙКА','salvadoran':'ЭЛЬ-САЛЬВАДОР',
+    'guatemalan':'ГВАТЕМАЛА','honduran':'ГОНДУРАС','nicaraguan':'НИКАРАГУА',
+    'panamanian':'ПАНАМА','indian':'ИНДИЯ','pakistani':'ПАКИСТАН',
+    'chinese':'КИТАЙ','japanese':'ЯПОНИЯ','korean':'КОРЕЯ',
+    'vietnamese':'ВЬЕТНАМ','thai':'ТАИЛАНД','philippine':'ФИЛИППИНЫ',
+    'turkish':'ТУРЦИЯ','iranian':'ИРАН','iraqi':'ИРАК','syrian':'СИРИЯ',
+    'egyptian':'ЕГИПЕТ','nigerian':'НИГЕРИЯ','ethiopian':'ЭФИОПИЯ',
+    'ghanaian':'ГАНА','kenyan':'КЕНИЯ','german':'ГЕРМАНИЯ',
+    'french':'ФРАНЦИЯ','spanish':'ИСПАНИЯ','italian':'ИТАЛИЯ',
+    'portuguese':'ПОРТУГАЛИЯ','greek':'ГРЕЦИЯ','polish':'ПОЛЬША',
+    'romanian':'РУМЫНИЯ','canadian':'КАНАДА','australian':'АВСТРАЛИЯ',
+    'british':'ВЕЛИКОБРИТАНИЯ','english':'ВЕЛИКОБРИТАНИЯ',
+    'israeli':'ИЗРАИЛЬ',
+  };
   const key = str.toLowerCase().trim();
-  return COUNTRIES_DICT[key] || str.toUpperCase();
+  return COUNTRIES_DICT[key] || ADJECTIVES[key] || str.toUpperCase();
 }
 
 // ── hospitalToRu: название больницы остаётся на английском как есть
