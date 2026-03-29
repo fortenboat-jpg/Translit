@@ -95,100 +95,88 @@ function translateNamePart(str) {
   }).join(' ');
 }
 
-function translateCityCounty(str) {
-  if (!str) return '';
-  const up = str.toUpperCase().trim();
-  if (/[А-ЯЁ]{3,}/.test(up)) return up;
+// Словарь городов с ручным переводом
+const CITY_DICT = {
+  'ST PETERSBURG':'Г. САНКТ-ПЕТЕРБУРГ','ST. PETERSBURG':'Г. САНКТ-ПЕТЕРБУРГ',
+  'SAINT PETERSBURG':'Г. САНКТ-ПЕТЕРБУРГ',
+  'MIAMI':'Г. МАЙАМИ','ORLANDO':'Г. ОРЛАНДО','TAMPA':'Г. ТАМПА',
+  'JACKSONVILLE':'Г. ДЖЭКСОНВИЛЛ','CLEARWATER':'Г. КЛИРУОТЕР',
+  'FORT LAUDERDALE':'Г. ФОРТ-ЛОДЕРДЕЙЛ','TALLAHASSEE':'Г. ТАЛЛАХАССИ',
+  'GAINESVILLE':'Г. ГЕЙНСВИЛЛ','PENSACOLA':'Г. ПЕНСАКОЛА',
+  'NAPLES':'Г. НЕАПОЛЬ','SARASOTA':'Г. САРАСОТА','SARASAOTA':'Г. САРАСОТА',
+  'FORT MYERS':'Г. ФОРТ-МАЙЕРС','CAPE CORAL':'Г. КЕЙП-КОРАЛ',
+  'DAYTONA BEACH':'Г. ДАЙТОНА-БИЧ','BOCA RATON':'Г. БОКА-РАТОН',
+  'HIALEAH':'Г. ХАЙАЛИА','WEST PALM BEACH':'Г. УЭСТ-ПАЛМ-БИЧ',
+  'PALM BEACH':'Г. ПАЛМ-БИЧ','CORAL GABLES':'Г. КОРАЛ-ГЕЙБЛС',
+  'POMPANO BEACH':'Г. ПОМПАНО-БИЧ','HOLLYWOOD':'Г. ГОЛЛИВУД',
+  'KISSIMMEE':'Г. КИССИММИ','OCALA':'Г. ОКАЛА',
+};
 
-  const CITIES = {
-    'ST PETERSBURG':'Г. САНКТ-ПЕТЕРБУРГ','ST. PETERSBURG':'Г. САНКТ-ПЕТЕРБУРГ',
-    'SAINT PETERSBURG':'Г. САНКТ-ПЕТЕРБУРГ',
-    'MIAMI':'Г. МАЙАМИ','ORLANDO':'Г. ОРЛАНДО','TAMPA':'Г. ТАМПА',
-    'JACKSONVILLE':'Г. ДЖЭКСОНВИЛЛ','CLEARWATER':'Г. КЛИРУОТЕР',
-    'FORT LAUDERDALE':'Г. ФОРТ-ЛОДЕРДЕЙЛ','TALLAHASSEE':'Г. ТАЛЛАХАССИ',
-    'GAINESVILLE':'Г. ГЕЙНСВИЛЛ','PENSACOLA':'Г. ПЕНСАКОЛА',
-    'NAPLES':'Г. НЕАПОЛЬ','SARASOTA':'Г. САРАСОТА',
-    'HIALEAH':'Г. ХАЙАЛИА','CAPE CORAL':'Г. КЕЙП-КОРАЛ',
-    'FORT MYERS':'Г. ФОРТ-МАЙЕРС','DAYTONA BEACH':'Г. ДАЙТОНА-БИЧ',
-    'BOCA RATON':'Г. БОКА-РАТОН',
-  };
-  const COUNTIES = {
-    'PINELLAS COUNTY':'ОКРУГ ПИНЕЛЛАС','HILLSBOROUGH COUNTY':'ОКРУГ ХИЛЛСБОРО',
-    'ORANGE COUNTY':'ОКРУГ ОРИНДЖ','MIAMI-DADE COUNTY':'ОКРУГ МАЙАМИ-ДЕЙД',
-    'BROWARD COUNTY':'ОКРУГ БРОУАРД','PALM BEACH COUNTY':'ОКРУГ ПАЛМ-БИЧ',
-    'DUVAL COUNTY':'ОКРУГ ДЮВАЛЬ','LEE COUNTY':'ОКРУГ ЛИ',
-    'POLK COUNTY':'ОКРУГ ПОЛК','VOLUSIA COUNTY':'ОКРУГ ВОЛУША',
-    'SARASOTA COUNTY':'ОКРУГ САРАСОТА','MANATEE COUNTY':'ОКРУГ МАНАТИ',
-    'COLLIER COUNTY':'ОКРУГ КОЛЬЕ','BREVARD COUNTY':'ОКРУГ БРЕВАРД',
-    'SEMINOLE COUNTY':'ОКРУГ СЕМИНОЛ',
-  };
+// Словарь округов с нестандартным переводом
+const COUNTY_DICT = {
+  'MIAMI-DADE':'МАЙАМИ-ДЕДИ',
+  'PALM BEACH':'ПАЛМ-БИЧ',
+  'ST JOHNS':'СТ. ДЖОНС','ST. JOHNS':'СТ. ДЖОНС','SAINT JOHNS':'СТ. ДЖОНС',
+  'ORANGE':'ОРИНДЖ',
+  'LEE':'ЛИ',
+};
 
-  let result = up;
-  for (const [en, ru] of Object.entries(CITIES)) {
-    result = result.replace(new RegExp('\\b' + en.replace(/\./g,'\\.') + '\\b', 'g'), ru);
+function autoTranslitWord(word) {
+  const pairs = [
+    ['shch','щ'],['sch','щ'],['zh','ж'],['kh','х'],['ph','ф'],['th','т'],
+    ['ts','ц'],['ch','ч'],['sh','ш'],['qu','кв'],
+    ['yu','ю'],['ya','я'],['yo','ё'],['ye','е'],['wr','р'],['wh','в'],
+    ['a','а'],['b','б'],['c','к'],['d','д'],['e','е'],['f','ф'],['g','г'],
+    ['h','х'],['i','и'],['j','дж'],['k','к'],['l','л'],['m','м'],['n','н'],
+    ['o','о'],['p','п'],['q','к'],['r','р'],['s','с'],['t','т'],['u','у'],
+    ['v','в'],['w','в'],['x','кс'],['y','й'],['z','з'],
+  ];
+  const w = word.toLowerCase().replace(/([bcdfghjklmnpqrstvwxz])y/g,'$1ей');
+  let r='',i=0;
+  while(i<w.length){
+    let matched=false;
+    for(const[en,ru]of pairs){if(w.startsWith(en,i)){r+=ru;i+=en.length;matched=true;break;}}
+    if(!matched){r+=w[i];i++;}
   }
-  for (const [en, ru] of Object.entries(COUNTIES)) {
-    result = result.replace(new RegExp('\\b' + en + '\\b', 'g'), ru);
-  }
-  result = result.replace(/\bCOUNTY\b/g, 'ОКРУГ');
-  return result.replace(/\s+/g, ' ').trim();
+  return(r.charAt(0).toUpperCase()+r.slice(1)).toUpperCase();
 }
 
-// ── hospitalLine2: транслитерируем название больницы пословно,
-//    НЕ заменяем города внутри названия
+function translateCityCounty(str) {
+  if (!str) return '';
+  if (/[А-ЯЁ]{3,}/.test(str)) return str.toUpperCase();
+  let result = str.toUpperCase().trim();
+
+  // 1. Заменяем многословные города из словаря (длинные первыми)
+  const cityEntries = Object.entries(CITY_DICT).sort((a,b) => b[0].length - a[0].length);
+  for (const [en, ru] of cityEntries) {
+    result = result.replace(new RegExp('\\b' + en.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + '\\b', 'g'), ru);
+  }
+
+  // 2. "НАЗВАНИЕ COUNTY" — словарь или автотранслит
+  result = result.replace(/\b([\w][\w\s-]*?)\s+COUNTY\b/g, (match, countyName) => {
+    const key = countyName.trim();
+    if (COUNTY_DICT[key]) return 'ОКРУГ ' + COUNTY_DICT[key];
+    const translitted = key.split(/[\s-]/).map(w => w ? autoTranslitWord(w) : '').join('-').replace(/--+/g,'-');
+    return 'ОКРУГ ' + translitted;
+  });
+
+  // 3. Одиночное COUNTY
+  result = result.replace(/\bCOUNTY\b/g, 'ОКРУГ');
+
+  // 4. Оставшиеся латинские слова — автотранслит
+  result = result.replace(/\b([A-Z]{3,})\b/g, match => autoTranslitWord(match));
+
+  return result.replace(/\s+/g,' ').trim();
+}
+
+// ── hospitalLine2: название больницы остаётся на английском как есть
+//    убираем только тип учреждения из начала строки
 function buildHospitalLine2(hospitalRaw) {
   if (!hospitalRaw) return '';
-  const up = hospitalRaw.toUpperCase().trim();
-
-  // Убираем тип учреждения только если он первый
-  let name = up
+  return hospitalRaw.toUpperCase().trim()
     .replace(/^HOSPITAL\s+/i, '')
     .replace(/^MEDICAL\s+CENT(?:ER|RE)\s+/i, '')
     .replace(/\s+/g, ' ').trim();
-
-  // Словарь для слов в названиях больниц
-  const HOSP_WORDS = {
-    'health':'ХЕЛС','regional':'РИДЖИНАЛ','bayfront':'БЭЙФРОНТ',
-    'general':'ДЖЕНЕРАЛ','memorial':'МЕМОРИАЛ','community':'КОМЬЮНИТИ',
-    'center':'СЕНТЕР','medical':'МЕДИКАЛ','university':'ЮНИВЕРСИТИ',
-    'south':'САУТ','north':'НОРТ','east':'ИСТ','west':'УЭСТ',
-    'st':'СТ','saint':'СЕЙНТ','orlando':'ОРЛАНДО','tampa':'ТАМПА',
-    'miami':'МАЙАМИ','jacksonville':'ДЖЭКСОНВИЛЛ',
-    'clearwater':'КЛИРУОТЕР','tallahassee':'ТАЛЛАХАССИ',
-    'gainesville':'ГЕЙНСВИЛЛ','pensacola':'ПЕНСАКОЛА',
-    'sarasota':'САРАСОТА','naples':'НЕАПОЛЬ',
-    'fort':'ФОРТ','myers':'МАЙЕРС','lauderdale':'ЛОДЕРДЕЙЛ',
-    'cape':'КЕЙП','coral':'КОРАЛ','daytona':'ДАЙТОНА','beach':'БИЧ',
-    'boca':'БОКА','raton':'РАТОН','hialeah':'ХАЙАЛИА',
-    'petersburg':'ПЕТЕРБУРГ',
-  };
-
-  return name.split(' ').map(word => {
-    const key = word.toLowerCase().replace(/[^a-z]/g, '');
-    if (!key) return '';
-    if (HOSP_WORDS[key]) return HOSP_WORDS[key];
-    // автотранслит
-    const pairs = [
-      ['shch','щ'],['sch','щ'],['zh','ж'],['kh','х'],['ph','ф'],['th','т'],
-      ['ts','ц'],['ch','ч'],['sh','ш'],['qu','кв'],
-      ['yu','ю'],['ya','я'],['yo','ё'],['ye','е'],
-      ['wr','р'],['wh','в'],
-      ['a','а'],['b','б'],['c','к'],['d','д'],['e','е'],['f','ф'],['g','г'],
-      ['h','х'],['i','и'],['j','дж'],['k','к'],['l','л'],['m','м'],['n','н'],
-      ['o','о'],['p','п'],['q','к'],['r','р'],['s','с'],['t','т'],['u','у'],
-      ['v','в'],['w','в'],['x','кс'],['y','й'],['z','з'],
-    ];
-    const w2 = word.toLowerCase().replace(/([bcdfghjklmnpqrstvwxz])y/g, '$1ей');
-    let r = '', i = 0;
-    while (i < w2.length) {
-      let matched = false;
-      for (const [en,ru] of pairs) {
-        if (w2.startsWith(en,i)) { r+=ru; i+=en.length; matched=true; break; }
-      }
-      if (!matched) { r+=w2[i]; i++; }
-    }
-    return (r.charAt(0).toUpperCase()+r.slice(1)).toUpperCase();
-  }).join(' ').trim();
 }
 
 module.exports = async function handler(req, res) {
