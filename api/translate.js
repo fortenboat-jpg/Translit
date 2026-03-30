@@ -52,11 +52,13 @@ async function buildPdfBlanк1(values, bgUrl, fields) {
   for (const f of fields) {
     const val = values[f.id];
     if (!val) continue;
+    const fontSize = f.size * 0.75;
     const x = (f.left / 100) * width;
-    const y = height - (f.top / 100) * height;
+    // pdf-lib: Y снизу вверх; top% — верхний край → вычитаем fontSize
+    const y = height - (f.top / 100) * height - fontSize;
     page.drawText(val, {
       x, y,
-      size: f.size * 0.85,
+      size: fontSize,
       font,
       color: rgb(0, 0, 0),
     });
