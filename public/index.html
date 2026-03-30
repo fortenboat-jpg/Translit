@@ -298,6 +298,17 @@ footer{background:var(--navy);color:rgba(255,255,255,.5);padding:40px 28px;text-
 
       <!-- STEP 1 -->
       <div class="step active" id="s1">
+        <div class="fsec">🗺️ Выберите штат</div>
+        <div class="fg">
+          <select class="fs" id="fState" onchange="onStateChange(this.value)">
+            <option value="florida">🌴 Флорида (Florida)</option>
+            <option value="newyork" disabled>🗽 Нью-Йорк (New York) — скоро</option>
+            <option value="california" disabled>🌉 Калифорния (California) — скоро</option>
+            <option value="texas" disabled>🤠 Техас (Texas) — скоро</option>
+            <option value="other" disabled>📋 Другой штат — скоро</option>
+          </select>
+        </div>
+
         <div class="fsec">📎 Загрузите свидетельство о рождении</div>
         <div class="fg">
           <div class="uzone" id="uZone" onclick="document.getElementById('fInput').click()">
@@ -538,6 +549,11 @@ let translationText = '';
 const API = '';
 
 // ─── UTILS ───────────────────────────────────────────────
+function onStateChange(val) {
+  // Пока только Флорида — в будущем переключаем бланки
+  console.log('State selected:', val);
+}
+
 function scrollToForm(){document.getElementById('form-area').scrollIntoView({behavior:'smooth',block:'start'})}
 function goTab(n){[1,2,3].forEach(i=>{document.getElementById('s'+i).classList.toggle('active',i===n);document.getElementById('tab'+i).classList.toggle('active',i===n)})}
 function faqT(el){el.closest('.faqi').classList.toggle('open')}
@@ -714,6 +730,7 @@ function doGenerate(){
     fatherDob:document.getElementById('fDadDob').value.trim(),
     fatherBirthPlace:document.getElementById('fDadBirth').value.trim(),
     reqNum:document.getElementById('fReqNum').value.trim(),
+    state:document.getElementById('fState').value,
     barcodeNum:document.getElementById('fBarcodeNum').value.trim(),
     childName: window._ocrChildName || [last, first, document.getElementById('fMid').value.trim()].filter(Boolean).join(' '),
     email
