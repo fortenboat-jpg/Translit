@@ -131,8 +131,8 @@ async function buildPdfBlanк2(values, num, today) {
   const certText2 = 'данный перевод является точным и полным переводом оригинала — свидетельства о рождении,';
   const certText3 = 'выданного компетентным органом штата Флорида, США.';
   page.drawText(certText,  { x:lm, y,    size:8, font:fontReg, color:black });
-  page.drawText(certText2, { x:lm, y-10, size:8, font:fontReg, color:black });
-  page.drawText(certText3, { x:lm, y-20, size:8, font:fontReg, color:black });
+  page.drawText(certText2, { x:lm, y:y-10, size:8, font:fontReg, color:black });
+  page.drawText(certText3, { x:lm, y:y-20, size:8, font:fontReg, color:black });
   y -= 38;
 
   page.drawText(`Переводчик: _______________________   Дата: ${today}   № ${num}`, {
