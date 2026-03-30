@@ -581,97 +581,18 @@ module.exports = async function handler(req, res) {
       return Buffer.from(await r.arrayBuffer());
     }
 
-    // Конвертация HTML → PNG через Gotenberg (скриншот для DOCX)
-    async function htmlToPng(html) {
+    // Конвертация PDF → DOCX через Gotenberg LibreOffice
+    async function pdfToDocx(pdfBytes) {
       const form = new FormData();
-      form.append('files', new Blob([html], {type:'text/html'}), 'index.html');
-      form.append('width', '794');
-      form.append('height', '1123');
-      form.append('format', 'png');
-      const r = await fetch(`${GOTENBERG}/forms/chromium/screenshot/html`, {
+      form.append('files', new Blob([pdfBytes], {type:'application/pdf'}), 'document.pdf');
+      const r = await fetch(`${GOTENBERG}/forms/libreoffice/convert`, {
         method: 'POST', body: form,
-        signal: AbortSignal.timeout(25000),
+        signal: AbortSignal.timeout(30000),
       });
-      if (!r.ok) throw new Error(`Gotenberg screenshot ${r.status}`);
+      if (!r.ok) throw new Error(`Gotenberg libreoffice ${r.status}`);
       return Buffer.from(await r.arrayBuffer());
     }
 
-    // DOCX с картинкой — бланк 2 как изображение на весь лист
-    function buildDocxWithImage(imgBytes, num) {
-      const imgB64 = imgBytes.toString('base64');
-      // EMU: 1 inch = 914400, A4 = 8.27x11.69 inch
-      const cx = Math.round(8.27 * 914400); // ширина A4
-      const cy = Math.round(11.69 * 914400); // высота A4
-
-      const docXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"
-            xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
-            xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"
-            xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
-            xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">
-<w:body>
-<w:p>
-  <w:r>
-    <w:rPr/>
-    <w:drawing>
-      <wp:inline distT="0" distB="0" distL="0" distR="0">
-        <wp:extent cx="${cx}" cy="${cy}"/>
-        <wp:effectExtent l="0" t="0" r="0" b="0"/>
-        <wp:docPr id="1" name="Picture 1"/>
-        <a:graphic>
-          <a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">
-            <pic:pic>
-              <pic:nvPicPr>
-                <pic:cNvPr id="1" name="blank2.png"/>
-                <pic:cNvPicPr/>
-              </pic:nvPicPr>
-              <pic:blipFill>
-                <a:blip r:embed="rId1"/>
-                <a:stretch><a:fillRect/></a:stretch>
-              </pic:blipFill>
-              <pic:spPr>
-                <a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm>
-                <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
-              </pic:spPr>
-            </pic:pic>
-          </a:graphicData>
-        </a:graphic>
-      </wp:inline>
-    </w:drawing>
-  </w:r>
-</w:p>
-<w:sectPr>
-  <w:pgSz w:w="11906" w:h="16838"/>
-  <w:pgMar w:top="0" w:right="0" w:bottom="0" w:left="0"/>
-</w:sectPr>
-</w:body></w:document>`;
-
-      const rels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/blank2.png"/>
-</Relationships>`;
-
-      const ct = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
-  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
-  <Default Extension="xml" ContentType="application/xml"/>
-  <Default Extension="png" ContentType="image/png"/>
-  <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
-</Types>`;
-
-      const rootRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
-</Relationships>`;
-
-      return buildZipMixed([
-        {name:'[Content_Types].xml',               data: ct,       binary: false},
-        {name:'_rels/.rels',                        data: rootRels, binary: false},
-        {name:'word/document.xml',                  data: docXml,   binary: false},
-        {name:'word/_rels/document.xml.rels',       data: rels,     binary: false},
-        {name:'word/media/blank2.png',              data: imgB64,   binary: true},
-      ]);
-    }
 
     try {
       const certHtml = buildCertHtml(values, num, today);
@@ -681,12 +602,13 @@ module.exports = async function handler(req, res) {
         htmlToPdf(certHtml),
       ]);
       console.log('PDF generated via Gotenberg OK');
-      // Конвертируем бланк 2 в PNG для вставки в DOCX
+      // Конвертируем бланк 2 PDF → DOCX через LibreOffice
       try {
-        const pngBytes = await htmlToPng(styledHtml2);
-        docxBuffer = buildDocxWithImage(pngBytes, num);
+        docxBuffer = await pdfToDocx(pdf2Bytes);
+        console.log('DOCX from PDF via LibreOffice OK');
       } catch(e) {
-        console.error('PNG for docx error:', e.message);
+        console.error('PDF→DOCX error:', e.message);
+        // fallback остаётся buildDocx
       }
     } catch(pdfErr) {
       console.error('Gotenberg error:', pdfErr.message);
