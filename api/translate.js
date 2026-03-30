@@ -1,23 +1,20 @@
 const { PDFDocument, rgb, StandardFonts } = require('pdf-lib');
 const fontkit = require('@pdf-lib/fontkit');
 
-// ── Загрузка кириллического шрифта ───────────────────────
+const fs = require('fs');
+const path = require('path');
+
+// ── Загрузка кириллического шрифта из репо ───────────────
+// Положи файлы в /public/fonts/ в репо на GitHub:
+// NotoSans-Bold.ttf и NotoSans-Regular.ttf
 let _fontBoldBytes = null;
 let _fontRegBytes  = null;
 
-async function getCyrillicFonts() {
+function getCyrillicFonts() {
   if (!_fontBoldBytes) {
-    const [rb, rr] = await Promise.all([
-      fetch('https://fonts.gstatic.com/s/notosans/v36/o-0IIpQlx3QUlC5A4PNr6zRAW_0.woff2'),
-      fetch('https://fonts.gstatic.com/s/notosans/v36/o-0OIpQlx3QUlC5A4PNjthCVUsTs.woff2'),
-    ]);
-    // woff2 не поддерживается pdf-lib напрямую, используем ttf
-    const [tb, tr] = await Promise.all([
-      fetch('https://cdn.jsdelivr.net/npm/@fontsource/noto-sans/files/noto-sans-cyrillic-700-normal.woff'),
-      fetch('https://cdn.jsdelivr.net/npm/@fontsource/noto-sans/files/noto-sans-cyrillic-400-normal.woff'),
-    ]);
-    _fontBoldBytes = await tb.arrayBuffer();
-    _fontRegBytes  = await tr.arrayBuffer();
+    const fontDir = path.join(process.cwd(), 'public', 'fonts');
+    _fontBoldBytes = fs.readFileSync(path.join(fontDir, 'NotoSans-Bold.ttf'));
+    _fontRegBytes  = fs.readFileSync(path.join(fontDir, 'NotoSans-Regular.ttf'));
   }
   return { boldBytes: _fontBoldBytes, regBytes: _fontRegBytes };
 }
@@ -25,7 +22,7 @@ async function getCyrillicFonts() {
 async function createPdfDoc() {
   const pdfDoc = await PDFDocument.create();
   pdfDoc.registerFontkit(fontkit);
-  const { boldBytes, regBytes } = await getCyrillicFonts();
+  const { boldBytes, regBytes } = getCyrillicFonts();
   const fontBold = await pdfDoc.embedFont(boldBytes);
   const fontReg  = await pdfDoc.embedFont(regBytes);
   return { pdfDoc, fontBold, fontReg };
@@ -558,19 +555,17 @@ module.exports = async function handler(req, res) {
     const styledHtml2 = await buildHtml(values, bg2Url, num, today, FIELDS2);
     const docxBuffer  = buildDocx(values, num, today);
 
-    // Генерируем PDF через pdf-lib
-    let pdf1Bytes, pdf2Bytes, pdf3Bytes;
+    // PDF через pdf-lib (требует шрифты в /public/fonts/)
+    let pdf1Bytes = null, pdf2Bytes = null, pdf3Bytes = null;
     try {
-      const FLDS  = FIELDS;
-      const FLDS2 = FIELDS2;
       [pdf1Bytes, pdf2Bytes, pdf3Bytes] = await Promise.all([
-        buildPdfBlanк1(values, bgUrl,  FLDS),
-        buildPdfBlanк1(values, bg2Url, FLDS2),
+        buildPdfBlanк1(values, bgUrl,  FIELDS),
+        buildPdfBlanк1(values, bg2Url, FIELDS2),
         buildPdfCert(values, num, today),
       ]);
     } catch(pdfErr) {
       console.error('pdf-lib error:', pdfErr.message);
-      pdf1Bytes = pdf2Bytes = pdf3Bytes = null;
+      // fallback на HTML если шрифты не найдены
     }
 
     if (d.email && process.env.RESEND_API_KEY) {
@@ -587,9 +582,12 @@ module.exports = async function handler(req, res) {
             subject: `Перевод свидетельства — ${d.childName || 'документ'} (No. ${num})`,
             html: buildEmail(d.childName, num),
             attachments: [
-              ...(pdf1Bytes ? [{ filename: `Перевод_бланк1_${num}.pdf`, content: Buffer.from(pdf1Bytes).toString('base64') }] : [{ filename: `Перевод_бланк1_${num}.html`, content: Buffer.from(styledHtml,'utf-8').toString('base64') }]),
-              ...(pdf2Bytes ? [{ filename: `Перевод_бланк2_${num}.pdf`, content: Buffer.from(pdf2Bytes).toString('base64') }] : [{ filename: `Перевод_бланк2_${num}.html`, content: Buffer.from(styledHtml2,'utf-8').toString('base64') }]),
-              ...(pdf3Bytes ? [{ filename: `Заверение_${num}.pdf`,       content: Buffer.from(pdf3Bytes).toString('base64') }] : []),
+              { filename: pdf1Bytes ? `Перевод_бланк1_${num}.pdf` : `Перевод_бланк1_${num}.html`,
+                content: pdf1Bytes ? Buffer.from(pdf1Bytes).toString('base64') : Buffer.from(styledHtml,'utf-8').toString('base64') },
+              { filename: pdf2Bytes ? `Перевод_бланк2_${num}.pdf` : `Перевод_бланк2_${num}.html`,
+                content: pdf2Bytes ? Buffer.from(pdf2Bytes).toString('base64') : Buffer.from(styledHtml2,'utf-8').toString('base64') },
+              { filename: pdf3Bytes ? `Заверение_${num}.pdf` : `Заверение_${num}.html`,
+                content: pdf3Bytes ? Buffer.from(pdf3Bytes).toString('base64') : Buffer.from(buildCertHtml(values, num, today),'utf-8').toString('base64') },
               { filename: `Перевод_${num}.docx`, content: docxBuffer.toString('base64') },
             ]
           })
