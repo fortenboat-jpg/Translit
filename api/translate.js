@@ -1,3 +1,29 @@
+const chromium = require('@sparticuz/chromium');
+const puppeteer = require('puppeteer-core');
+
+// ── HTML → PDF через Puppeteer ───────────────────────────
+async function htmlToPdf(html) {
+  let browser = null;
+  try {
+    browser = await puppeteer.launch({
+      args: chromium.args,
+      defaultViewport: chromium.defaultViewport,
+      executablePath: await chromium.executablePath(),
+      headless: chromium.headless,
+    });
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: 'networkidle0', timeout: 30000 });
+    const pdf = await page.pdf({
+      format: 'A4',
+      printBackground: true,
+      margin: { top: 0, right: 0, bottom: 0, left: 0 },
+    });
+    return Buffer.from(pdf);
+  } finally {
+    if (browser) await browser.close();
+  }
+}
+
 // ── ТОЧНЫЕ КООРДИНАТЫ ПОЛЕЙ НА БЛАНКЕ (из редактора пользователя) ────
 const FIELDS = [
   { id:'stateRegNum',      top:15.0, left:30.1, size:16 },
@@ -259,6 +285,22 @@ module.exports = async function handler(req, res) {
     const styledHtml2 = await buildHtml(values, bg2Url, num, today, FIELDS2);
     const docxBuffer  = buildDocx(values, num, today);
 
+    // Конвертируем HTML в PDF
+    let pdf1, pdf2, pdf3;
+    try {
+      [pdf1, pdf2, pdf3] = await Promise.all([
+        htmlToPdf(styledHtml),
+        htmlToPdf(styledHtml2),
+        htmlToPdf(buildCertHtml(values, num, today)),
+      ]);
+    } catch(pdfErr) {
+      console.error('PDF conversion error:', pdfErr.message);
+      // fallback — отправляем HTML если PDF не получился
+      pdf1 = Buffer.from(styledHtml, 'utf-8');
+      pdf2 = Buffer.from(styledHtml2, 'utf-8');
+      pdf3 = Buffer.from(buildCertHtml(values, num, today), 'utf-8');
+    }
+
     if (d.email && process.env.RESEND_API_KEY) {
       try {
         const emailResp = await fetch('https://api.resend.com/emails', {
@@ -273,8 +315,9 @@ module.exports = async function handler(req, res) {
             subject: `Перевод свидетельства — ${d.childName || 'документ'} (№ ${num})`,
             html: buildEmail(d.childName, num),
             attachments: [
-              { filename: `Перевод_бланк1_${num}.html`, content: Buffer.from(styledHtml,  'utf-8').toString('base64') },
-              { filename: `Перевод_бланк2_${num}.html`, content: Buffer.from(styledHtml2, 'utf-8').toString('base64') },
+              { filename: `Перевод_бланк1_${num}.pdf`,  content: pdf1.toString('base64') },
+              { filename: `Перевод_бланк2_${num}.pdf`,  content: pdf2.toString('base64') },
+              { filename: `Заверение_${num}.pdf`,        content: pdf3.toString('base64') },
               { filename: `Перевод_${num}.docx`,         content: docxBuffer.toString('base64') },
             ]
           })
@@ -471,8 +514,54 @@ function buildDocx(v, num, today) {
   ${row('Дата рождения', v.fatherDob)}
   ${row('Место рождения', v.fatherBirthPlace)}
 </w:tbl>
-<w:p><w:r><w:t xml:space="preserve"> </w:t></w:r></w:p>
-<w:p><w:r><w:rPr><w:b/><w:sz w:val="24"/><w:color w:val="0C1B3A"/><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/></w:rPr>
+
+<!-- ══ СТРАНИЦА 2 — та же таблица, заголовок "Бланк 2" ══ -->
+<w:p><w:pPr><w:pageBreakBefore/><w:jc w:val="center"/><w:spacing w:before="0" w:after="120"/></w:pPr>
+  <w:r><w:rPr><w:b/><w:sz w:val="32"/><w:color w:val="0C1B3A"/><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/></w:rPr>
+  <w:t>СВИДЕТЕЛЬСТВО О РОЖДЕНИИ</w:t></w:r></w:p>
+<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="0" w:after="160"/></w:pPr>
+  <w:r><w:rPr><w:i/><w:sz w:val="18"/><w:color w:val="666666"/><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/></w:rPr>
+  <w:t>Перевод с английского языка на русский язык | штат Флорида, США</w:t></w:r></w:p>
+<w:tbl>
+  <w:tblPr>
+    <w:tblW w:w="8800" w:type="dxa"/>
+    <w:tblBorders>
+      <w:top    w:val="single" w:sz="6" w:color="C8A84B"/>
+      <w:bottom w:val="single" w:sz="6" w:color="C8A84B"/>
+      <w:insideH w:val="single" w:sz="2" w:color="CCCCCC"/>
+    </w:tblBorders>
+    <w:tblCellMar>
+      <w:top w:w="80" w:type="dxa"/><w:left w:w="120" w:type="dxa"/>
+      <w:bottom w:w="80" w:type="dxa"/><w:right w:w="120" w:type="dxa"/>
+    </w:tblCellMar>
+  </w:tblPr>
+  <w:tblGrid><w:gridCol w:w="3500"/><w:gridCol w:w="5300"/></w:tblGrid>
+  ${sec('РЕКВИЗИТЫ ДОКУМЕНТА')}
+  ${row('Номер регистрации в штате', v.stateRegNum)}
+  ${row('Дата выдачи', v.dateIssued)}
+  ${row('Дата регистрации', v.dateRegistered)}
+  ${sec('ИНФОРМАЦИЯ О РЕБЁНКЕ')}
+  ${row('ФИО', v.childName)}
+  ${row('Дата рождения', v.dobFormatted)}
+  ${row('Время рождения (24 ч)', v.timeOfBirth)}
+  ${row('Пол', v.sex)}
+  ${row('Вес при рождении', v.weight)}
+  ${row('Место рождения', v.hospital)}
+  ${row('Название / город', v.hospitalLine2)}
+  ${row('Город, округ рождения', v.cityCounty)}
+  ${sec('ИНФОРМАЦИЯ О МАТЕРИ / РОДИТЕЛЕ')}
+  ${row('ФИО', v.motherName)}
+  ${row('Дата рождения', v.motherDob)}
+  ${row('Место рождения', v.motherBirthPlace)}
+  ${sec('ИНФОРМАЦИЯ ОБ ОТЦЕ / РОДИТЕЛЕ')}
+  ${row('ФИО', v.fatherName)}
+  ${row('Дата рождения', v.fatherDob)}
+  ${row('Место рождения', v.fatherBirthPlace)}
+</w:tbl>
+
+<!-- ══ УДОСТОВЕРЕНИЕ ПЕРЕВОДА ══ -->
+<w:p><w:pPr><w:spacing w:before="200" w:after="80"/></w:pPr>
+  <w:r><w:rPr><w:b/><w:sz w:val="24"/><w:color w:val="0C1B3A"/><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/></w:rPr>
   <w:t>УДОСТОВЕРЕНИЕ ПЕРЕВОДА</w:t></w:r></w:p>
 <w:p><w:pPr><w:spacing w:before="80" w:after="80"/></w:pPr>
   <w:r><w:rPr><w:sz w:val="20"/><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/></w:rPr>
@@ -480,6 +569,9 @@ function buildDocx(v, num, today) {
 <w:p><w:pPr><w:spacing w:before="160" w:after="60"/></w:pPr>
   <w:r><w:rPr><w:sz w:val="20"/><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/></w:rPr>
   <w:t xml:space="preserve">Переводчик: _______________________     Дата: ${esc(today)}     № ${esc(num)}</w:t></w:r></w:p>
+<w:p><w:pPr><w:spacing w:before="80" w:after="60"/></w:pPr>
+  <w:r><w:rPr><w:sz w:val="20"/><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/></w:rPr>
+  <w:t xml:space="preserve">Нотариус: _______________________     Дата: _______________________</w:t></w:r></w:p>
 <w:sectPr>
   <w:pgSz w:w="11906" w:h="16838"/>
   <w:pgMar w:top="1080" w:right="850" w:bottom="1080" w:left="1701"/>
@@ -520,7 +612,225 @@ function buildDocx(v, num, today) {
   ]);
 }
 
-function buildEmail(name, num){return`<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto"><div style="background:#0c1b3a;padding:24px;text-align:center"><h2 style="color:white;margin:0">📄 BirthCert Translation</h2><p style="color:rgba(255,255,255,.6);margin:6px 0 0;font-size:13px">Официальный перевод для Консульства РФ</p></div><div style="background:#f4f6fb;padding:28px"><p style="color:#0e1c36;font-size:15px;margin:0 0 10px">Здравствуйте!</p><p style="color:#5a6b90;font-size:14px;margin-bottom:16px">Ваш перевод готов. К письму прикреплены <strong>3 файла</strong>:</p><div style="background:white;border:1px solid #d4daf0;border-radius:8px;padding:14px;margin:0 0 16px"><p style="margin:0 0 8px;font-size:13px">🎨 <strong>Перевод_бланк1_${num}.html</strong> — перевод с цветным фоном</p><p style="margin:0 0 8px;font-size:13px">📄 <strong>Перевод_бланк2_${num}.html</strong> — перевод на белом фоне</p><p style="margin:0;font-size:13px">📝 <strong>Перевод_${num}.docx</strong> — документ Word</p></div><div style="background:#fff8e6;border-left:3px solid #c8a84b;padding:10px 14px;border-radius:0 6px 6px 0;margin-bottom:16px"><p style="margin:0;color:#7a5a00;font-size:13px">🖨️ Для подачи в консульство: откройте HTML файл в браузере → Ctrl+P → масштаб 100% → без полей</p></div><p style="color:#aab0c8;font-size:12px;margin:0">№ ${num} · BirthCert Translation</p></div></div>`;}
+
+// ── СТРАНИЦА ЗАВЕРЕНИЯ ПЕРЕВОДА ──────────────────────────
+function buildCertHtml(v, num, today) {
+  return `<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<style>
+  @page { size: A4; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Times New Roman', Times, serif;
+    background: white;
+    width: 210mm;
+    min-height: 297mm;
+    padding: 20mm 22mm 18mm;
+    color: #111;
+  }
+  .border {
+    border: 2px solid #0c1b3a;
+    padding: 16mm 18mm;
+    min-height: 257mm;
+    display: flex;
+    flex-direction: column;
+  }
+  .inner-border {
+    border: 1px solid #c8a84b;
+    padding: 12mm 14mm;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .header {
+    text-align: center;
+    border-bottom: 2px solid #c8a84b;
+    padding-bottom: 10px;
+    margin-bottom: 18px;
+  }
+  .header h1 {
+    font-size: 16pt;
+    font-weight: bold;
+    color: #0c1b3a;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .header p {
+    font-size: 10pt;
+    color: #555;
+  }
+  .doc-info {
+    background: #f8f6ee;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 10px 14px;
+    margin-bottom: 18px;
+    font-size: 10pt;
+    line-height: 1.8;
+  }
+  .doc-info strong { color: #0c1b3a; }
+  .cert-text {
+    font-size: 11pt;
+    line-height: 1.9;
+    text-align: justify;
+    margin-bottom: 16px;
+  }
+  .cert-text p { margin-bottom: 10px; }
+  .sign-section {
+    margin-top: auto;
+  }
+  .sign-title {
+    font-size: 11pt;
+    font-weight: bold;
+    color: #0c1b3a;
+    border-bottom: 1px solid #c8a84b;
+    padding-bottom: 6px;
+    margin-bottom: 18px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .sign-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+  .sign-block {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .sign-block-title {
+    font-size: 9pt;
+    font-weight: bold;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+  .sign-line {
+    border-bottom: 1.5px solid #333;
+    height: 40px;
+    margin-bottom: 4px;
+  }
+  .sign-label {
+    font-size: 8.5pt;
+    color: #444;
+    text-align: center;
+  }
+  .stamp-area {
+    border: 2px dashed #aaa;
+    border-radius: 50%;
+    width: 90px;
+    height: 90px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    color: #bbb;
+    font-size: 7pt;
+    text-align: center;
+    line-height: 1.4;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .footer {
+    text-align: center;
+    font-size: 8pt;
+    color: #999;
+    border-top: 1px solid #ddd;
+    padding-top: 10px;
+    margin-top: 16px;
+  }
+  .order-num {
+    text-align: right;
+    font-size: 9pt;
+    color: #888;
+    margin-bottom: 8px;
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+<div class="border">
+<div class="inner-border">
+
+  <div class="order-num">№ ${num} · ${today}</div>
+
+  <div class="header">
+    <h1>Удостоверение перевода</h1>
+    <p>Свидетельство о рождении · Штат Флорида, США</p>
+  </div>
+
+  <div class="doc-info">
+    <strong>Документ:</strong> Свидетельство о рождении (Certification of Birth), штат Флорида, США<br>
+    <strong>Имя ребёнка:</strong> ${v.childName || '—'}<br>
+    <strong>Дата рождения:</strong> ${v.dobFormatted || '—'}<br>
+    <strong>Номер регистрации:</strong> ${v.stateRegNum || '—'}<br>
+    <strong>Дата выдачи:</strong> ${v.dateIssued || '—'}
+  </div>
+
+  <div class="cert-text">
+    <p>Я, нижеподписавшийся(аяся), сертифицированный переводчик с английского языка на русский язык, настоящим удостоверяю, что выполненный мной перевод вышеуказанного документа является точным, полным и верным переводом оригинала.</p>
+    <p>Перевод выполнен в соответствии с требованиями Консульства Российской Федерации в США и может быть использован для подачи в консульские учреждения Российской Федерации на территории Соединённых Штатов Америки.</p>
+    <p>Настоящим подтверждаю, что являюсь компетентным переводчиком русского и английского языков, и данный перевод соответствует тексту оригинала документа.</p>
+  </div>
+
+  <div class="sign-section">
+    <div class="sign-title">Подписи и удостоверение</div>
+
+    <div class="sign-grid">
+      <div class="sign-block">
+        <div class="sign-block-title">Переводчик</div>
+        <div class="sign-line"></div>
+        <div class="sign-label">Подпись переводчика</div>
+        <div style="height:8px"></div>
+        <div class="sign-line"></div>
+        <div class="sign-label">ФИО переводчика (печатными буквами)</div>
+        <div style="height:8px"></div>
+        <div class="sign-line"></div>
+        <div class="sign-label">Дата</div>
+      </div>
+
+      <div class="sign-block">
+        <div class="sign-block-title">Нотариус</div>
+        <div class="sign-line"></div>
+        <div class="sign-label">Подпись нотариуса</div>
+        <div style="height:8px"></div>
+        <div class="sign-line"></div>
+        <div class="sign-label">ФИО нотариуса (печатными буквами)</div>
+        <div style="height:8px"></div>
+        <div class="sign-line"></div>
+        <div class="sign-label">Дата · Комиссия действительна до</div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+      <div style="text-align:center">
+        <div class="sign-block-title" style="margin-bottom:8px">Печать переводчика</div>
+        <div class="stamp-area">Печать<br>переводчика</div>
+      </div>
+      <div style="text-align:center">
+        <div class="sign-block-title" style="margin-bottom:8px">Печать нотариуса</div>
+        <div class="stamp-area">Нотариальная<br>печать</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    BirthCert Translation Services &nbsp;·&nbsp; Официальный перевод для Консульства РФ в США &nbsp;·&nbsp; № ${num}
+  </div>
+
+</div>
+</div>
+</body>
+</html>`;
+}
+
+function buildEmail(name, num){return`<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto"><div style="background:#0c1b3a;padding:24px;text-align:center"><h2 style="color:white;margin:0">📄 BirthCert Translation</h2><p style="color:rgba(255,255,255,.6);margin:6px 0 0;font-size:13px">Официальный перевод для Консульства РФ</p></div><div style="background:#f4f6fb;padding:28px"><p style="color:#0e1c36;font-size:15px;margin:0 0 10px">Здравствуйте!</p><p style="color:#5a6b90;font-size:14px;margin-bottom:16px">Ваш перевод готов. К письму прикреплены <strong>4 файла</strong>:</p><div style="background:white;border:1px solid #d4daf0;border-radius:8px;padding:14px;margin:0 0 16px"><p style="margin:0 0 8px;font-size:13px">📋 <strong>Перевод_бланк1_${num}.pdf</strong> — бланк с цветным фоном</p><p style="margin:0 0 8px;font-size:13px">📄 <strong>Перевод_бланк2_${num}.pdf</strong> — бланк на белом фоне</p><p style="margin:0 0 8px;font-size:13px">✍️ <strong>Заверение_${num}.pdf</strong> — страница заверения переводчика и нотариуса</p><p style="margin:0;font-size:13px">📝 <strong>Перевод_${num}.docx</strong> — документ Word</p></div><div style="background:#fff8e6;border-left:3px solid #c8a84b;padding:10px 14px;border-radius:0 6px 6px 0;margin-bottom:16px"><p style="margin:0;color:#7a5a00;font-size:13px">🖨️ Для подачи в консульство: распечатайте все PDF файлы. Страницу заверения подпишите у переводчика и нотариуса.</p></div><p style="color:#aab0c8;font-size:12px;margin:0">№ ${num} · BirthCert Translation</p></div></div>`;}
 
 function buildZipMixed(files){
   const lp=[],cp=[];let offset=0;
