@@ -701,21 +701,7 @@ body{font-family:'Times New Roman',Times,serif;background:#666;display:flex;flex
   <img src="${bgData}" alt="бланк">
   <div class="fields">${fieldsHtml}</div>
 </div>
-<div class="sheet sheet-cert">
-  <div class="cert-title">УДОСТОВЕРЕНИЕ ПЕРЕВОДА</div>
-  <div class="cert-body">
-    <p>Я, нижеподписавшийся(аяся), сертифицированный переводчик с английского языка на русский язык, настоящим удостоверяю, что данный перевод является точным и полным переводом оригинального документа — свидетельства о рождении, выданного компетентным органом штата Флорида, США.</p>
-    <p>Перевод выполнен в соответствии с требованиями Консульства Российской Федерации в США.</p>
-    <p>Настоящим подтверждаю, что являюсь компетентным переводчиком русского и английского языков и данный перевод соответствует оригиналу документа.</p>
-  </div>
-  <div class="cert-sign">
-    <div class="cert-sign-item"><div class="cert-sign-line"></div>Подпись переводчика</div>
-    <div class="cert-sign-item"><div class="cert-sign-line"></div>Дата: ${today}</div>
-    <div class="cert-sign-item"><div class="cert-sign-line"></div>No. ${num}</div>
-  </div>
-  <div class="cert-footer">BirthCert Translation Services &nbsp;·&nbsp; Официальный перевод для Консульства РФ в США</div>
-</div>
-<p class="hint">Для печати: Ctrl+P → масштаб 100% → без полей → 2 страницы А4</p>
+<p class="hint">Для печати: Ctrl+P → масштаб 100% → без полей</p>
 </body></html>`;
 }
 
@@ -866,8 +852,12 @@ function buildDocx(v, num, today) {
 
 // ── СТРАНИЦА ЗАВЕРЕНИЯ ПЕРЕВОДА ──────────────────────────
 function buildCertHtml(v, num, today) {
+  const childName = v.childName || '—';
+  const dob = v.dobFormatted || '—';
+  const regNum = v.stateRegNum || '—';
+
   return `<!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <style>
@@ -878,208 +868,107 @@ function buildCertHtml(v, num, today) {
     background: white;
     width: 210mm;
     min-height: 297mm;
-    padding: 20mm 22mm 18mm;
+    padding: 28mm 25mm 22mm;
     color: #111;
+    font-size: 12pt;
+    line-height: 1.7;
   }
-  .border {
-    border: 2px solid #0c1b3a;
-    padding: 16mm 18mm;
-    min-height: 257mm;
-    display: flex;
-    flex-direction: column;
-  }
-  .inner-border {
-    border: 1px solid #c8a84b;
-    padding: 12mm 14mm;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-  }
-  .header {
-    text-align: center;
-    border-bottom: 2px solid #c8a84b;
-    padding-bottom: 10px;
-    margin-bottom: 18px;
-  }
-  .header h1 {
-    font-size: 16pt;
-    font-weight: bold;
-    color: #0c1b3a;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    margin-bottom: 4px;
-  }
-  .header p {
-    font-size: 10pt;
-    color: #555;
-  }
-  .doc-info {
-    background: #f8f6ee;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    padding: 10px 14px;
-    margin-bottom: 18px;
-    font-size: 10pt;
-    line-height: 1.8;
-  }
-  .doc-info strong { color: #0c1b3a; }
-  .cert-text {
-    font-size: 11pt;
-    line-height: 1.9;
-    text-align: justify;
-    margin-bottom: 16px;
-  }
-  .cert-text p { margin-bottom: 10px; }
-  .sign-section {
-    margin-top: auto;
-  }
-  .sign-title {
-    font-size: 11pt;
-    font-weight: bold;
-    color: #0c1b3a;
-    border-bottom: 1px solid #c8a84b;
-    padding-bottom: 6px;
-    margin-bottom: 18px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-  }
-  .sign-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    margin-bottom: 20px;
-  }
-  .sign-block {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-  .sign-block-title {
-    font-size: 9pt;
-    font-weight: bold;
-    color: #555;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 4px;
-  }
-  .sign-line {
-    border-bottom: 1.5px solid #333;
-    height: 40px;
-    margin-bottom: 4px;
-  }
-  .sign-label {
-    font-size: 8.5pt;
-    color: #444;
-    text-align: center;
-  }
-  .stamp-area {
-    border: 2px dashed #aaa;
-    border-radius: 50%;
-    width: 90px;
-    height: 90px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto;
-    color: #bbb;
-    font-size: 7pt;
-    text-align: center;
-    line-height: 1.4;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-  .footer {
-    text-align: center;
-    font-size: 8pt;
-    color: #999;
-    border-top: 1px solid #ddd;
-    padding-top: 10px;
-    margin-top: 16px;
-  }
-  .order-num {
-    text-align: right;
-    font-size: 9pt;
-    color: #888;
-    margin-bottom: 8px;
-    font-style: italic;
-  }
+  .order { text-align: right; font-size: 9pt; color: #888; margin-bottom: 12mm; font-style: italic; }
+  .title { text-align: center; margin-bottom: 10mm; }
+  .title h1 { font-size: 15pt; font-weight: bold; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 3px; }
+  .title p { font-size: 10pt; color: #555; font-style: italic; }
+  .divider { border: none; border-top: 1px solid #333; margin: 8mm 0; }
+  .body-text { font-size: 12pt; line-height: 1.9; text-align: justify; margin-bottom: 12mm; }
+  .appeared { margin-bottom: 8mm; }
+  .blank-line { display: inline-block; border-bottom: 1px solid #333; min-width: 80mm; margin: 0 2mm; vertical-align: bottom; }
+  .sign-section { margin-top: 12mm; }
+  .sign-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20mm; margin-top: 12mm; }
+  .sign-line { border-bottom: 1px solid #333; height: 14mm; margin-bottom: 2mm; }
+  .sign-label { font-size: 9pt; color: #555; }
+  .notary-block { margin-top: 14mm; border-top: 1px solid #333; padding-top: 6mm; }
+  .notary-title { font-size: 10pt; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6mm; }
+  .notary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20mm; }
+  .stamp-area { border: 1px dashed #aaa; width: 32mm; height: 32mm; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-top: 4mm; }
+  .stamp-text { font-size: 7.5pt; color: #aaa; text-align: center; text-transform: uppercase; line-height: 1.4; }
+  .footer { text-align: center; font-size: 8pt; color: #bbb; margin-top: 14mm; padding-top: 4mm; border-top: 1px solid #eee; }
 </style>
 </head>
 <body>
-<div class="border">
-<div class="inner-border">
 
-  <div class="order-num">No. ${num} · ${today}</div>
+  <div class="order">No. ${num} &nbsp;·&nbsp; ${today}</div>
 
-  <div class="header">
-    <h1>Удостоверение перевода</h1>
-    <p>Свидетельство о рождении · Штат Флорида, США</p>
+  <div class="title">
+    <h1>Notarization of Translator's Signature</h1>
+    <p>State of Florida, United States of America</p>
   </div>
 
-  <div class="doc-info">
-    <strong>Документ:</strong> Свидетельство о рождении (Certification of Birth), штат Флорида, США<br>
-    <strong>Имя ребёнка:</strong> ${v.childName || '—'}<br>
-    <strong>Дата рождения:</strong> ${v.dobFormatted || '—'}<br>
-    <strong>Номер регистрации:</strong> ${v.stateRegNum || '—'}<br>
-    <strong>Дата выдачи:</strong> ${v.dateIssued || '—'}
-  </div>
+  <hr class="divider">
 
-  <div class="cert-text">
-    <p>Я, нижеподписавшийся(аяся), сертифицированный переводчик с английского языка на русский язык, настоящим удостоверяю, что выполненный мной перевод вышеуказанного документа является точным, полным и верным переводом оригинала.</p>
-    <p>Перевод выполнен в соответствии с требованиями Консульства Российской Федерации в США и может быть использован для подачи в консульские учреждения Российской Федерации на территории Соединённых Штатов Америки.</p>
-    <p>Настоящим подтверждаю, что являюсь компетентным переводчиком русского и английского языков, и данный перевод соответствует тексту оригинала документа.</p>
+  <div class="body-text">
+    <div class="appeared">
+      <p>State of _________________________, County of _________________________</p>
+    </div>
+
+    <p>Before me, the undersigned authority, personally appeared <span class="blank-line">&nbsp;</span>, who, being duly sworn, states that:</p>
+
+    <p style="margin-top:6mm">He/She is a translator competent in the English and Russian languages, and that He/She has translated the attached document:</p>
+
+    <p style="margin-top:4mm;padding-left:8mm;font-style:italic">
+      Certificate of Birth, State of Florida, USA<br>
+      Child's Name: <strong>${childName}</strong><br>
+      Date of Birth: <strong>${dob}</strong><br>
+      State File No.: <strong>${regNum}</strong>
+    </p>
+
+    <p style="margin-top:6mm">from the English language into the Russian language, and that the translation is true and accurate to the best of his/her knowledge and ability.</p>
   </div>
 
   <div class="sign-section">
-    <div class="sign-title">Подписи и удостоверение</div>
-
     <div class="sign-grid">
-      <div class="sign-block">
-        <div class="sign-block-title">Переводчик</div>
+      <div>
         <div class="sign-line"></div>
-        <div class="sign-label">Подпись переводчика</div>
-        <div style="height:8px"></div>
+        <div class="sign-label">Signature of Translator</div>
+        <div style="height:5mm"></div>
         <div class="sign-line"></div>
-        <div class="sign-label">ФИО переводчика (печатными буквами)</div>
-        <div style="height:8px"></div>
+        <div class="sign-label">Printed Name of Translator</div>
+        <div style="height:5mm"></div>
         <div class="sign-line"></div>
-        <div class="sign-label">Дата</div>
+        <div class="sign-label">Date</div>
       </div>
-
-      <div class="sign-block">
-        <div class="sign-block-title">Нотариус</div>
-        <div class="sign-line"></div>
-        <div class="sign-label">Подпись нотариуса</div>
-        <div style="height:8px"></div>
-        <div class="sign-line"></div>
-        <div class="sign-label">ФИО нотариуса (печатными буквами)</div>
-        <div style="height:8px"></div>
-        <div class="sign-line"></div>
-        <div class="sign-label">Дата · Комиссия действительна до</div>
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end">
+        <div class="stamp-area"><div class="stamp-text">Translator's<br>Seal<br>(if applicable)</div></div>
       </div>
     </div>
+  </div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
-      <div style="text-align:center">
-        <div class="sign-block-title" style="margin-bottom:8px">Печать переводчика</div>
-        <div class="stamp-area">Печать<br>переводчика</div>
+  <div class="notary-block">
+    <div class="notary-title">Notary Public Acknowledgment</div>
+    <p>Sworn to (or affirmed) and subscribed before me this <span class="blank-line" style="min-width:20mm">&nbsp;</span> day of <span class="blank-line" style="min-width:30mm">&nbsp;</span>, 20<span class="blank-line" style="min-width:10mm">&nbsp;</span>, by <span class="blank-line">&nbsp;</span>.</p>
+    <div class="notary-grid" style="margin-top:8mm">
+      <div>
+        <div class="sign-line"></div>
+        <div class="sign-label">Signature of Notary Public</div>
+        <div style="height:5mm"></div>
+        <div class="sign-line"></div>
+        <div class="sign-label">Printed Name of Notary Public</div>
+        <div style="height:5mm"></div>
+        <div class="sign-line"></div>
+        <div class="sign-label">My Commission Expires</div>
       </div>
-      <div style="text-align:center">
-        <div class="sign-block-title" style="margin-bottom:8px">Печать нотариуса</div>
-        <div class="stamp-area">Нотариальная<br>печать</div>
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center">
+        <div class="stamp-area"><div class="stamp-text">Notarial<br>Seal</div></div>
       </div>
     </div>
   </div>
 
   <div class="footer">
-    BirthCert Translation Services &nbsp;·&nbsp; Официальный перевод для Консульства РФ в США &nbsp;·&nbsp; No. ${num}
+    BirthCert Translation Services &nbsp;·&nbsp; No. ${num}
   </div>
 
-</div>
-</div>
 </body>
 </html>`;
 }
+
 
 function buildEmail(name, num){return`<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto"><div style="background:#0c1b3a;padding:24px;text-align:center"><h2 style="color:white;margin:0">📄 BirthCert Translation</h2><p style="color:rgba(255,255,255,.6);margin:6px 0 0;font-size:13px">Официальный перевод для Консульства РФ</p></div><div style="background:#f4f6fb;padding:28px"><p style="color:#0e1c36;font-size:15px;margin:0 0 10px">Здравствуйте!</p><p style="color:#5a6b90;font-size:14px;margin-bottom:16px">Ваш перевод готов. К письму прикреплены <strong>4 файла</strong>:</p><div style="background:white;border:1px solid #d4daf0;border-radius:8px;padding:14px;margin:0 0 16px"><p style="margin:0 0 8px;font-size:13px">📋 <strong>Перевод_бланк1_${num}.html</strong> — бланк с цветным фоном (открыть в браузере → Ctrl+P → PDF)</p><p style="margin:0 0 8px;font-size:13px">📄 <strong>Перевод_бланк2_${num}.html</strong> — бланк на белом фоне (открыть в браузере → Ctrl+P → PDF)</p><p style="margin:0 0 8px;font-size:13px">✍️ <strong>Заверение_${num}.html</strong> — страница заверения (распечатать, подписать)</p><p style="margin:0;font-size:13px">📝 <strong>Перевод_${num}.docx</strong> — документ Word (редактируемый)</p></div><div style="background:#fff8e6;border-left:3px solid #c8a84b;padding:10px 14px;border-radius:0 6px 6px 0;margin-bottom:16px"><p style="margin:0;color:#7a5a00;font-size:13px">🖨️ Для печати: откройте HTML файл в браузере → Ctrl+P → масштаб 100% → без полей → Сохранить как PDF</p></div><p style="color:#aab0c8;font-size:12px;margin:0">No. ${num} · BirthCert Translation</p></div></div>`;}
 
