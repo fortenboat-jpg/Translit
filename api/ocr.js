@@ -72,7 +72,8 @@ STRICT RULES:
   "fatherLastName": "last name in RUSSIAN transliteration uppercase",
   "fatherDob": "MONTH DD, YYYY",
   "fatherBirthCountry": "country in RUSSIAN uppercase",
-  "reqNum": "REQ number digits only"
+  "reqNum": "REQ number digits only — read from the REQ field on the right side",
+  "barcode": "the number printed under the barcode at the very bottom of the document (e.g. *43677394* — digits only, no asterisks)"
 }
 
 NAME order in US certificates: FIRST MIDDLE LAST
@@ -123,7 +124,11 @@ IMPORTANT - transliterate all names to RUSSIAN uppercase using standard Russian 
       fatherDob:        dateToRu(raw.fatherDob),
       fatherBirthPlace: countryToRu(raw.fatherBirthCountry),
       reqNum:           (raw.reqNum || '').replace(/[^0-9]/g, ''),
+      barcodeNum:       (raw.barcode || '').replace(/[^0-9]/g, ''),
     };
+
+    // Штрихкод — отдельное поле из низа документа; fallback на reqNum
+    if (!result.barcodeNum) result.barcodeNum = result.reqNum;
 
     result.childName  = [result.lastName, result.firstName, result.middleName].filter(Boolean).join(' ');
     result.motherName = [result.motherLastName, result.motherFirstName, result.motherMiddleName].filter(Boolean).join(' ');
