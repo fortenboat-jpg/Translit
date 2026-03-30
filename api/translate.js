@@ -211,7 +211,9 @@ module.exports = async function handler(req, res) {
         })()
       : '';
 
-    // Штрихкод берём из отдельного поля barcodeNum (низ документа), fallback на reqNum
+    // reqNum — поле REQ справа на бланке (номер запроса)
+    const reqNumClean = (d.reqNum || '').replace(/[^0-9]/g, '');
+    // barcodeNum — цифры под штрихкодом внизу документа (отдельное поле)
     const barcodeNum = (d.barcodeNum || d.reqNum || '').replace(/[^0-9]/g, '');
     const barcodeText = barcodeNum ? '*' + barcodeNum + '*' : '';
 
@@ -247,7 +249,7 @@ module.exports = async function handler(req, res) {
       fatherName:       d.fatherName || '',
       fatherDob:        d.fatherDob || '',
       fatherBirthPlace: d.fatherBirthPlace || '',
-      reqNum:           barcodeNum,
+      reqNum:           reqNumClean,
       barcode:          barcodeText,
     };
 
