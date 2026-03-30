@@ -352,7 +352,10 @@ footer{background:var(--navy);color:rgba(255,255,255,.5);padding:40px 28px;text-
           <div class="fg"><label class="fl">Дата рождения отца</label><input class="fi" id="fDadDob" placeholder="09 НОЯБРЯ 1982 г."/></div>
         </div>
         <div class="fg"><label class="fl">Место рождения отца</label><input class="fi" id="fDadBirth" placeholder="РОССИЯ"/></div>
-        <input type="hidden" id="fReqNum" value="">
+        <div class="fr">
+          <div class="fg"><label class="fl">Номер запроса (REQ)</label><input class="fi" id="fReqNum" placeholder="2023733714"/></div>
+          <div class="fg"><label class="fl">Штрихкод (низ документа)</label><input class="fi" id="fBarcodeNum" placeholder="43677394"/></div>
+        </div>
 
         <div class="fg"><label class="fl" style="color:var(--gold2)">✉️ Email для получения PDF *</label>
           <input class="fi" id="fEmail" type="email" placeholder="your@email.com" style="border-color:var(--gold2)"/></div>
@@ -558,7 +561,7 @@ async function handleUpload(inp) {
   // Сброс полей
   ['fLast','fFirst','fMid','fTime','fWeight','fHospType','fHosp','fPlace',
    'fRegNum','fIssued','fRegDate','fMom','fMomDob','fMomBirth',
-   'fDad','fDadDob','fDadBirth','fReqNum'].forEach(id => {
+   'fDad','fDadDob','fDadBirth','fReqNum','fBarcodeNum'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
   });
   window._ocrChildName = ''; window._ocrCityCounty = '';
@@ -636,6 +639,7 @@ async function handleUpload(inp) {
       af('fDadDob', j.fatherDob);
       af('fDadBirth', j.fatherBirthPlace);
       if (j.reqNum) af('fReqNum', j.reqNum);
+      if (j.barcodeNum) { const el = document.getElementById('fBarcodeNum'); if(el) el.value = j.barcodeNum; }
       window._ocrCityCounty   = j.cityCounty   || '';
       window._ocrHospital     = j.hospital      || '';
       window._ocrHospitalType = j.hospitalType  || 'БОЛЬНИЦА';
@@ -710,6 +714,7 @@ function doGenerate(){
     fatherDob:document.getElementById('fDadDob').value.trim(),
     fatherBirthPlace:document.getElementById('fDadBirth').value.trim(),
     reqNum:document.getElementById('fReqNum').value.trim(),
+    barcodeNum:document.getElementById('fBarcodeNum').value.trim(),
     childName: window._ocrChildName || [last, first, document.getElementById('fMid').value.trim()].filter(Boolean).join(' '),
     email
   };
