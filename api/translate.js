@@ -796,19 +796,7 @@ function buildDocx(v, num, today) {
   ${row('Дата рождения', v.fatherDob)}
   ${row('Место рождения', v.fatherBirthPlace)}
 </w:tbl>
-<w:p><w:r><w:t xml:space="preserve"> </w:t></w:r></w:p>
-<w:p><w:pPr><w:spacing w:before="160" w:after="80"/></w:pPr>
-  <w:r><w:rPr><w:b/><w:sz w:val="24"/><w:color w:val="0C1B3A"/><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/></w:rPr>
-  <w:t>УДОСТОВЕРЕНИЕ ПЕРЕВОДА</w:t></w:r></w:p>
-<w:p><w:pPr><w:spacing w:before="80" w:after="80"/></w:pPr>
-  <w:r><w:rPr><w:sz w:val="20"/><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/></w:rPr>
-  <w:t xml:space="preserve">Я, нижеподписавшийся(аяся), сертифицированный переводчик с английского языка на русский язык, настоящим удостоверяю, что данный перевод является точным и полным переводом оригинального документа — свидетельства о рождении, выданного компетентным органом штата Флорида, США. Перевод выполнен в соответствии с требованиями Консульства Российской Федерации в США.</w:t></w:r></w:p>
-<w:p><w:pPr><w:spacing w:before="160" w:after="60"/></w:pPr>
-  <w:r><w:rPr><w:sz w:val="20"/><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/></w:rPr>
-  <w:t xml:space="preserve">Переводчик: _______________________     Дата: ${esc(today)}     No. ${esc(num)}</w:t></w:r></w:p>
-<w:p><w:pPr><w:spacing w:before="80" w:after="60"/></w:pPr>
-  <w:r><w:rPr><w:sz w:val="20"/><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/></w:rPr>
-  <w:t xml:space="preserve">Нотариус: _______________________     Дата: _______________________</w:t></w:r></w:p>
+
 <w:sectPr>
   <w:pgSz w:w="11906" w:h="16838"/>
   <w:pgMar w:top="1080" w:right="850" w:bottom="1080" w:left="1701"/>
@@ -970,7 +958,7 @@ function buildCertHtml(v, num, today) {
 }
 
 
-function buildEmail(name, num){return`<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto"><div style="background:#0c1b3a;padding:24px;text-align:center"><h2 style="color:white;margin:0">📄 BirthCert Translation</h2><p style="color:rgba(255,255,255,.6);margin:6px 0 0;font-size:13px">Официальный перевод для Консульства РФ</p></div><div style="background:#f4f6fb;padding:28px"><p style="color:#0e1c36;font-size:15px;margin:0 0 10px">Здравствуйте!</p><p style="color:#5a6b90;font-size:14px;margin-bottom:16px">Ваш перевод готов. К письму прикреплены <strong>4 файла</strong>:</p><div style="background:white;border:1px solid #d4daf0;border-radius:8px;padding:14px;margin:0 0 16px"><p style="margin:0 0 8px;font-size:13px">📋 <strong>Перевод_бланк1_${num}.html</strong> — бланк с цветным фоном (открыть в браузере → Ctrl+P → PDF)</p><p style="margin:0 0 8px;font-size:13px">📄 <strong>Перевод_бланк2_${num}.html</strong> — бланк на белом фоне (открыть в браузере → Ctrl+P → PDF)</p><p style="margin:0 0 8px;font-size:13px">✍️ <strong>Заверение_${num}.html</strong> — страница заверения (распечатать, подписать)</p><p style="margin:0;font-size:13px">📝 <strong>Перевод_${num}.docx</strong> — документ Word (редактируемый)</p></div><div style="background:#fff8e6;border-left:3px solid #c8a84b;padding:10px 14px;border-radius:0 6px 6px 0;margin-bottom:16px"><p style="margin:0;color:#7a5a00;font-size:13px">🖨️ Для печати: откройте HTML файл в браузере → Ctrl+P → масштаб 100% → без полей → Сохранить как PDF</p></div><p style="color:#aab0c8;font-size:12px;margin:0">No. ${num} · BirthCert Translation</p></div></div>`;}
+function buildEmail(name, num){return`<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto"><div style="background:#0c1b3a;padding:24px;text-align:center"><h2 style="color:white;margin:0">📄 BirthCert Translation</h2><p style="color:rgba(255,255,255,.6);margin:6px 0 0;font-size:13px">Официальный перевод для Консульства РФ</p></div><div style="background:#f4f6fb;padding:28px"><p style="color:#0e1c36;font-size:15px;margin:0 0 10px">Здравствуйте!</p><p style="color:#5a6b90;font-size:14px;margin-bottom:16px">Ваш перевод готов. К письму прикреплены <strong>4 файла</strong>:</p><div style="background:white;border:1px solid #d4daf0;border-radius:8px;padding:14px;margin:0 0 16px"><p style="margin:0 0 8px;font-size:13px">📋 <strong>Перевод_бланк1_${num}.pdf</strong> — перевод с цветным фоном</p><p style="margin:0 0 8px;font-size:13px">📄 <strong>Перевод_бланк2_${num}.pdf</strong> — перевод на белом фоне</p><p style="margin:0 0 8px;font-size:13px">✍️ <strong>Заверение_${num}.pdf</strong> — нотариальное заверение подписи переводчика (заполнить и подписать)</p><p style="margin:0;font-size:13px">📝 <strong>Перевод_${num}.docx</strong> — перевод в формате Word (бланк 2, редактируемый)</p></div><div style="background:#fff8e6;border-left:3px solid #c8a84b;padding:10px 14px;border-radius:0 6px 6px 0;margin-bottom:16px"><p style="margin:0;color:#7a5a00;font-size:13px">🖨️ Для печати: откройте HTML файл в браузере → Ctrl+P → масштаб 100% → без полей → Сохранить как PDF</p></div><p style="color:#aab0c8;font-size:12px;margin:0">No. ${num} · BirthCert Translation</p></div></div>`;}
 
 function buildZipMixed(files){
   const lp=[],cp=[];let offset=0;
