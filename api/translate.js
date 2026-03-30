@@ -298,48 +298,48 @@ async function buildPdfCert(values, num, today) {
 
 // ── ТОЧНЫЕ КООРДИНАТЫ ПОЛЕЙ НА БЛАНКЕ (из редактора пользователя) ────
 const FIELDS = [
-  { id:'stateRegNum',      top:14.5, left:30.1, size:16 },
+  { id:'stateRegNum',      top:15.0, left:30.1, size:16 },
   { id:'dateIssued',       top:14.7, left:62.9, size:16 },
   { id:'dateRegistered',   top:16.8, left:62.9, size:16 },
   { id:'childName',        top:21.6, left:33.6, size:16 },
   { id:'dobFormatted',     top:26.5, left:33.6, size:16 },
-  { id:'timeOfBirth',      top:26.3, left:78.7, size:16 },
+  { id:'timeOfBirth',      top:26.8, left:78.7, size:16 },
   { id:'sex',              top:30.8, left:33.6, size:16 },
-  { id:'weight',           top:30.5, left:70.5, size:16 },
+  { id:'weight',           top:31.0, left:70.5, size:16 },
   { id:'hospital',         top:34.3, left:33.6, size:16 },
   { id:'hospitalLine2',    top:36.2, left:33.6, size:16 },
   { id:'cityCounty',       top:38.1, left:33.7, size:16 },
-  { id:'motherName',       top:48.7, left:33.5, size:16 },
+  { id:'motherName',       top:49.0, left:33.5, size:16 },
   { id:'motherDob',        top:52.9, left:33.5, size:16 },
   { id:'motherBirthPlace', top:56.1, left:33.4, size:16 },
   { id:'fatherName',       top:65.2, left:33.4, size:16 },
   { id:'fatherDob',        top:69.7, left:33.4, size:16 },
   { id:'fatherBirthPlace', top:73.2, left:33.5, size:16 },
-  { id:'reqNum',           top:84.1, left:75.1, size:16 },
+  { id:'reqNum',           top:84.6, left:75.1, size:16 },
   { id:'barcode',          top:96.6, left:27.9, size:14 },
 ];
 
 // ── КООРДИНАТЫ ПОЛЕЙ ДЛЯ ВТОРОГО БЛАНКА (bg2.jpg) ──────
 const FIELDS2 = [
-  { id:'stateRegNum',      top:21.3, left:12.8, size:14 },
-  { id:'dateIssued',       top:20.0, left:68.6, size:14 },
-  { id:'dateRegistered',   top:21.6, left:73.6, size:14 },
-  { id:'childName',        top:26.2, left:38.0, size:14 },
-  { id:'dobFormatted',     top:28.7, left:37.7, size:14 },
-  { id:'timeOfBirth',      top:28.8, left:84.8, size:14 },
-  { id:'sex',              top:31.3, left:37.9, size:14 },
-  { id:'weight',           top:31.4, left:76.6, size:14 },
-  { id:'hospital',         top:33.7, left:37.7, size:14 },
-  { id:'hospitalLine2',    top:35.5, left:37.6, size:14 },
-  { id:'cityCounty',       top:37.6, left:37.5, size:14 },
-  { id:'motherName',       top:44.5, left:37.8, size:14 },
-  { id:'motherDob',        top:47.0, left:37.5, size:14 },
-  { id:'motherBirthPlace', top:49.5, left:37.5, size:14 },
-  { id:'fatherName',       top:57.5, left:37.9, size:14 },
-  { id:'fatherDob',        top:60.1, left:37.9, size:14 },
-  { id:'fatherBirthPlace', top:62.7, left:37.7, size:14 },
-  { id:'reqNum',           top:65.6, left:71.1, size:14 },
-  { id:'barcode',          top:86.1, left:42.7, size:10 },
+  { id:'stateRegNum',      top:21.3, left:12.8, size:15 },
+  { id:'dateIssued',       top:20.0, left:68.6, size:15 },
+  { id:'dateRegistered',   top:21.6, left:73.6, size:15 },
+  { id:'childName',        top:26.2, left:38.0, size:15 },
+  { id:'dobFormatted',     top:28.7, left:37.7, size:15 },
+  { id:'timeOfBirth',      top:28.8, left:84.8, size:15 },
+  { id:'sex',              top:31.3, left:37.9, size:15 },
+  { id:'weight',           top:31.4, left:76.6, size:15 },
+  { id:'hospital',         top:33.7, left:37.7, size:15 },
+  { id:'hospitalLine2',    top:35.5, left:37.6, size:15 },
+  { id:'cityCounty',       top:37.6, left:37.5, size:15 },
+  { id:'motherName',       top:44.5, left:37.8, size:15 },
+  { id:'motherDob',        top:47.0, left:37.5, size:15 },
+  { id:'motherBirthPlace', top:49.5, left:37.5, size:15 },
+  { id:'fatherName',       top:57.5, left:37.9, size:15 },
+  { id:'fatherDob',        top:60.1, left:37.9, size:15 },
+  { id:'fatherBirthPlace', top:62.7, left:37.7, size:15 },
+  { id:'reqNum',           top:65.6, left:71.1, size:15 },
+  { id:'barcode',          top:86.1, left:42.7, size:11 },
 ];
 
 // ── ПЕРЕВОД ИМЁН (для случая когда OCR не перевёл) ──────
@@ -564,6 +564,15 @@ module.exports = async function handler(req, res) {
     async function htmlToPdf(html) {
       const form = new FormData();
       form.append('files', new Blob([html], {type:'text/html'}), 'index.html');
+      // A4: 210x297mm, без полей, масштаб 1
+      form.append('paperWidth', '8.27');
+      form.append('paperHeight', '11.69');
+      form.append('marginTop', '0');
+      form.append('marginBottom', '0');
+      form.append('marginLeft', '0');
+      form.append('marginRight', '0');
+      form.append('scale', '1.0');
+      form.append('printBackground', 'true');
       const r = await fetch(`${GOTENBERG}/forms/chromium/convert/html`, {
         method: 'POST', body: form,
         signal: AbortSignal.timeout(25000),
