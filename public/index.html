@@ -184,6 +184,31 @@ nav{background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;
 .docct{font-size:.68rem;color:var(--muted);line-height:1.6}
 .docct strong{color:var(--text);display:block;margin-bottom:2px}
 .docnum{font-size:.6rem;color:var(--muted);text-align:right;margin-top:8px;font-style:italic}
+.blanks-preview{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.blank-preview-item{display:flex;flex-direction:column;gap:6px}
+.blank-preview-label{font-size:.72rem;font-weight:600;color:rgba(255,255,255,.7);text-align:center}
+.mock-doc{border-radius:8px;padding:10px 10px 28px;position:relative;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.1);min-height:200px}
+.mock-bg{background:linear-gradient(135deg,#e8e0c8 0%,#d4c9a8 100%)}
+.mock-white{background:#f8f8f6;border:1px solid #ddd}
+.mock-header{margin-bottom:8px}
+.mock-title-line{height:6px;background:rgba(12,27,58,.25);border-radius:3px;margin-bottom:3px;width:70%}
+.mock-sub-line{height:3px;background:rgba(12,27,58,.15);border-radius:2px;width:50%}
+.mock-section-label{height:8px;background:rgba(12,27,58,.2);border-radius:2px;margin:6px 0 4px;width:40%}
+.mock-row{display:flex;align-items:center;gap:4px;margin-bottom:3px}
+.mock-lbl{height:3px;background:rgba(0,0,0,.2);border-radius:1px;flex:0 0 25%;opacity:.6}
+.mock-lbl.ml{flex:0 0 18%}
+.mock-val{height:5px;background:rgba(0,0,0,.35);border-radius:2px}
+.mock-val.long{flex:0 0 55%}
+.mock-val.med{flex:0 0 35%}
+.mock-val.short{flex:0 0 20%}
+.mock-barcode{margin-top:8px;text-align:center}
+.mock-barcode-lines{height:14px;background:repeating-linear-gradient(90deg,#333 0,#333 2px,transparent 2px,transparent 4px);width:70%;margin:0 auto}
+.mock-cert-box{background:rgba(0,0,0,.04);border:1px solid rgba(0,0,0,.1);border-radius:4px;padding:5px 6px;margin-bottom:6px}
+.mock-sign-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+.mock-sign-block{display:flex;flex-direction:column;gap:3px;align-items:center}
+.mock-sign-line{width:100%;height:1px;background:rgba(0,0,0,.3);margin:4px 0 1px}
+.mock-stamp{width:22px;height:22px;border-radius:50%;border:1px solid rgba(0,0,0,.2);margin-top:4px}
+.blank-preview-overlay{position:absolute;bottom:6px;right:6px;background:rgba(12,27,58,.85);color:#fff;font-size:.6rem;font-weight:700;padding:2px 7px;border-radius:4px;letter-spacing:1px}
 
 /* FAQ */
 .faqlist{display:flex;flex-direction:column;gap:10px;max-width:720px}
