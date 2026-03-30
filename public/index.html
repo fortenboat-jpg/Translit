@@ -229,6 +229,14 @@ footer{background:var(--navy);color:rgba(255,255,255,.5);padding:40px 28px;text-
   .nav-links{display:none}
   .docbody{grid-template-columns:1fr}
 }
+.doc-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:4px}
+.doc-card{border:1.5px solid var(--border);border-radius:10px;padding:10px 6px;text-align:center;cursor:pointer;transition:all .2s;position:relative;background:#fff}
+.doc-card:hover:not(.soon){border-color:var(--blue);background:rgba(26,70,184,.04);transform:translateY(-2px)}
+.doc-card.active{border-color:var(--blue);background:rgba(26,70,184,.08);box-shadow:0 0 0 3px rgba(26,70,184,.12)}
+.doc-card.soon{opacity:.55;cursor:not-allowed}
+.doc-card-icon{font-size:1.4rem;margin-bottom:4px}
+.doc-card-label{font-size:.65rem;font-weight:600;color:var(--text);line-height:1.3}
+.doc-card-soon{position:absolute;top:4px;right:4px;font-size:.55rem;font-weight:700;background:var(--gold2);color:#fff;border-radius:4px;padding:1px 4px;text-transform:uppercase}
 </style>
 <style>
 #blankPreview { user-select:none; -webkit-user-select:none; }
@@ -298,15 +306,52 @@ footer{background:var(--navy);color:rgba(255,255,255,.5);padding:40px 28px;text-
 
       <!-- STEP 1 -->
       <div class="step active" id="s1">
-        <div class="fsec">🗺️ Выберите штат</div>
-        <div class="fg">
-          <select class="fs" id="fState" onchange="onStateChange(this.value)">
-            <option value="florida">🌴 Флорида (Florida)</option>
-            <option value="newyork" disabled>🗽 Нью-Йорк (New York) — скоро</option>
-            <option value="california" disabled>🌉 Калифорния (California) — скоро</option>
-            <option value="texas" disabled>🤠 Техас (Texas) — скоро</option>
-            <option value="other" disabled>📋 Другой штат — скоро</option>
-          </select>
+        <div class="fsec">📋 Тип документа</div>
+        <input type="hidden" id="fDocType" value="birth">
+        <div class="doc-cards">
+          <div class="doc-card active" onclick="selectDocType('birth', this)">
+            <div class="doc-card-icon">👶</div>
+            <div class="doc-card-label">Свидетельство<br>о рождении</div>
+          </div>
+          <div class="doc-card soon" title="Скоро">
+            <div class="doc-card-icon">📜</div>
+            <div class="doc-card-label">Апостиль</div>
+            <div class="doc-card-soon">скоро</div>
+          </div>
+          <div class="doc-card soon" title="Скоро">
+            <div class="doc-card-icon">💍</div>
+            <div class="doc-card-label">Свидетельство<br>о браке</div>
+            <div class="doc-card-soon">скоро</div>
+          </div>
+          <div class="doc-card soon" title="Скоро">
+            <div class="doc-card-icon">🎓</div>
+            <div class="doc-card-label">Диплом /<br>Аттестат</div>
+            <div class="doc-card-soon">скоро</div>
+          </div>
+        </div>
+
+        <div class="fsec" style="margin-top:14px">🗺️ Штат</div>
+        <input type="hidden" id="fState" value="florida">
+        <div class="doc-cards">
+          <div class="doc-card active" onclick="selectState('florida', this)">
+            <div class="doc-card-icon">🌴</div>
+            <div class="doc-card-label">Флорида</div>
+          </div>
+          <div class="doc-card soon" title="Скоро">
+            <div class="doc-card-icon">🌉</div>
+            <div class="doc-card-label">Калифорния</div>
+            <div class="doc-card-soon">скоро</div>
+          </div>
+          <div class="doc-card soon" title="Скоро">
+            <div class="doc-card-icon">🗽</div>
+            <div class="doc-card-label">Нью-Йорк</div>
+            <div class="doc-card-soon">скоро</div>
+          </div>
+          <div class="doc-card soon" title="Скоро">
+            <div class="doc-card-icon">🤠</div>
+            <div class="doc-card-label">Техас</div>
+            <div class="doc-card-soon">скоро</div>
+          </div>
         </div>
 
         <div class="fsec">📎 Загрузите свидетельство о рождении</div>
@@ -549,10 +594,24 @@ let translationText = '';
 const API = '';
 
 // ─── UTILS ───────────────────────────────────────────────
-function onStateChange(val) {
-  // Пока только Флорида — в будущем переключаем бланки
-  console.log('State selected:', val);
+function selectDocType(val, el) {
+  if (el.classList.contains('soon')) return;
+  document.getElementById('fDocType').value = val;
+  document.querySelectorAll('.doc-cards').forEach((grid, i) => {
+    if (i === 0) grid.querySelectorAll('.doc-card').forEach(c => c.classList.remove('active'));
+  });
+  el.classList.add('active');
 }
+
+function selectState(val, el) {
+  if (el.classList.contains('soon')) return;
+  document.getElementById('fState').value = val;
+  document.querySelectorAll('.doc-cards')[1].querySelectorAll('.doc-card').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function onDocTypeChange(val) {}
+function onStateChange(val) {}
 
 function scrollToForm(){document.getElementById('form-area').scrollIntoView({behavior:'smooth',block:'start'})}
 function goTab(n){[1,2,3].forEach(i=>{document.getElementById('s'+i).classList.toggle('active',i===n);document.getElementById('tab'+i).classList.toggle('active',i===n)})}
@@ -731,6 +790,7 @@ function doGenerate(){
     fatherBirthPlace:document.getElementById('fDadBirth').value.trim(),
     reqNum:document.getElementById('fReqNum').value.trim(),
     state:document.getElementById('fState').value,
+    docType:document.getElementById('fDocType').value,
     barcodeNum:document.getElementById('fBarcodeNum').value.trim(),
     childName: window._ocrChildName || [last, first, document.getElementById('fMid').value.trim()].filter(Boolean).join(' '),
     email
