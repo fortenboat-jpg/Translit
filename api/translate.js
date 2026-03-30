@@ -211,7 +211,8 @@ module.exports = async function handler(req, res) {
         })()
       : '';
 
-    const barcodeNum = (d.reqNum || '').replace(/[^0-9]/g, '');
+    // Штрихкод берём из отдельного поля barcodeNum (низ документа), fallback на reqNum
+    const barcodeNum = (d.barcodeNum || d.reqNum || '').replace(/[^0-9]/g, '');
     const barcodeText = barcodeNum ? '*' + barcodeNum + '*' : '';
 
     const rawLast  = d.lastName  || '';
