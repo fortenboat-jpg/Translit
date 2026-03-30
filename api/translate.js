@@ -1,9 +1,39 @@
 const { PDFDocument, rgb, StandardFonts } = require('pdf-lib');
 const fontkit = require('@pdf-lib/fontkit');
 
+// ── Загрузка кириллического шрифта ───────────────────────
+let _fontBoldBytes = null;
+let _fontRegBytes  = null;
+
+async function getCyrillicFonts() {
+  if (!_fontBoldBytes) {
+    const [rb, rr] = await Promise.all([
+      fetch('https://fonts.gstatic.com/s/notosans/v36/o-0IIpQlx3QUlC5A4PNr6zRAW_0.woff2'),
+      fetch('https://fonts.gstatic.com/s/notosans/v36/o-0OIpQlx3QUlC5A4PNjthCVUsTs.woff2'),
+    ]);
+    // woff2 не поддерживается pdf-lib напрямую, используем ttf
+    const [tb, tr] = await Promise.all([
+      fetch('https://cdn.jsdelivr.net/npm/@fontsource/noto-sans/files/noto-sans-cyrillic-700-normal.woff'),
+      fetch('https://cdn.jsdelivr.net/npm/@fontsource/noto-sans/files/noto-sans-cyrillic-400-normal.woff'),
+    ]);
+    _fontBoldBytes = await tb.arrayBuffer();
+    _fontRegBytes  = await tr.arrayBuffer();
+  }
+  return { boldBytes: _fontBoldBytes, regBytes: _fontRegBytes };
+}
+
+async function createPdfDoc() {
+  const pdfDoc = await PDFDocument.create();
+  pdfDoc.registerFontkit(fontkit);
+  const { boldBytes, regBytes } = await getCyrillicFonts();
+  const fontBold = await pdfDoc.embedFont(boldBytes);
+  const fontReg  = await pdfDoc.embedFont(regBytes);
+  return { pdfDoc, fontBold, fontReg };
+}
+
 // ── PDF бланк 1: фон bg.jpg + текст поверх ───────────────
 async function buildPdfBlanк1(values, bgUrl, fields) {
-  const pdfDoc = await PDFDocument.create();
+  const { pdfDoc, fontBold, fontReg } = await createPdfDoc();
   const page = pdfDoc.addPage([595, 842]); // A4
 
   // Загружаем фон
@@ -19,7 +49,7 @@ async function buildPdfBlanк1(values, bgUrl, fields) {
     console.error('bg load error:', e.message);
   }
 
-  const font = await pdfDoc.embedFont(StandardFonts.TimesRomanBold);
+  const font = fontBold;
   const { width, height } = page.getSize();
 
   for (const f of fields) {
@@ -40,10 +70,9 @@ async function buildPdfBlanк1(values, bgUrl, fields) {
 
 // ── PDF бланк 2: белый лист + таблица ────────────────────
 async function buildPdfBlanк2(values, num, today) {
-  const pdfDoc = await PDFDocument.create();
+  const { pdfDoc, fontBold, fontReg } = await createPdfDoc();
   const page = pdfDoc.addPage([595, 842]);
-  const font = await pdfDoc.embedFont(StandardFonts.TimesRomanBold);
-  const fontReg = await pdfDoc.embedFont(StandardFonts.TimesRoman);
+  const font = fontBold;
   const { width, height } = page.getSize();
 
   const navy = rgb(0.047, 0.106, 0.227);
@@ -135,7 +164,7 @@ async function buildPdfBlanк2(values, num, today) {
   page.drawText(certText3, { x:lm, y:y-20, size:8, font:fontReg, color:black });
   y -= 38;
 
-  page.drawText(`Переводчик: _______________________   Дата: ${today}   № ${num}`, {
+  page.drawText(`Переводчик: _______________________   Дата: ${today}   No. ${num}`, {
     x:lm, y, size:8, font:fontReg, color:black
   });
   y -= 14;
@@ -145,7 +174,7 @@ async function buildPdfBlanк2(values, num, today) {
 
   // Footer
   page.drawLine({ start:{x:lm,y:25}, end:{x:rm,y:25}, thickness:0.5, color:rgb(0.8,0.8,0.8) });
-  page.drawText(`BirthCert Translation · Официальный перевод для Консульства РФ в США · № ${num}`, {
+  page.drawText(`BirthCert Translation · Официальный перевод для Консульства РФ в США · No. ${num}`, {
     x:lm, y:12, size:6.5, font:fontReg, color:gray
   });
 
@@ -154,10 +183,9 @@ async function buildPdfBlanк2(values, num, today) {
 
 // ── PDF заверение ─────────────────────────────────────────
 async function buildPdfCert(values, num, today) {
-  const pdfDoc = await PDFDocument.create();
+  const { pdfDoc, fontBold, fontReg } = await createPdfDoc();
   const page = pdfDoc.addPage([595, 842]);
-  const font = await pdfDoc.embedFont(StandardFonts.TimesRomanBold);
-  const fontReg = await pdfDoc.embedFont(StandardFonts.TimesRoman);
+  const font = fontBold;
   const { width, height } = page.getSize();
 
   const navy = rgb(0.047, 0.106, 0.227);
@@ -175,7 +203,7 @@ async function buildPdfCert(values, num, today) {
   const rm = width - 50;
 
   // Номер заказа
-  page.drawText(`№ ${num} · ${today}`, { x:rm-120, y, size:8, font:fontReg, color:gray });
+  page.drawText(`No. ${num} · ${today}`, { x:rm-120, y, size:8, font:fontReg, color:gray });
   y -= 20;
 
   // Заголовок
@@ -262,7 +290,7 @@ async function buildPdfCert(values, num, today) {
 
   // Footer
   page.drawLine({ start:{x:lm,y:38}, end:{x:rm,y:38}, thickness:0.5, color:rgb(0.8,0.8,0.8) });
-  page.drawText(`BirthCert Translation Services · Официальный перевод для Консульства РФ в США · № ${num}`, {
+  page.drawText(`BirthCert Translation Services · Официальный перевод для Консульства РФ в США · No. ${num}`, {
     x:lm, y:26, size:6.5, font:fontReg, color:gray
   });
 
@@ -556,7 +584,7 @@ module.exports = async function handler(req, res) {
           body: JSON.stringify({
             from: 'BirthCert Translation <onboarding@resend.dev>',
             to: d.email,
-            subject: `Перевод свидетельства — ${d.childName || 'документ'} (№ ${num})`,
+            subject: `Перевод свидетельства — ${d.childName || 'документ'} (No. ${num})`,
             html: buildEmail(d.childName, num),
             attachments: [
               ...(pdf1Bytes ? [{ filename: `Перевод_бланк1_${num}.pdf`, content: Buffer.from(pdf1Bytes).toString('base64') }] : [{ filename: `Перевод_бланк1_${num}.html`, content: Buffer.from(styledHtml,'utf-8').toString('base64') }]),
@@ -659,7 +687,7 @@ body{font-family:'Times New Roman',Times,serif;background:#666;display:flex;flex
   <div class="cert-sign">
     <div class="cert-sign-item"><div class="cert-sign-line"></div>Подпись переводчика</div>
     <div class="cert-sign-item"><div class="cert-sign-line"></div>Дата: ${today}</div>
-    <div class="cert-sign-item"><div class="cert-sign-line"></div>№ ${num}</div>
+    <div class="cert-sign-item"><div class="cert-sign-line"></div>No. ${num}</div>
   </div>
   <div class="cert-footer">BirthCert Translation Services &nbsp;·&nbsp; Официальный перевод для Консульства РФ в США</div>
 </div>
@@ -692,7 +720,7 @@ ${v.hospitalLine2}
 ДАТА РОЖДЕНИЯ: ${v.fatherDob}
 МЕСТО РОЖДЕНИЯ: ${v.fatherBirthPlace}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Перевод № ${num} от ${today}`;
+Перевод No. ${num} от ${today}`;
 }
 
 // ── DOCX ─────────────────────────────────────────────────
@@ -767,7 +795,7 @@ function buildDocx(v, num, today) {
   <w:t xml:space="preserve">Я, нижеподписавшийся(аяся), сертифицированный переводчик с английского языка на русский язык, настоящим удостоверяю, что данный перевод является точным и полным переводом оригинального документа — свидетельства о рождении, выданного компетентным органом штата Флорида, США. Перевод выполнен в соответствии с требованиями Консульства Российской Федерации в США.</w:t></w:r></w:p>
 <w:p><w:pPr><w:spacing w:before="160" w:after="60"/></w:pPr>
   <w:r><w:rPr><w:sz w:val="20"/><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/></w:rPr>
-  <w:t xml:space="preserve">Переводчик: _______________________     Дата: ${esc(today)}     № ${esc(num)}</w:t></w:r></w:p>
+  <w:t xml:space="preserve">Переводчик: _______________________     Дата: ${esc(today)}     No. ${esc(num)}</w:t></w:r></w:p>
 <w:p><w:pPr><w:spacing w:before="80" w:after="60"/></w:pPr>
   <w:r><w:rPr><w:sz w:val="20"/><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/></w:rPr>
   <w:t xml:space="preserve">Нотариус: _______________________     Дата: _______________________</w:t></w:r></w:p>
@@ -957,7 +985,7 @@ function buildCertHtml(v, num, today) {
 <div class="border">
 <div class="inner-border">
 
-  <div class="order-num">№ ${num} · ${today}</div>
+  <div class="order-num">No. ${num} · ${today}</div>
 
   <div class="header">
     <h1>Удостоверение перевода</h1>
@@ -1020,7 +1048,7 @@ function buildCertHtml(v, num, today) {
   </div>
 
   <div class="footer">
-    BirthCert Translation Services &nbsp;·&nbsp; Официальный перевод для Консульства РФ в США &nbsp;·&nbsp; № ${num}
+    BirthCert Translation Services &nbsp;·&nbsp; Официальный перевод для Консульства РФ в США &nbsp;·&nbsp; No. ${num}
   </div>
 
 </div>
@@ -1029,7 +1057,7 @@ function buildCertHtml(v, num, today) {
 </html>`;
 }
 
-function buildEmail(name, num){return`<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto"><div style="background:#0c1b3a;padding:24px;text-align:center"><h2 style="color:white;margin:0">📄 BirthCert Translation</h2><p style="color:rgba(255,255,255,.6);margin:6px 0 0;font-size:13px">Официальный перевод для Консульства РФ</p></div><div style="background:#f4f6fb;padding:28px"><p style="color:#0e1c36;font-size:15px;margin:0 0 10px">Здравствуйте!</p><p style="color:#5a6b90;font-size:14px;margin-bottom:16px">Ваш перевод готов. К письму прикреплены <strong>4 файла</strong>:</p><div style="background:white;border:1px solid #d4daf0;border-radius:8px;padding:14px;margin:0 0 16px"><p style="margin:0 0 8px;font-size:13px">📋 <strong>Перевод_бланк1_${num}.html</strong> — бланк с цветным фоном (открыть в браузере → Ctrl+P → PDF)</p><p style="margin:0 0 8px;font-size:13px">📄 <strong>Перевод_бланк2_${num}.html</strong> — бланк на белом фоне (открыть в браузере → Ctrl+P → PDF)</p><p style="margin:0 0 8px;font-size:13px">✍️ <strong>Заверение_${num}.html</strong> — страница заверения (распечатать, подписать)</p><p style="margin:0;font-size:13px">📝 <strong>Перевод_${num}.docx</strong> — документ Word (редактируемый)</p></div><div style="background:#fff8e6;border-left:3px solid #c8a84b;padding:10px 14px;border-radius:0 6px 6px 0;margin-bottom:16px"><p style="margin:0;color:#7a5a00;font-size:13px">🖨️ Для печати: откройте HTML файл в браузере → Ctrl+P → масштаб 100% → без полей → Сохранить как PDF</p></div><p style="color:#aab0c8;font-size:12px;margin:0">№ ${num} · BirthCert Translation</p></div></div>`;}
+function buildEmail(name, num){return`<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto"><div style="background:#0c1b3a;padding:24px;text-align:center"><h2 style="color:white;margin:0">📄 BirthCert Translation</h2><p style="color:rgba(255,255,255,.6);margin:6px 0 0;font-size:13px">Официальный перевод для Консульства РФ</p></div><div style="background:#f4f6fb;padding:28px"><p style="color:#0e1c36;font-size:15px;margin:0 0 10px">Здравствуйте!</p><p style="color:#5a6b90;font-size:14px;margin-bottom:16px">Ваш перевод готов. К письму прикреплены <strong>4 файла</strong>:</p><div style="background:white;border:1px solid #d4daf0;border-radius:8px;padding:14px;margin:0 0 16px"><p style="margin:0 0 8px;font-size:13px">📋 <strong>Перевод_бланк1_${num}.html</strong> — бланк с цветным фоном (открыть в браузере → Ctrl+P → PDF)</p><p style="margin:0 0 8px;font-size:13px">📄 <strong>Перевод_бланк2_${num}.html</strong> — бланк на белом фоне (открыть в браузере → Ctrl+P → PDF)</p><p style="margin:0 0 8px;font-size:13px">✍️ <strong>Заверение_${num}.html</strong> — страница заверения (распечатать, подписать)</p><p style="margin:0;font-size:13px">📝 <strong>Перевод_${num}.docx</strong> — документ Word (редактируемый)</p></div><div style="background:#fff8e6;border-left:3px solid #c8a84b;padding:10px 14px;border-radius:0 6px 6px 0;margin-bottom:16px"><p style="margin:0;color:#7a5a00;font-size:13px">🖨️ Для печати: откройте HTML файл в браузере → Ctrl+P → масштаб 100% → без полей → Сохранить как PDF</p></div><p style="color:#aab0c8;font-size:12px;margin:0">No. ${num} · BirthCert Translation</p></div></div>`;}
 
 function buildZipMixed(files){
   const lp=[],cp=[];let offset=0;
