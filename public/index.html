@@ -398,9 +398,9 @@ footer{background:var(--navy);color:rgba(255,255,255,.5);padding:40px 28px;text-
 
         <div class="fsec">👶 Данные о ребёнке</div>
         <div class="fr3">
-          <div class="fg"><label class="fl">Фамилия</label><input autocomplete="new-password" class="fi" id="fLast" placeholder="Кирзов"/></div>
-          <div class="fg"><label class="fl">Имя</label><input autocomplete="new-password" class="fi" id="fFirst" placeholder="Марк"/></div>
-          <div class="fg"><label class="fl">Отчество</label><input autocomplete="new-password" class="fi" id="fMid" placeholder="Алексеевич"/></div>
+          <div class="fg"><label class="fl">Фамилия</label><input autocomplete="new-password" class="fi" id="fLast" placeholder="Иванов"/></div>
+          <div class="fg"><label class="fl">Имя</label><input autocomplete="new-password" class="fi" id="fFirst" placeholder="Иван"/></div>
+          <div class="fg"><label class="fl">Отчество</label><input autocomplete="new-password" class="fi" id="fMid" placeholder="Иванович"/></div>
         </div>
         <div class="fr">
           <div class="fg"><label class="fl">Дата рождения</label><input autocomplete="new-password" class="fi" id="fDob" type="date"/></div>
@@ -408,13 +408,13 @@ footer{background:var(--navy);color:rgba(255,255,255,.5);padding:40px 28px;text-
             <select autocomplete="new-password" class="fs" id="fSex"><option value="МУЖСКОЙ">Мужской</option><option value="ЖЕНСКИЙ">Женский</option></select></div>
         </div>
         <div class="fr">
-          <div class="fg"><label class="fl">Время рождения</label><input autocomplete="new-password" class="fi" id="fTime" placeholder="14:11"/></div>
-          <div class="fg"><label class="fl">Вес при рождении</label><input autocomplete="new-password" class="fi" id="fWeight" placeholder="8 фунтов 0 унций"/></div>
+          <div class="fg"><label class="fl">Время рождения</label><input autocomplete="new-password" class="fi" id="fTime" placeholder="чч:мм"/></div>
+          <div class="fg"><label class="fl">Вес при рождении</label><input autocomplete="new-password" class="fi" id="fWeight" placeholder="7 фунтов 0 унций"/></div>
         </div>
         <div class="fg"><label class="fl">Больница</label><input autocomplete="new-password" class="fi" id="fHospType" placeholder="БОЛЬНИЦА"/></div>
         <div class="fg"><label class="fl">Место рождения</label><input autocomplete="new-password" class="fi" id="fHosp" placeholder="Bayfront Health Г. Санкт-Петербург"/></div>
         <div class="fg"><label class="fl">Город и округ рождения</label><input autocomplete="new-password" class="fi" id="fPlace" placeholder="г. Санкт-Петербург, округ Пинеллас"/></div>
-        <div class="fg"><label class="fl">Номер регистрации в штате</label><input autocomplete="new-password" class="fi" id="fRegNum" placeholder="109-2022-034113"/></div>
+        <div class="fg"><label class="fl">Номер регистрации в штате</label><input autocomplete="new-password" class="fi" id="fRegNum" placeholder="XXX-XXXX-XXXXXX"/></div>
         <div class="fr">
           <div class="fg"><label class="fl">Дата выдачи</label><input autocomplete="new-password" class="fi" id="fIssued" placeholder="08 МАРТА 2022 г."/></div>
           <div class="fg"><label class="fl">Дата регистрации</label><input autocomplete="new-password" class="fi" id="fRegDate" placeholder="27 ФЕВРАЛЯ 2022 г."/></div>
@@ -948,18 +948,20 @@ uz.addEventListener('drop',e=>{
   if(f){const dt=new DataTransfer();dt.items.add(f);document.getElementById('fInput').files=dt.files;handleUpload(document.getElementById('fInput'))}
 });
 window.addEventListener('load', function() {
-  // Защита от автозаполнения браузера
-  setTimeout(() => {
-    document.querySelectorAll('input.fi, input[type="email"]').forEach(el => {
+  // Полная очистка всех полей при загрузке
+  function clearAllFields() {
+    document.querySelectorAll('input.fi, input.fdate, input[type="email"], input[type="text"], input[type="number"]').forEach(el => {
       el.value = '';
-      // Случайный name чтобы браузер не сопоставил с сохранёнными данными
-      el.setAttribute('name', 'field_' + Math.random().toString(36).slice(2));
       el.setAttribute('autocomplete', 'new-password');
+      el.setAttribute('name', 'f_' + Math.random().toString(36).slice(2));
     });
-    document.querySelectorAll('select.fs').forEach(el => {
+    document.querySelectorAll('select').forEach(el => {
       el.selectedIndex = 0;
     });
-  }, 50);
+  }
+  clearAllFields();
+  setTimeout(clearAllFields, 100);
+  setTimeout(clearAllFields, 500);
 });
 </script>
 </body>
