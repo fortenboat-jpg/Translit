@@ -585,6 +585,7 @@ module.exports = async function handler(req, res) {
     async function pdfToDocx(pdfBytes) {
       const form = new FormData();
       form.append('files', new Blob([pdfBytes], {type:'application/pdf'}), 'document.pdf');
+      form.append('nativePageRanges', '1');
       const r = await fetch(`${GOTENBERG}/forms/libreoffice/convert`, {
         method: 'POST', body: form,
         signal: AbortSignal.timeout(30000),
