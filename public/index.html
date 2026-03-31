@@ -766,14 +766,14 @@ const LOAD_STEPS=[
 function doGenerate(){
   const last=document.getElementById('fLast').value.trim();
   const first=document.getElementById('fFirst').value.trim();
-  const email=document.getElementById('fEmail').value.trim();
+  const emailEl=document.getElementById('fEmail'); const email=emailEl?emailEl.value.trim():'';
   if(!last||!first){toast('err','⚠️ Заполните хотя бы фамилию и имя ребёнка');return}
   goTab(2);
   document.getElementById('loadingAnim').style.display='block';
   document.getElementById('blankPreview').style.display='none';
   document.getElementById('errBox').style.display='none';
   document.getElementById('pvButtons').style.display='none';
-  document.getElementById('eNote').style.display='none';
+  // eNote removed
   document.getElementById('pvBadge').textContent='⏳ Формируем перевод...';
   let si=0;
   const stepIv=setInterval(()=>{
