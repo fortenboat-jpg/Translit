@@ -830,7 +830,7 @@ function doGenerate(){
         showPreview(res.pdfHtml);
         document.getElementById('pvButtons').style.display='flex';
         document.getElementById('pvBadge').textContent='✓ Перевод готов — проверьте данные';
-        document.getElementById('eDisp').textContent=email;
+        // email будет введён на шаге 3
         // Файлы отправляются только после оплаты
       } else {
         document.getElementById('blankPreview').style.display='none';
