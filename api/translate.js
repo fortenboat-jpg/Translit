@@ -676,7 +676,8 @@ module.exports = async function handler(req, res) {
       // fallback — отправим HTML
     }
 
-    if (d.email && process.env.GMAIL_USER && process.env.GMAIL_PASS && d.paid === true) {
+    const isPaid = d.paid === true && d._paymentToken === process.env.PAYMENT_TOKEN;
+    if (d.email && process.env.GMAIL_USER && process.env.GMAIL_PASS && isPaid) {
       try {
         const transporter = nodemailer.createTransport({
           service: 'gmail',
@@ -708,7 +709,7 @@ module.exports = async function handler(req, res) {
         console.error('EMAIL ERROR:', emailErr.message);
       }
     } else {
-      console.log('EMAIL SKIP: email=', d.email, 'gmail=', !!process.env.GMAIL_USER, 'paid=', d.paid);
+      console.log('EMAIL SKIP: email=', d.email, 'paid=', d.paid, 'token=', !!d._paymentToken);
     }
 
     return res.status(200).json({
