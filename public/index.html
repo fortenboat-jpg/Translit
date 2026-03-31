@@ -947,6 +947,12 @@ uz.addEventListener('drop',e=>{
   const f=e.dataTransfer.files[0];
   if(f){const dt=new DataTransfer();dt.items.add(f);document.getElementById('fInput').files=dt.files;handleUpload(document.getElementById('fInput'))}
 });
+window.addEventListener('load', function() {
+  setTimeout(() => {
+    document.querySelectorAll('input.fi').forEach(el => el.value = '');
+    document.querySelectorAll('select.fs').forEach(el => el.selectedIndex = 0);
+  }, 100);
+});
 </script>
 </body>
 </html>
