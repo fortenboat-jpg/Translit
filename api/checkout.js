@@ -51,7 +51,7 @@ module.exports = async function handler(req, res) {
             description: `Имя: ${d.childName || '—'} · Рег. номер: ${d.stateRegNum || '—'}`,
             images: ['https://translit-gilt.vercel.app/logo.png'],
           },
-          unit_amount: 5500, // $55.00
+          unit_amount: 5900, // $59.00
         },
         quantity: 1,
       }],
