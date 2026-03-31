@@ -27,19 +27,37 @@ module.exports = async function handler(req, res) {
     console.log('Payment completed:', session.id, session.customer_email);
 
     try {
-      // Восстанавливаем payload из metadata
-      const payloadStr = session.metadata?.payload;
-      if (!payloadStr) {
-        console.error('No payload in metadata');
-        return res.status(200).json({ received: true });
-      }
-
-      const payload = JSON.parse(payloadStr);
-
-      // Убеждаемся что email есть
-      if (!payload.email && session.customer_email) {
-        payload.email = session.customer_email;
-      }
+      // Восстанавливаем все поля из metadata
+      const meta = session.metadata || {};
+      const payload = {
+        email:            meta.email || session.customer_email || '',
+        orderNum:         meta.orderNum || '',
+        childName:        meta.childName || '',
+        firstName:        meta.firstName || '',
+        lastName:         meta.lastName || '',
+        middleName:       meta.middleName || '',
+        dob:              meta.dob || '',
+        sex:              meta.sex || '',
+        timeOfBirth:      meta.timeOfBirth || '',
+        weight:           meta.weight || '',
+        hospital:         meta.hospital || '',
+        hospitalType:     meta.hospitalType || 'БОЛЬНИЦА',
+        cityCounty:       meta.cityCounty || '',
+        stateRegNum:      meta.stateRegNum || '',
+        dateIssued:       meta.dateIssued || '',
+        dateRegistered:   meta.dateRegistered || '',
+        motherName:       meta.motherName || '',
+        motherDob:        meta.motherDob || '',
+        motherBirthPlace: meta.motherBirthPlace || '',
+        fatherName:       meta.fatherName || '',
+        fatherDob:        meta.fatherDob || '',
+        fatherBirthPlace: meta.fatherBirthPlace || '',
+        reqNum:           meta.reqNum || '',
+        barcodeNum:       meta.barcodeNum || '',
+        state:            meta.state || 'florida',
+        docType:          meta.docType || 'birth',
+      };
+      console.log('Payload email:', payload.email, 'childName:', payload.childName);
 
       // Вызываем /api/translate для генерации и отправки PDF
       const baseUrl = process.env.SITE_URL || 'https://translit-gilt.vercel.app';
