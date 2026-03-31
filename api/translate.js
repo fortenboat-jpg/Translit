@@ -877,14 +877,13 @@ async function buildCertPdf() {
 
   // Читаем оригинальный PDF бланка
   // Пробуем разные пути
-  const certBgPath = path.join(process.cwd(), 'public', 'cert_bg.pdf');
+  const certBgPath = path.join(process.cwd(), 'public', 'Certification sample3.pdf');
   console.log('cert_bg path:', certBgPath, 'exists:', fs.existsSync(certBgPath));
   // Fallback
-  const certBgPath2 = path.join(__dirname, '..', 'public', 'cert_bg.pdf');
+  const certBgPath2 = path.join(__dirname, '..', 'public', 'Certification sample3.pdf');
   console.log('cert_bg path2:', certBgPath2, 'exists:', fs.existsSync(certBgPath2));
   const finalPath = fs.existsSync(certBgPath) ? certBgPath : certBgPath2;
   const certBgBytes = fs.readFileSync(finalPath);
-  const certBgBytes = fs.readFileSync(certBgPath);
 
   // Создаём overlay с датой через Gotenberg — нет, используем pdf-lib
   const { PDFDocument, rgb, StandardFonts } = require('pdf-lib');
