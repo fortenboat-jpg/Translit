@@ -675,7 +675,7 @@ module.exports = async function handler(req, res) {
       // fallback — отправим HTML
     }
 
-    if (d.email && process.env.RESEND_API_KEY) {
+    if (d.email && process.env.RESEND_API_KEY && d.paid === true) {
       try {
         const emailResp = await fetch('https://api.resend.com/emails', {
           method: 'POST',
