@@ -36,7 +36,7 @@ module.exports = async function handler(req, res) {
       }],
       mode: 'payment',
       customer_email: d.email || undefined,
-      success_url: `${process.env.SITE_URL || 'https://translit-gilt.vercel.app'}/success?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${process.env.SITE_URL || 'https://translit-gilt.vercel.app'}/api/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url:  `${process.env.SITE_URL || 'https://translit-gilt.vercel.app'}/?cancelled=1`,
       metadata,
     });
