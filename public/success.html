@@ -1,6 +1,4 @@
-module.exports = function handler(req, res) {
-  res.setHeader('Content-Type', 'text/html; charset=utf-8');
-  res.status(200).send(`<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
@@ -30,10 +28,8 @@ module.exports = function handler(req, res) {
     <strong>📧 Документы будут отправлены на ваш email в течение 10 минут.</strong>
     <p style="margin-top:8px;font-size:.9rem">Проверьте папку «Входящие» и «Спам».</p>
   </div>
-  <p>В письме вы получите 4 файла:<br>
-    бланк 1 (PDF), бланк 2 (PDF + DOCX) и удостоверение перевода (PDF).</p>
+  <p>В письме вы получите 4 файла:<br>бланк 1 (PDF), бланк 2 (PDF + DOCX) и удостоверение перевода (PDF).</p>
   <a href="/" class="btn">← На главную</a>
 </div>
 </body>
-</html>`);
-};
+</html>
