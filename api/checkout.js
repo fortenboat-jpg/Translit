@@ -10,14 +10,35 @@ module.exports = async function handler(req, res) {
   try {
     const d = req.body;
 
-    // Сохраняем данные перевода в metadata (макс 500 символов на поле)
+    // Stripe metadata: макс 50 ключей, 500 символов каждый
+    const p = d;
     const metadata = {
-      childName:        (d.childName        || '').substring(0, 100),
-      stateRegNum:      (d.stateRegNum      || '').substring(0, 50),
-      email:            (d.email            || '').substring(0, 100),
-      orderNum:         (d.orderNum         || '').substring(0, 20),
-      // Сохраняем весь payload как JSON в одном поле
-      payload:          JSON.stringify(d).substring(0, 490),
+      email:            (p.email            || '').substring(0, 200),
+      orderNum:         (p.orderNum         || '').substring(0, 30),
+      childName:        (p.childName        || '').substring(0, 200),
+      firstName:        (p.firstName        || '').substring(0, 100),
+      lastName:         (p.lastName         || '').substring(0, 100),
+      middleName:       (p.middleName       || '').substring(0, 100),
+      dob:              (p.dob              || '').substring(0, 20),
+      sex:              (p.sex              || '').substring(0, 20),
+      timeOfBirth:      (p.timeOfBirth      || '').substring(0, 20),
+      weight:           (p.weight           || '').substring(0, 50),
+      hospital:         (p.hospital         || '').substring(0, 200),
+      hospitalType:     (p.hospitalType     || '').substring(0, 50),
+      cityCounty:       (p.cityCounty       || '').substring(0, 200),
+      stateRegNum:      (p.stateRegNum      || '').substring(0, 50),
+      dateIssued:       (p.dateIssued       || '').substring(0, 50),
+      dateRegistered:   (p.dateRegistered   || '').substring(0, 50),
+      motherName:       (p.motherName       || '').substring(0, 200),
+      motherDob:        (p.motherDob        || '').substring(0, 50),
+      motherBirthPlace: (p.motherBirthPlace || '').substring(0, 100),
+      fatherName:       (p.fatherName       || '').substring(0, 200),
+      fatherDob:        (p.fatherDob        || '').substring(0, 50),
+      fatherBirthPlace: (p.fatherBirthPlace || '').substring(0, 100),
+      reqNum:           (p.reqNum           || '').substring(0, 30),
+      barcodeNum:       (p.barcodeNum       || '').substring(0, 30),
+      state:            (p.state            || 'florida').substring(0, 20),
+      docType:          (p.docType          || 'birth').substring(0, 20),
     };
 
     const session = await stripe.checkout.sessions.create({
