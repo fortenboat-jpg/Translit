@@ -501,7 +501,7 @@ footer{background:var(--navy);color:rgba(255,255,255,.5);padding:40px 28px;text-
             <div class="pm">VISA</div><div class="pm">Mastercard</div>
             <div class="pm">AMEX</div><div class="pm">Apple Pay</div><div class="pm">Google Pay</div>
           </div>
-          <button class="bpay" onclick="doPayment()">💳 Оплатить USD $49.00 →</button>
+          <button class="bpay" onclick="doPayment()">💳 Оплатить USD $55.00 →</button>
           <div class="pguar">🛡️ <strong>Гарантия возврата:</strong> если перевод не примут в консульстве из-за формата — вернём деньги. PDF придёт на email в течение <strong>10 минут</strong>.</div>
         </div>
         <div style="margin-top:10px"><button class="bsec" onclick="goTab(2)">← Назад</button></div>
@@ -913,18 +913,58 @@ function downloadHtml(){
 
 function downloadPDF(){downloadDocx();}
 
-function doPayment(){
+async function doPayment(){
   if(!translationText){toast('err','Сначала сгенерируйте перевод');return}
   const email=document.getElementById('fEmail').value.trim();
-  toast('info','💳 Обработка платежа...');
-  setTimeout(()=>{
-    downloadDocx();
-    setTimeout(downloadHtml, 500);
-    document.getElementById('succEmail').textContent=email||'ваш email';
-    document.getElementById('eNote').style.display='flex';
-    document.getElementById('succModal').classList.add('show');
-    toast('ok','✉️ 3 файла отправлены на '+email);
-  },1800);
+  if(!email){toast('err','Введите email для получения документов');return}
+
+  toast('info','💳 Переход к оплате...');
+
+  // Собираем payload для передачи в Stripe metadata
+  const payload = {
+    email,
+    childName:       document.getElementById('fLast').value.trim()+' '+document.getElementById('fFirst').value.trim()+' '+document.getElementById('fMid').value.trim(),
+    firstName:       document.getElementById('fFirst').value.trim(),
+    lastName:        document.getElementById('fLast').value.trim(),
+    middleName:      document.getElementById('fMid').value.trim(),
+    dob:             document.getElementById('fDob').value.trim(),
+    sex:             document.getElementById('fSex').value.trim(),
+    timeOfBirth:     document.getElementById('fTime').value.trim(),
+    weight:          document.getElementById('fWeight').value.trim(),
+    hospitalType:    document.getElementById('fHospType').value.trim(),
+    hospital:        document.getElementById('fHosp').value.trim(),
+    cityCounty:      document.getElementById('fPlace').value.trim(),
+    stateRegNum:     document.getElementById('fRegNum').value.trim(),
+    dateIssued:      document.getElementById('fIssued').value.trim(),
+    dateRegistered:  document.getElementById('fRegDate').value.trim(),
+    motherName:      document.getElementById('fMom').value.trim(),
+    motherDob:       document.getElementById('fMomDob').value.trim(),
+    motherBirthPlace:document.getElementById('fMomBirth').value.trim(),
+    fatherName:      document.getElementById('fDad').value.trim(),
+    fatherDob:       document.getElementById('fDadDob').value.trim(),
+    fatherBirthPlace:document.getElementById('fDadBirth').value.trim(),
+    reqNum:          document.getElementById('fReqNum').value.trim(),
+    barcodeNum:      document.getElementById('fBarcodeNum').value.trim(),
+    state:           document.getElementById('fState').value,
+    docType:         document.getElementById('fDocType').value,
+    orderNum:        window._orderNum || '',
+  };
+
+  try {
+    const resp = await fetch('/api/checkout', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const data = await resp.json();
+    if (data.ok && data.url) {
+      window.location.href = data.url;
+    } else {
+      toast('err', 'Ошибка: ' + (data.error || 'Попробуйте ещё раз'));
+    }
+  } catch(e) {
+    toast('err', 'Ошибка соединения');
+  }
 }
 
 // ─── DRAG & DROP ─────────────────────────────────────────
