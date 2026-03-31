@@ -5,6 +5,7 @@
   "dependencies": {
     "stripe": "14.25.0",
     "pdf-lib": "1.17.1",
-    "@pdf-lib/fontkit": "1.1.1"
+    "@pdf-lib/fontkit": "1.1.1",
+    "nodemailer": "6.9.13"
   }
 }
