@@ -64,7 +64,7 @@ module.exports = async function handler(req, res) {
       const translateResp = await fetch(`${baseUrl}/api/translate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({...payload, paid: true}),
+        body: JSON.stringify({...payload, paid: true, _paymentToken: process.env.PAYMENT_TOKEN}),
       });
 
       const result = await translateResp.json();
