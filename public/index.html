@@ -545,10 +545,21 @@ footer{background:var(--navy);color:rgba(255,255,255,.5);padding:40px 28px;text-
           <li><div class="sclic">⚡</div><div class="sclt"><strong>На email за 10 минут</strong><span>Готовый PDF — распечатать и подать</span></div></li>
         </ul>
       </div>
-      <div class="docwrap">
-        <img src="certificates_preview.png"
-             alt="Свидетельства о рождении разных штатов США"
-             style="width:100%;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.25);display:block">
+      <div class="docwrap" style="position:relative;user-select:none"
+           oncontextmenu="return false"
+           ondragstart="return false">
+        <img src="sample_translation.jpg"
+             alt="Образец перевода свидетельства о рождении"
+             draggable="false"
+             style="width:100%;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.25);display:block;pointer-events:none">
+        <div style="position:absolute;top:0;left:0;right:0;bottom:0;border-radius:16px;
+                    background:linear-gradient(to bottom,transparent 60%,rgba(12,27,58,0.7) 100%)">
+        </div>
+        <div style="position:absolute;bottom:14px;left:0;right:0;text-align:center;
+                    color:rgba(255,255,255,0.9);font-size:.8rem;font-weight:600;letter-spacing:2px;
+                    text-transform:uppercase">
+          Образец перевода
+        </div>
       </div>
     </div>
   </div>
