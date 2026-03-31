@@ -595,11 +595,10 @@ module.exports = async function handler(req, res) {
 
 
     try {
-      const certHtml = buildCertHtml(values, num, today);
       [pdf1Bytes, pdf2Bytes, pdf3Bytes] = await Promise.all([
         htmlToPdf(styledHtml),
         htmlToPdf(styledHtml2),
-        htmlToPdf(certHtml),
+        buildCertPdf(),
       ]);
       console.log('PDF generated via Gotenberg OK');
       // Конвертируем бланк 2 PDF → DOCX через LibreOffice
@@ -860,128 +859,49 @@ function buildDocx(v, num, today) {
 
 
 // ── СТРАНИЦА ЗАВЕРЕНИЯ ПЕРЕВОДА ──────────────────────────
-function buildCertHtml(v, num, today) {
-  const childName = v.childName || '_______________';
+// ── Третий бланк: оригинальный PDF + наложение даты ─────
+async function buildCertPdf() {
+  const fs = require('fs');
+  const path = require('path');
 
+  // Американский формат: Month Day, Year
   const now = new Date();
-  const months_en = ['January','February','March','April','May','June',
+  const months = ['January','February','March','April','May','June',
     'July','August','September','October','November','December'];
-  const dayNum = now.getDate();
-  const monthEn = months_en[now.getMonth()];
-  const yearEn = now.getFullYear();
-  const yearShort = String(yearEn).slice(2);
+  const dateStr = `${months[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
 
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<style>
-  @page { size: A4; margin: 0; }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: 'Times New Roman', Times, serif;
-    background: white;
-    width: 210mm;
-    min-height: 297mm;
-    padding: 22mm 25mm 18mm;
-    color: #111;
-    font-size: 11.5pt;
-    line-height: 1.75;
+  // Читаем оригинальный PDF бланка
+  const certBgPath = path.join(process.cwd(), 'public', 'cert_bg.pdf');
+  const certBgBytes = fs.readFileSync(certBgPath);
+
+  // Создаём overlay с датой через Gotenberg — нет, используем pdf-lib
+  const { PDFDocument, rgb, StandardFonts } = require('pdf-lib');
+
+  const pdfDoc = await PDFDocument.load(certBgBytes);
+  const page = pdfDoc.getPages()[0];
+  const { width, height } = page.getSize();
+
+  const font = await pdfDoc.embedFont(StandardFonts.TimesRoman);
+
+  // Координаты из редактора (в % от размера)
+  // dateTranslator: top:30.46, left:20.43
+  // dateNotary:     top:61.12, left:69.29
+  const fields = [
+    { top: 30.46, left: 20.43 },
+    { top: 61.12, left: 69.29 },
+  ];
+
+  for (const f of fields) {
+    const x = (f.left / 100) * width;
+    const y = height - (f.top / 100) * height;
+    page.drawText(dateStr, { x, y, size: 11, font, color: rgb(0.07, 0.07, 0.07) });
   }
-  .order { text-align: right; font-size: 9pt; color: #999; margin-bottom: 8mm; font-style: italic; }
-  h2 { font-size: 13pt; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; text-align: center; margin-bottom: 2mm; }
-  .sub { text-align: center; font-size: 9.5pt; color: #555; font-style: italic; margin-bottom: 6mm; }
-  .divider { border: none; border-top: 1px solid #333; margin: 5mm 0; }
-  .gold { border-color: #c8a84b; }
-  p { margin-bottom: 4mm; text-align: justify; }
-  .sign-area { margin-top: 6mm; }
-  .sign-row { display: flex; align-items: flex-end; gap: 6mm; margin-bottom: 3mm; }
-  .sign-label { font-size: 10pt; white-space: nowrap; min-width: 52mm; }
-  .sign-line { flex: 1; border-bottom: 1px solid #333; height: 12mm; position: relative; }
-  .sign-img { position: absolute; bottom: 2px; left: 4px; height: 36px; max-width: 160px; object-fit: contain; }
-  .printed { font-size: 10pt; padding-left: calc(52mm + 6mm); color: #333; margin-bottom: 5mm; }
-  .section-divider { border: none; border-top: 2px solid #c8a84b; margin: 7mm 0; }
-  .notary-block { }
-  .state-county { margin-bottom: 5mm; font-size: 11pt; }
-  .state-county span { display: inline-block; border-bottom: 1px solid #333; min-width: 55mm; padding: 0 3px; }
-  .blank { display: inline-block; border-bottom: 1px solid #333; padding: 0 3px; }
-  .blank.sm { min-width: 14mm; }
-  .blank.md { min-width: 40mm; }
-  .blank.lg { min-width: 60mm; }
-  .id-produced { margin: 3mm 0 5mm; font-size: 11pt; }
-  .notary-sign-row { display: flex; align-items: flex-end; gap: 8mm; margin-top: 7mm; }
-  .notary-sign-col { flex: 1; }
-  .seal-circle { width: 36mm; height: 36mm; border: 1.5px dashed #aaa; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .seal-text { font-size: 7pt; color: #bbb; text-align: center; text-transform: uppercase; line-height: 1.5; }
-  .footer { text-align: center; font-size: 8pt; color: #ccc; margin-top: 8mm; padding-top: 3mm; border-top: 1px solid #eee; }
-</style>
-</head>
-<body>
 
-  <div class="order">No. ${num} &nbsp;·&nbsp; ${today}</div>
-
-  <!-- CERTIFICATION OF TRANSLATION -->
-  <h2>Certification of Translation</h2>
-  <div class="sub">(Certified Translator)</div>
-  <hr class="divider">
-
-  <p>I, <strong>Olga A. Chamberlain</strong>, a professionally trained and certified translator fluent in English and Russian, hereby certify that I am competent to translate from English to Russian.</p>
-
-  <p>I further certify that the attached translation of the Birth Certificate of <strong>${childName}</strong> is complete and accurate to the best of my knowledge and ability.</p>
-
-  <p>This certification is made for the purpose of submission to the Consulate of the Russian Federation and other official uses requiring a certified translation.</p>
-
-  <div class="sign-area">
-    <div style="font-size:10.5pt;margin-bottom:2mm">Date: <strong>${dayNum} ${monthEn} ${yearEn}</strong></div>
-
-    <div class="sign-row">
-      <div class="sign-label">Signature of Translator:</div>
-      <div class="sign-line">
-        <img src="https://translit-gilt.vercel.app/signature_translator.png"
-             class="sign-img"
-             onerror="this.style.display='none'">
-      </div>
-    </div>
-    <div class="printed">Olga A. Chamberlain</div>
-  </div>
-
-  <!-- NOTARIZATION -->
-  <hr class="section-divider">
-
-  <h2>Notarization of Translator's Signature</h2>
-  <hr class="divider" style="margin-top:4mm">
-
-  <div class="state-county">
-    State of <span>Florida</span> &nbsp;&nbsp; County of <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-  </div>
-
-  <p>On this <span class="blank sm">${dayNum}</span> day of <span class="blank md">${monthEn}</span>, 20<span class="blank sm">${yearShort}</span>, before me, <strong>Jainensha Burgess</strong>, Florida Notary Public, personally appeared <strong>Olga A. Chamberlain</strong>, who proved to me through satisfactory identification (Passport&nbsp;#<span class="blank md">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>) to be the person whose signature appears on the above Certification of Translation, and acknowledged that they executed the document freely and voluntarily.</p>
-
-  <div class="id-produced">Identification Produced: Passport #<span class="blank lg">&nbsp;</span></div>
-
-  <div class="notary-sign-row">
-    <div class="notary-sign-col">
-      <div class="sign-line" style="height:14mm;position:relative;border-bottom:1px solid #333;margin-bottom:2mm">
-        <img src="https://translit-gilt.vercel.app/signature_notary.png"
-             class="sign-img"
-             onerror="this.style.display='none'">
-      </div>
-      <div style="font-size:10.5pt">Jainensha Burgess</div>
-      <div style="font-size:10pt;color:#444">Notary Public, State of Florida</div>
-      <div style="font-size:10pt;color:#444;margin-top:3mm">My Commission Expires: <span class="blank md">&nbsp;</span></div>
-    </div>
-    <div class="seal-circle">
-      <div class="seal-text">Notarial<br>Seal</div>
-    </div>
-  </div>
-
-  <div class="footer">
-    BirthCert Translation Services &nbsp;·&nbsp; No. ${num}
-  </div>
-
-</body>
-</html>`;
+  return Buffer.from(await pdfDoc.save());
 }
+
+// Заглушка для обратной совместимости (не используется)
+function buildCertHtml(v, num, today) { return ''; }
 
 
 function buildEmail(name, num){return`<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto"><div style="background:#0c1b3a;padding:24px;text-align:center"><h2 style="color:white;margin:0">📄 BirthCert Translation</h2><p style="color:rgba(255,255,255,.6);margin:6px 0 0;font-size:13px">Официальный перевод для Консульства РФ</p></div><div style="background:#f4f6fb;padding:28px"><p style="color:#0e1c36;font-size:15px;margin:0 0 10px">Здравствуйте!</p><p style="color:#5a6b90;font-size:14px;margin-bottom:16px">Ваш перевод готов. К письму прикреплены <strong>4 файла</strong>:</p><div style="background:white;border:1px solid #d4daf0;border-radius:8px;padding:14px;margin:0 0 16px"><p style="margin:0 0 8px;font-size:13px">📋 <strong>Перевод_бланк1_${num}.pdf</strong> — перевод с цветным фоном</p><p style="margin:0 0 8px;font-size:13px">📄 <strong>Перевод_бланк2_${num}.pdf</strong> — перевод на белом фоне</p><p style="margin:0 0 8px;font-size:13px">✍️ <strong>Заверение_${num}.pdf</strong> — нотариальное заверение подписи переводчика (заполнить и подписать)</p><p style="margin:0;font-size:13px"></p></div><div style="background:#fff8e6;border-left:3px solid #c8a84b;padding:10px 14px;border-radius:0 6px 6px 0;margin-bottom:16px"><p style="margin:0;color:#7a5a00;font-size:13px">🖨️ Для печати: откройте HTML файл в браузере → Ctrl+P → масштаб 100% → без полей → Сохранить как PDF</p></div><p style="color:#aab0c8;font-size:12px;margin:0">No. ${num} · BirthCert Translation</p></div></div>`;}
