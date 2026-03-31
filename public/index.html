@@ -807,7 +807,7 @@ function doGenerate(){
     docType:document.getElementById('fDocType').value,
     barcodeNum:document.getElementById('fBarcodeNum').value.trim(),
     childName: window._ocrChildName || [last, first, document.getElementById('fMid').value.trim()].filter(Boolean).join(' '),
-    email
+    // email НЕ передаём при генерации — только после оплаты через webhook
   };
   fetch(API+'/api/translate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
   .then(r=>r.json())
