@@ -595,11 +595,16 @@ module.exports = async function handler(req, res) {
 
 
     try {
-      [pdf1Bytes, pdf2Bytes, pdf3Bytes] = await Promise.all([
+      [pdf1Bytes, pdf2Bytes] = await Promise.all([
         htmlToPdf(styledHtml),
         htmlToPdf(styledHtml2),
-        buildCertPdf(),
       ]);
+      try {
+        pdf3Bytes = await buildCertPdf();
+      } catch(certErr) {
+        console.error('Cert PDF error:', certErr.message);
+        // fallback — без третьего документа
+      }
       console.log('PDF generated via Gotenberg OK');
       // Конвертируем бланк 2 PDF → DOCX через LibreOffice
       try {
@@ -871,7 +876,14 @@ async function buildCertPdf() {
   const dateStr = `${months[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
 
   // Читаем оригинальный PDF бланка
+  // Пробуем разные пути
   const certBgPath = path.join(process.cwd(), 'public', 'cert_bg.pdf');
+  console.log('cert_bg path:', certBgPath, 'exists:', fs.existsSync(certBgPath));
+  // Fallback
+  const certBgPath2 = path.join(__dirname, '..', 'public', 'cert_bg.pdf');
+  console.log('cert_bg path2:', certBgPath2, 'exists:', fs.existsSync(certBgPath2));
+  const finalPath = fs.existsSync(certBgPath) ? certBgPath : certBgPath2;
+  const certBgBytes = fs.readFileSync(finalPath);
   const certBgBytes = fs.readFileSync(certBgPath);
 
   // Создаём overlay с датой через Gotenberg — нет, используем pdf-lib
