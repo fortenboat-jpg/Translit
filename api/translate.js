@@ -782,7 +782,7 @@ body{font-family:'Times New Roman',Times,serif;background:#666;display:flex;flex
   <img src="${bgData}" alt="бланк">
   <div class="fields">${fieldsHtml}</div>
 </div>
-<p class="hint">Для печати: Ctrl+P → масштаб 100% → без полей</p>
+
 </body></html>`;
 }
 
