@@ -437,9 +437,6 @@ footer{background:var(--navy);color:rgba(255,255,255,.5);padding:40px 28px;text-
           <div class="fg"><label class="fl">Штрихкод (низ документа)</label><input autocomplete="new-password" class="fi" id="fBarcodeNum" placeholder="Цифры штрихкода"/></div>
         </div>
 
-        <div class="fg"><label class="fl" style="color:var(--gold2)">✉️ Email для получения PDF *</label>
-          <input autocomplete="new-password" class="fi" id="fEmail" type="email" placeholder="your@email.com" style="border-color:var(--gold2)"/></div>
-
         <button class="bgen" id="btnGen" onclick="doGenerate()">✨ Сгенерировать перевод →</button>
         <div class="priv">🔒 Данные используются только для перевода</div>
       </div>
@@ -500,6 +497,11 @@ footer{background:var(--navy);color:rgba(255,255,255,.5);padding:40px 28px;text-
           <div class="pms">
             <div class="pm">VISA</div><div class="pm">Mastercard</div>
             <div class="pm">AMEX</div><div class="pm">Apple Pay</div><div class="pm">Google Pay</div>
+          </div>
+          <div style="margin-bottom:12px">
+            <label style="display:block;font-size:.8rem;font-weight:700;color:#555;margin-bottom:6px;text-align:left">✉️ Email для получения документов *</label>
+            <input autocomplete="new-password" id="fEmail" type="email" placeholder="your@email.com"
+              style="width:100%;padding:11px 14px;border:1.5px solid #c8a84b;border-radius:9px;font-size:.95rem;outline:none;font-family:inherit">
           </div>
           <button class="bpay" onclick="doPayment()">💳 Оплатить USD $55.00 →</button>
           <div class="pguar">🛡️ <strong>Гарантия возврата:</strong> если перевод не примут в консульстве из-за формата — вернём деньги. PDF придёт на email в течение <strong>10 минут</strong>.</div>
@@ -766,7 +768,6 @@ function doGenerate(){
   const first=document.getElementById('fFirst').value.trim();
   const email=document.getElementById('fEmail').value.trim();
   if(!last||!first){toast('err','⚠️ Заполните хотя бы фамилию и имя ребёнка');return}
-  if(!email){toast('err','⚠️ Укажите email для получения файлов');return}
   goTab(2);
   document.getElementById('loadingAnim').style.display='block';
   document.getElementById('blankPreview').style.display='none';
