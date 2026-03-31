@@ -1,4 +1,6 @@
-<!DOCTYPE html>
+module.exports = function handler(req, res) {
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.status(200).send(`<!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
@@ -33,4 +35,5 @@
   <a href="/" class="btn">← На главную</a>
 </div>
 </body>
-</html>
+</html>`);
+};
