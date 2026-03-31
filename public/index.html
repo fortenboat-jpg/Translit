@@ -484,7 +484,7 @@ footer{background:var(--navy);color:rgba(255,255,255,.5);padding:40px 28px;text-
           <button class="bsec" onclick="goTab(1)">← Назад</button>
           <button class="bgen" style="width:auto;padding:10px 22px;margin:0" onclick="goTab(3)">Оплатить и получить PDF →</button>
         </div>
-        <div class="enote" id="eNote" style="display:none;margin-top:8px">✉️ 3 файла отправлены на <strong id="eDisp"></strong></div>
+
       </div>
 
       <!-- STEP 3 -->
@@ -831,8 +831,7 @@ function doGenerate(){
         document.getElementById('pvButtons').style.display='flex';
         document.getElementById('pvBadge').textContent='✓ Перевод готов — проверьте данные';
         document.getElementById('eDisp').textContent=email;
-        document.getElementById('eNote').style.display='flex';
-        toast('ok','✓ Файлы отправлены на '+email);
+        // Файлы отправляются только после оплаты
       } else {
         document.getElementById('blankPreview').style.display='none';
         const err = document.createElement('div');
