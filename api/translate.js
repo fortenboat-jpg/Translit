@@ -1,4 +1,5 @@
 const { PDFDocument, rgb, StandardFonts } = require('pdf-lib');
+const nodemailer = require('nodemailer');
 const fontkit = require('@pdf-lib/fontkit');
 
 const fs = require('fs');
@@ -675,37 +676,39 @@ module.exports = async function handler(req, res) {
       // fallback — отправим HTML
     }
 
-    if (d.email && process.env.RESEND_API_KEY && d.paid === true) {
+    if (d.email && process.env.GMAIL_USER && process.env.GMAIL_PASS && d.paid === true) {
       try {
-        const emailResp = await fetch('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.RESEND_API_KEY}`
-          },
-          body: JSON.stringify({
-            from: 'BirthCert Translation <onboarding@resend.dev>',
-            to: d.email,
-            subject: `Перевод свидетельства — ${d.childName || 'документ'} (No. ${num})`,
-            html: buildEmail(d.childName, num),
-            attachments: [
-              { filename: pdf1Bytes ? `Перевод_бланк1_${num}.pdf` : `Перевод_бланк1_${num}.html`,
-                content: pdf1Bytes ? Buffer.from(pdf1Bytes).toString('base64') : Buffer.from(styledHtml,'utf-8').toString('base64') },
-              { filename: pdf2Bytes ? `Перевод_бланк2_${num}.pdf` : `Перевод_бланк2_${num}.html`,
-                content: pdf2Bytes ? Buffer.from(pdf2Bytes).toString('base64') : Buffer.from(styledHtml2,'utf-8').toString('base64') },
-              { filename: `Перевод_бланк2_${num}.docx`, content: docxBuffer.toString('base64') },
-              { filename: pdf3Bytes ? `Заверение_${num}.pdf` : `Заверение_${num}.html`,
-                content: pdf3Bytes ? Buffer.from(pdf3Bytes).toString('base64') : Buffer.from(buildCertHtml(values, num, today),'utf-8').toString('base64') },
-            ]
-          })
+        const transporter = nodemailer.createTransport({
+          service: 'gmail',
+          auth: {
+            user: process.env.GMAIL_USER,
+            pass: process.env.GMAIL_PASS,
+          }
         });
-        const emailResult = await emailResp.json();
-        console.log('EMAIL RESULT:', JSON.stringify(emailResult));
+
+        const attachments = [
+          { filename: pdf1Bytes ? `Перевод_бланк1_${num}.pdf` : `Перевод_бланк1_${num}.html`,
+            content: pdf1Bytes ? Buffer.from(pdf1Bytes) : Buffer.from(styledHtml,'utf-8') },
+          { filename: pdf2Bytes ? `Перевод_бланк2_${num}.pdf` : `Перевод_бланк2_${num}.html`,
+            content: pdf2Bytes ? Buffer.from(pdf2Bytes) : Buffer.from(styledHtml2,'utf-8') },
+          { filename: `Перевод_бланк2_${num}.docx`, content: Buffer.from(docxBuffer) },
+          { filename: pdf3Bytes ? `Заверение_${num}.pdf` : `Заверение_${num}.html`,
+            content: pdf3Bytes ? Buffer.from(pdf3Bytes) : Buffer.from(buildCertHtml(values, num, today),'utf-8') },
+        ];
+
+        const emailResult = await transporter.sendMail({
+          from: `BirthCert Translation <${process.env.GMAIL_USER}>`,
+          to: d.email,
+          subject: `Перевод свидетельства — ${d.childName || 'документ'} (No. ${num})`,
+          html: buildEmail(d.childName, num),
+          attachments,
+        });
+        console.log('EMAIL RESULT:', emailResult.messageId);
       } catch(emailErr) {
         console.error('EMAIL ERROR:', emailErr.message);
       }
     } else {
-      console.log('EMAIL SKIP: email=', d.email, 'key=', !!process.env.RESEND_API_KEY);
+      console.log('EMAIL SKIP: email=', d.email, 'gmail=', !!process.env.GMAIL_USER, 'paid=', d.paid);
     }
 
     return res.status(200).json({
