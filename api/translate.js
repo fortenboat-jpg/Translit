@@ -687,6 +687,20 @@ module.exports = async function handler(req, res) {
           }
         });
 
+        // Читаем гайд PDF
+        let guideBytes = null;
+        try {
+          const guidePath = require('path').join(process.cwd(), 'public', 'BirthCert_Guide_RU.pdf');
+          guideBytes = require('fs').readFileSync(guidePath);
+        } catch(e) {
+          try {
+            const guidePath2 = require('path').join(__dirname, '..', 'public', 'BirthCert_Guide_RU.pdf');
+            guideBytes = require('fs').readFileSync(guidePath2);
+          } catch(e2) {
+            console.error('Guide PDF not found:', e2.message);
+          }
+        }
+
         const attachments = [
           { filename: pdf1Bytes ? `Перевод_бланк1_${num}.pdf` : `Перевод_бланк1_${num}.html`,
             content: pdf1Bytes ? Buffer.from(pdf1Bytes) : Buffer.from(styledHtml,'utf-8') },
@@ -695,6 +709,7 @@ module.exports = async function handler(req, res) {
           { filename: `Перевод_бланк2_${num}.docx`, content: Buffer.from(docxBuffer) },
           { filename: pdf3Bytes ? `Заверение_${num}.pdf` : `Заверение_${num}.html`,
             content: pdf3Bytes ? Buffer.from(pdf3Bytes) : Buffer.from(buildCertHtml(values, num, today),'utf-8') },
+          ...(guideBytes ? [{ filename: 'Гайд_Гражданство_РФ_для_детей.pdf', content: guideBytes }] : []),
         ];
 
         const emailResult = await transporter.sendMail({
@@ -975,7 +990,7 @@ async function buildCertPdf() {
 function buildCertHtml(v, num, today) { return ''; }
 
 
-function buildEmail(name, num){return`<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto"><div style="background:#0c1b3a;padding:24px;text-align:center"><h2 style="color:white;margin:0">📄 BirthCert Translation</h2><p style="color:rgba(255,255,255,.6);margin:6px 0 0;font-size:13px">Официальный перевод для Консульства РФ</p></div><div style="background:#f4f6fb;padding:28px"><p style="color:#0e1c36;font-size:15px;margin:0 0 10px">Здравствуйте!</p><p style="color:#5a6b90;font-size:14px;margin-bottom:16px">Ваш перевод готов. К письму прикреплены <strong>4 файла</strong>:</p><div style="background:white;border:1px solid #d4daf0;border-radius:8px;padding:14px;margin:0 0 16px"><p style="margin:0 0 8px;font-size:13px">📋 <strong>Перевод_бланк1_${num}.pdf</strong> — перевод с цветным фоном</p><p style="margin:0 0 8px;font-size:13px">📄 <strong>Перевод_бланк2_${num}.pdf</strong> — перевод на белом фоне</p><p style="margin:0 0 8px;font-size:13px">✍️ <strong>Заверение_${num}.pdf</strong> — удостоверение перевода с нотариальным заверением</p><p style="margin:0;font-size:13px"></p></div><div style="background:#fff8e6;border-left:3px solid #c8a84b;padding:10px 14px;border-radius:0 6px 6px 0;margin-bottom:16px"><p style="margin:0;color:#7a5a00;font-size:13px">🖨️ Для печати: откройте HTML файл в браузере → Ctrl+P → масштаб 100% → без полей → Сохранить как PDF</p></div><p style="color:#aab0c8;font-size:12px;margin:0">No. ${num} · BirthCert Translation</p></div></div>`;}
+function buildEmail(name, num){return`<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto"><div style="background:#0c1b3a;padding:24px;text-align:center"><h2 style="color:white;margin:0">📄 BirthCert Translation</h2><p style="color:rgba(255,255,255,.6);margin:6px 0 0;font-size:13px">Официальный перевод для Консульства РФ</p></div><div style="background:#f4f6fb;padding:28px"><p style="color:#0e1c36;font-size:15px;margin:0 0 10px">Здравствуйте!</p><p style="color:#5a6b90;font-size:14px;margin-bottom:16px">Ваш перевод готов. К письму прикреплены <strong>5 файлов</strong>:</p><div style="background:white;border:1px solid #d4daf0;border-radius:8px;padding:14px;margin:0 0 16px"><p style="margin:0 0 8px;font-size:13px">📋 <strong>Перевод_бланк1_${num}.pdf</strong> — перевод с цветным фоном</p><p style="margin:0 0 8px;font-size:13px">📄 <strong>Перевод_бланк2_${num}.pdf</strong> — перевод на белом фоне</p><p style="margin:0 0 8px;font-size:13px">✍️ <strong>Заверение_${num}.pdf</strong> — удостоверение перевода с нотариальным заверением</p><p style="margin:0;font-size:13px">🎁 <strong>Гайд_Гражданство_РФ_для_детей.pdf</strong> — пошаговый гайд: как оформить гражданство РФ ребёнку, рождённому в США</p></div><div style="background:#fff8e6;border-left:3px solid #c8a84b;padding:10px 14px;border-radius:0 6px 6px 0;margin-bottom:16px"><p style="margin:0;color:#7a5a00;font-size:13px">🖨️ Для печати: откройте HTML файл в браузере → Ctrl+P → масштаб 100% → без полей → Сохранить как PDF</p></div><p style="color:#aab0c8;font-size:12px;margin:0">No. ${num} · BirthCert Translation</p></div></div>`;}
 
 function buildZipMixed(files){
   const lp=[],cp=[];let offset=0;
