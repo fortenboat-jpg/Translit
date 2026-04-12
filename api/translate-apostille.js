@@ -29,6 +29,7 @@ module.exports = async function handler(req, res) {
 
     const html = buildHtml(values, num, today);
 
+    // PDF через Gotenberg
     const GOTENBERG = process.env.GOTENBERG_URL || 'https://pdf.fortendocs.online';
     let pdfBytes = null;
     try {
@@ -36,10 +37,10 @@ module.exports = async function handler(req, res) {
       form.append('files', new Blob([html], { type: 'text/html' }), 'index.html');
       form.append('paperWidth', '8.27');
       form.append('paperHeight', '11.69');
-      form.append('marginTop', '0.6');
-      form.append('marginBottom', '0.6');
-      form.append('marginLeft', '0.8');
-      form.append('marginRight', '0.8');
+      form.append('marginTop', '0');
+      form.append('marginBottom', '0');
+      form.append('marginLeft', '0');
+      form.append('marginRight', '0');
       form.append('scale', '1.0');
       form.append('printBackground', 'true');
       const r = await fetch(`${GOTENBERG}/forms/chromium/convert/html`, {
@@ -52,6 +53,7 @@ module.exports = async function handler(req, res) {
       console.error('Gotenberg apostille error:', e.message);
     }
 
+    // Email — только при оплате через webhook
     const isPaid = d.paid === true && d._paymentToken === process.env.PAYMENT_TOKEN;
     if (d.email && process.env.GMAIL_USER && process.env.GMAIL_PASS && isPaid) {
       try {
@@ -88,27 +90,29 @@ module.exports = async function handler(req, res) {
   }
 };
 
+// ── GPT перевод полей ──────────────────────────────────────
 async function translateFields(d) {
   const prompt = `Переведи поля апостиля штата Флорида с английского на русский язык.
 
 Правила:
-- Имена людей — транслитерируй фонетически (KENNETH → КЕННЕТ, JOHNSON → ДЖОНСОН, KEN → КЕН)
-- Прозвища в кавычках — тоже транслитерируй и оставляй в кавычках-ёлочках
-- Должности — переводи (STATE REGISTRAR OF VITAL STATISTICS → РЕГИСТРАТОР ЗАГС ШТАТА)
-- Печать — переводи (THE GREAT SEAL OF THE STATE OF FLORIDA → ГЕРБОВОЙ ПЕЧАТЬЮ ШТАТА ФЛОРИДА)
-- Дата словами — в родительном падеже (Twelfth day of September, 2024 → Двенадцатого сентября 2024 года)
+- Имена людей — транслитерируй фонетически (KENNETH → КЕННЕТ, JOHNSON → ДЖОНСОН, "KEN" → «КЕН»)
+- Прозвища в кавычках — транслитерируй и оставляй в кавычках-ёлочках «»
+- Должности и названия органов — переводи (STATE REGISTRAR OF VITAL STATISTICS → РЕГИСТРАТОР ЗАГС ШТАТА)
+- Описание печати — переводи (THE GREAT SEAL OF THE STATE OF FLORIDA → ГЕРБОВОЙ ПЕЧАТЬЮ ШТАТА ФЛОРИДА)
+- Дата словами — в родительном падеже, без слова "года" в конце (Twelfth day of September, 2024 → Двенадцатого сентября 2024)
 - Город — (Tallahassee, Florida → г. Таллахасси, штат Флорида)
 - Уполномоченный — (Secretary of State, State of Florida → Секретарем штата, штат Флорида)
+- Поле 8 (номер) — не переводить, вернуть как есть
 
-Поля:
-field2: "${d.field2 || ''}"
-field3: "${d.field3 || ''}"
-field4: "${d.field4 || ''}"
-field5: "${d.field5 || ''}"
-field6: "${d.field6 || ''}"
-field7: "${d.field7 || ''}"
+Входные данные:
+field2 (подписан): "${d.field2 || ''}"
+field3 (в должности): "${d.field3 || ''}"
+field4 (печать): "${d.field4 || ''}"
+field5 (в городе): "${d.field5 || ''}"
+field6 (дата словами): "${d.field6 || ''}"
+field7 (уполномочен): "${d.field7 || ''}"
 
-Верни ТОЛЬКО JSON без markdown:
+Верни ТОЛЬКО JSON без markdown и пояснений:
 {"field2":"","field3":"","field4":"","field5":"","field6":"","field7":""}`;
 
   try {
@@ -133,9 +137,10 @@ field7: "${d.field7 || ''}"
   }
 }
 
+// ── HTML — точно по образцу скрина ────────────────────────
 function buildHtml(v, num, today) {
   function esc(s) {
-    return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
   return `<!DOCTYPE html>
@@ -151,33 +156,164 @@ function buildHtml(v, num, today) {
     color: #000;
     font-size: 14px;
     line-height: 1.7;
-    padding: 40px 72px;
+    padding: 36px 72px 40px;
   }
-  .top-right { text-align: right; font-style: italic; text-decoration: underline; font-size: 13px; margin-bottom: 24px; }
-  .header { text-align: center; margin-bottom: 22px; }
-  .header .state { font-size: 17px; font-weight: bold; letter-spacing: 2px; margin-bottom: 2px; }
-  .header .emblem { font-style: italic; font-size: 12px; color: #444; margin-bottom: 2px; }
-  .header .dept { font-size: 14px; font-weight: bold; margin-bottom: 14px; }
-  .header .apostille-title { font-size: 16px; font-weight: bold; letter-spacing: 1px; margin-bottom: 3px; }
-  .header .convention { font-size: 13px; }
-  .field { display: flex; align-items: baseline; margin-bottom: 10px; font-size: 14px; gap: 6px; }
-  .num { min-width: 20px; flex-shrink: 0; }
-  .label { flex-shrink: 0; }
-  .value-red { font-weight: bold; color: #c00000; text-decoration: underline; }
-  .value-plain { text-decoration: underline; }
-  .plain-text { margin-left: 26px; margin-bottom: 10px; font-size: 14px; }
-  .certified { text-align: center; font-size: 15px; font-weight: bold; margin: 18px 0 14px; }
-  .bottom-section { display: flex; justify-content: space-between; margin-top: 24px; align-items: flex-start; }
+
+  /* Верхний правый угол */
+  .top-right {
+    text-align: right;
+    font-style: italic;
+    text-decoration: underline;
+    font-size: 13px;
+    margin-bottom: 20px;
+  }
+
+  /* Шапка по центру */
+  .header {
+    text-align: center;
+    margin-bottom: 18px;
+  }
+  .header .state {
+    font-size: 16px;
+    font-weight: bold;
+    letter-spacing: 1px;
+  }
+  .header .emblem {
+    font-style: italic;
+    font-size: 12px;
+    color: #333;
+    margin: 1px 0;
+  }
+  .header .dept {
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 14px;
+  }
+  .header .apostille-title {
+    font-size: 15px;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+  }
+  .header .convention {
+    font-size: 13px;
+  }
+
+  /* Поля 1–4 */
+  .section-top {
+    margin-top: 14px;
+    margin-bottom: 8px;
+  }
+  .field-row {
+    display: flex;
+    align-items: baseline;
+    margin-bottom: 8px;
+    font-size: 14px;
+  }
+  .field-num {
+    min-width: 22px;
+    flex-shrink: 0;
+  }
+  .field-label {
+    flex-shrink: 0;
+    margin-right: 4px;
+  }
+  /* Подчёркнутое значение (поля 5,6,7) */
+  .field-val-underline {
+    text-decoration: underline;
+  }
+  /* Пустая линия после метки (поля 2,3,4) */
+  .field-line {
+    flex: 1;
+    border-bottom: 1px solid #000;
+    margin-left: 6px;
+    min-width: 120px;
+  }
+  /* Подчёркнутое значение полей 2,3,4 — вставляется после линии справа */
+  .field-val-red {
+    font-weight: bold;
+    text-decoration: underline;
+    margin-left: 0;
+    white-space: nowrap;
+  }
+
+  /* "Настоящий официальный документ" — отступ как в оригинале */
+  .indent-text {
+    margin-left: 26px;
+    margin-bottom: 8px;
+    font-size: 14px;
+  }
+
+  /* Удостоверено */
+  .certified {
+    text-align: center;
+    font-size: 15px;
+    font-weight: bold;
+    margin: 18px 0 12px;
+  }
+
+  /* Поля 5–8 — с подчёркиванием текста */
+  .field-56 {
+    display: flex;
+    align-items: baseline;
+    margin-bottom: 8px;
+    font-size: 14px;
+  }
+
+  /* Поле 6: "6. ______ года" */
+  .field6-wrap {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin-bottom: 8px;
+    font-size: 14px;
+  }
+  .field6-val {
+    text-decoration: underline;
+    min-width: 180px;
+  }
+
+  /* Нижняя секция: печать + подпись */
+  .bottom-section {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 22px;
+    align-items: flex-start;
+  }
   .stamp-label { font-size: 13px; margin-bottom: 4px; }
-  .stamp-block { font-style: italic; font-size: 12px; color: #555; line-height: 1.5; }
-  .sig-label { font-size: 13px; margin-bottom: 4px; }
-  .sig-name { font-weight: bold; font-size: 14px; }
-  .sig-title-red { color: #c00000; font-weight: bold; font-size: 13px; }
-  .dsde { font-size: 11px; color: #c00000; margin-top: 20px; }
-  .notes { margin-top: 18px; font-size: 12px; font-style: italic; color: #444; line-height: 1.75; }
+  .stamp-text  { font-style: italic; font-size: 12px; color: #444; line-height: 1.5; }
+  .sig-label   { font-size: 13px; margin-bottom: 4px; }
+  .sig-name    { font-weight: bold; font-size: 14px; }
+
+  /* DSDE */
+  .dsde { font-size: 11px; color: #c00000; margin-top: 22px; }
+
+  /* Примечания в рамках */
+  .notes {
+    margin-top: 16px;
+    font-size: 12px;
+    font-style: italic;
+    color: #333;
+    line-height: 1.75;
+  }
+
+  /* Номер на обороте */
   .back-number { margin-top: 10px; font-size: 12px; font-style: italic; }
-  .footer { margin-top: 36px; border-top: 1px solid #ccc; padding-top: 8px; font-size: 10px; color: #aaa; text-align: center; }
-  @media print { body { padding: 20mm 22mm; } @page { size: A4; margin: 0; } }
+
+  /* Футер */
+  .footer {
+    margin-top: 32px;
+    border-top: 1px solid #ccc;
+    padding-top: 8px;
+    font-size: 10px;
+    color: #aaa;
+    text-align: center;
+  }
+
+  @media print {
+    body { padding: 18mm 20mm; }
+    @page { size: A4; margin: 0; }
+  }
 </style>
 </head>
 <body>
@@ -192,68 +328,81 @@ function buildHtml(v, num, today) {
   <div class="convention">(Гаагская конвенция от 5 октября 1961 года)</div>
 </div>
 
-<div class="field">
-  <span class="num">1.</span>
-  <span class="label">Страна:&nbsp;&nbsp;&nbsp;&nbsp;</span>
-  <span class="value-red">СОЕДИНЁННЫЕ ШТАТЫ АМЕРИКИ</span>
-</div>
+<div class="section-top">
 
-<div class="plain-text">Настоящий официальный документ</div>
+  <!-- Поле 1 — фиксированное -->
+  <div class="field-row">
+    <span class="field-num">1.</span>
+    <span class="field-label">Страна:&nbsp;&nbsp;&nbsp;&nbsp;</span>
+    <span style="font-weight:bold">СОЕДИНЁННЫЕ ШТАТЫ АМЕРИКИ</span>
+  </div>
 
-<div class="field">
-  <span class="num">2.</span>
-  <span class="label">Был подписан:</span>
-  <span style="flex:1;border-bottom:1px solid #000;min-width:40px;margin:0 8px"></span>
-  <span class="value-red">${esc(v.field2)}</span>
-</div>
+  <div class="indent-text">Настоящий официальный документ</div>
 
-<div class="field">
-  <span class="num">3.</span>
-  <span class="label">Выступающим(-ей) в качестве:</span>
-  <span style="flex:1;border-bottom:1px solid #000;min-width:20px;margin:0 8px"></span>
-  <span class="value-red">${esc(v.field3)}</span>
-</div>
+  <!-- Поле 2 -->
+  <div class="field-row">
+    <span class="field-num">2.</span>
+    <span class="field-label">Был подписан:</span>
+    <span class="field-line"></span>
+    <span class="field-val-red">&nbsp;${esc(v.field2)}</span>
+  </div>
 
-<div class="field">
-  <span class="num">4.</span>
-  <span class="label">Скреплён печатью/штампом:</span>
-  <span style="flex:1;border-bottom:1px solid #000;min-width:20px;margin:0 8px"></span>
-  <span class="value-red">${esc(v.field4)}</span>
+  <!-- Поле 3 -->
+  <div class="field-row">
+    <span class="field-num">3.</span>
+    <span class="field-label">Выступающим(-ей) в качестве:</span>
+    <span class="field-line"></span>
+    <span class="field-val-red">&nbsp;${esc(v.field3)}</span>
+  </div>
+
+  <!-- Поле 4 -->
+  <div class="field-row">
+    <span class="field-num">4.</span>
+    <span class="field-label">Скреплён печатью/штампом:</span>
+    <span class="field-line"></span>
+    <span class="field-val-red">&nbsp;${esc(v.field4)}</span>
+  </div>
+
 </div>
 
 <div class="certified">Удостоверено</div>
 
-<div class="field">
-  <span class="num">5.</span>
-  <span class="label">в</span>
-  <span class="value-plain">&nbsp;${esc(v.field5)}</span>
+<!-- Поле 5 -->
+<div class="field-56">
+  <span class="field-num">5.</span>
+  <span class="field-label">в</span>
+  <span class="field-val-underline">&nbsp;${esc(v.field5)}</span>
 </div>
 
-<div class="field">
-  <span class="num">6.</span>
-  <span class="value-plain">${esc(v.field6)}</span>
+<!-- Поле 6: значение + "года" -->
+<div class="field6-wrap">
+  <span class="field-num">6.</span>
+  <span class="field6-val">${esc(v.field6)}</span>
+  <span>года</span>
 </div>
 
-<div class="field">
-  <span class="num">7.</span>
-  <span class="value-plain">${esc(v.field7)}</span>
+<!-- Поле 7 -->
+<div class="field-56">
+  <span class="field-num">7.</span>
+  <span class="field-val-underline">${esc(v.field7)}</span>
 </div>
 
-<div class="field">
-  <span class="num">8.</span>
-  <span class="label">№</span>
-  <span class="value-red">&nbsp;${esc(v.field8)}</span>
+<!-- Поле 8 -->
+<div class="field-56" style="margin-top:4px">
+  <span class="field-num">8.</span>
+  <span class="field-label">№</span>
+  <span>&nbsp;${esc(v.field8)}</span>
 </div>
 
+<!-- Нижняя секция -->
 <div class="bottom-section">
   <div>
     <div class="stamp-label">9. Печать/штамп:</div>
-    <div class="stamp-block">[ГЕРБОВАЯ ПЕЧАТЬ<br>ШТАТА ФЛОРИДА]</div>
+    <div class="stamp-text">[ГЕРБОВАЯ ПЕЧАТЬ<br>ШТАТА ФЛОРИДА]</div>
   </div>
   <div>
     <div class="sig-label">10. Подпись:</div>
     <div class="sig-name">[ПОДПИСЬ]</div>
-    <div class="sig-title-red">СЕКРЕТАРЬ ШТАТА</div>
   </div>
 </div>
 
@@ -266,7 +415,7 @@ function buildHtml(v, num, today) {
   [<em>В рамке внизу на полях</em>: Настоящий документ содержит водяной знак. Посмотрите на просвет, чтобы увидеть слова «SAFE» (защищено) и «VERIFY FIRST» (сначала проверить)].
 </div>
 
-${v.backNumber ? `<div class="back-number">[<em>Номер на обороте</em>: ${esc(v.backNumber)}]</div>` : ''}
+<div class="back-number">[<em>Номер на обороте</em>:&nbsp;${esc(v.backNumber)}&nbsp;]</div>
 
 <div class="footer">BirthCert Translation · Перевод апостиля · No. ${num} · ${today}</div>
 
@@ -274,6 +423,7 @@ ${v.backNumber ? `<div class="back-number">[<em>Номер на обороте</
 </html>`;
 }
 
+// ── Plain text ─────────────────────────────────────────────
 function buildPlainText(v, num, today) {
   return `АПОСТИЛЬ (Гаагская конвенция от 5 октября 1961 года)
 Штат Флорида · Перевод с английского языка
@@ -284,13 +434,14 @@ function buildPlainText(v, num, today) {
 4. Печать: ${v.field4}
    Удостоверено
 5. в ${v.field5}
-6. ${v.field6}
+6. ${v.field6} года
 7. ${v.field7}
 8. № ${v.field8}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Перевод No. ${num} от ${today}`;
 }
 
+// ── Email ──────────────────────────────────────────────────
 function buildEmail(num) {
   return `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto">
 <div style="background:#0c1b3a;padding:24px;text-align:center">
