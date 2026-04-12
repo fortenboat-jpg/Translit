@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="favicon.png">
-<!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-QBBH8P72WQ"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
@@ -31,7 +30,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<!-- PDF.js для конвертации PDF → PNG на клиенте -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
 <style>
@@ -45,22 +43,15 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);line-height:1.6}
-
-/* NAV */
 nav{background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:200;box-shadow:0 2px 16px rgba(12,27,58,.07)}
 .nav-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:0 28px;height:68px}
 .logo{display:flex;align-items:center;gap:11px;text-decoration:none;padding:4px 0}
-.logo-box{width:42px;height:42px;background:linear-gradient(135deg,var(--navy),var(--blue2));border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:1.15rem;flex-shrink:0;box-shadow:0 4px 12px rgba(26,70,184,.3)}
-.logo-name{font-family:'Cormorant Garamond',serif;font-size:1.3rem;font-weight:700;color:var(--navy);line-height:1}
-.logo-sub{font-size:.6rem;font-weight:500;color:var(--muted);letter-spacing:2.5px;text-transform:uppercase;display:block;margin-top:2px}
 .nav-links{display:flex;gap:30px}
 .nav-links a{text-decoration:none;color:var(--muted);font-size:.88rem;font-weight:500;transition:color .2s}
 .nav-links a:hover{color:var(--navy)}
 .nav-right{display:flex;align-items:center;gap:14px}
 .btn-cta{background:var(--navy);color:#fff;border:none;border-radius:10px;padding:10px 22px;font-size:.88rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .2s,transform .1s}
 .btn-cta:hover{background:var(--blue2);transform:translateY(-1px)}
-
-/* HERO */
 .hero{background:linear-gradient(140deg,var(--navy) 0%,var(--navy2) 55%,#1e3f8a 100%);position:relative;overflow:hidden}
 .hero-pat{position:absolute;inset:0;background-image:radial-gradient(circle at 20% 50%,rgba(184,146,42,.08) 0%,transparent 50%),radial-gradient(circle at 80% 20%,rgba(26,70,184,.15) 0%,transparent 40%);pointer-events:none}
 .hero-inner{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr 540px;align-items:stretch;position:relative;z-index:1}
@@ -76,39 +67,19 @@ nav{background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;
 .btn-hero:hover{transform:translateY(-2px);box-shadow:0 10px 36px rgba(184,146,42,.55)}
 .hero-note{margin-top:14px;display:flex;align-items:center;gap:7px;color:rgba(255,255,255,.45);font-size:.78rem}
 .hero-right{background:#fff;padding:32px 28px;display:flex;flex-direction:column;overflow-y:auto;max-height:100vh}
-
-/* API KEY BANNER */
-.api-banner{background:linear-gradient(135deg,#fff8e6,#fffbf0);border:1.5px solid var(--gold2);border-radius:12px;padding:14px 16px;margin-bottom:18px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.api-banner-text{font-size:.78rem;color:var(--text);flex:1;min-width:180px}
-.api-banner-text strong{display:block;color:var(--navy);margin-bottom:2px;font-size:.82rem}
-.api-key-wrap{display:flex;gap:6px;width:100%;margin-top:8px}
-.api-key-inp{flex:1;padding:8px 12px;border:1.5px solid var(--gold2);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.8rem;outline:none;background:#fff}
-.api-key-inp:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(26,70,184,.1)}
-.btn-save-key{background:var(--navy);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:.78rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap}
-.btn-save-key:hover{background:var(--blue2)}
-.key-status{font-size:.72rem;margin-top:5px;width:100%}
-.key-status.ok{color:var(--green)}
-.key-status.err{color:var(--red)}
-
-/* TABS */
 .tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:20px}
 .tab{flex:1;text-align:center;padding:10px 6px;font-size:.73rem;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2.5px solid transparent;transition:all .2s;line-height:1.3}
 .tab span{display:block;font-size:.63rem;font-weight:400;opacity:.7;margin-top:2px}
 .tab.active{color:var(--blue);border-bottom-color:var(--blue)}
-
-/* FORM */
 .step{display:none}.step.active{display:block}
 .fl{display:block;font-size:.74rem;font-weight:600;color:var(--muted);margin-bottom:4px}
 .fi,.fs,.ft{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.84rem;color:var(--text);background:#fff;outline:none;transition:border-color .2s,box-shadow .2s}
 .fi:focus,.fs:focus,.ft:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(26,70,184,.09)}
 .fi.af{background:#edfaf4;border-color:var(--green)}
-.ft{resize:vertical;min-height:60px}
 .fr{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .fr3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
 .fg{margin-bottom:12px}
 .fsec{font-size:.78rem;font-weight:700;color:var(--text);margin:14px 0 9px;padding-bottom:6px;border-bottom:1px solid var(--bg2);display:flex;align-items:center;gap:7px}
-
-/* UPLOAD */
 .uzone{border:2px dashed var(--border);border-radius:12px;padding:18px;text-align:center;cursor:pointer;transition:all .2s;background:var(--bg)}
 .uzone:hover{border-color:var(--blue);background:rgba(26,70,184,.03)}
 .uzone.analyzing{border-color:var(--gold2);background:rgba(212,170,62,.05)}
@@ -123,29 +94,18 @@ nav{background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;
 .albl.show{display:block}
 .fchip{display:none;align-items:center;gap:9px;background:var(--bg2);border-radius:8px;padding:7px 11px;margin-top:7px;font-size:.78rem}
 .fchip.show{display:flex}
-
-/* BUTTONS */
 .bgen{width:100%;background:linear-gradient(135deg,var(--navy),var(--blue2));color:#fff;border:none;border-radius:11px;padding:13px;font-size:.9rem;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:6px;box-shadow:0 4px 18px rgba(26,70,184,.28);transition:opacity .2s,transform .1s}
 .bgen:hover:not(:disabled){opacity:.91;transform:translateY(-1px)}
 .bgen:disabled{opacity:.45;cursor:not-allowed}
 .bsec{display:inline-flex;align-items:center;gap:7px;background:#fff;border:1.5px solid var(--border);border-radius:8px;padding:8px 14px;font-size:.8rem;font-weight:600;color:var(--text);cursor:pointer;font-family:'DM Sans',sans-serif;transition:border-color .2s}
 .bsec:hover{border-color:var(--blue)}
 .priv{text-align:center;font-size:.69rem;color:var(--muted);margin-top:6px;display:flex;align-items:center;justify-content:center;gap:5px}
-
-/* PREVIEW */
 .pvh{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
 .pvbadge{font-size:.7rem;font-weight:700;color:var(--green);background:rgba(14,168,110,.1);border-radius:100px;padding:4px 11px}
 .pvdl{font-size:.7rem;color:var(--muted)}
-.pvbox{background:var(--bg);border:1.5px solid var(--border);border-radius:11px;padding:16px 18px;font-size:.78rem;line-height:1.85;color:var(--text);max-height:320px;overflow-y:auto;white-space:pre-wrap;font-family:'DM Sans',sans-serif;margin-bottom:12px}
-.pvbox.ld{display:flex;align-items:center;justify-content:center;min-height:140px;flex-direction:column;gap:10px;color:var(--muted)}
 .dot-pulse{width:12px;height:12px;border-radius:50%;background:var(--blue);animation:dotPulse 1s ease-in-out infinite}
 @keyframes dotPulse{0%,100%{transform:scale(.6);opacity:.4}50%{transform:scale(1);opacity:1}}
-.sp{width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:sp .7s linear infinite}
-@keyframes sp{to{transform:rotate(360deg)}}
 .brow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.enote{font-size:.76rem;color:var(--muted);margin-top:9px;padding:9px 12px;background:rgba(14,168,110,.06);border:1px solid rgba(14,168,110,.2);border-radius:8px;display:flex;align-items:center;gap:7px}
-
-/* PAYMENT */
 .pcrd{border:1.5px solid var(--border);border-radius:14px;padding:20px}
 .plbl{font-size:.73rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:11px}
 .pbig{font-family:'Cormorant Garamond',serif;font-size:2.3rem;font-weight:700;color:var(--navy);line-height:1}
@@ -156,14 +116,10 @@ nav{background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;
 .bpay{width:100%;background:linear-gradient(135deg,#0ea86e,#0c9460);color:#fff;border:none;border-radius:11px;padding:14px;font-size:.95rem;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 18px rgba(14,168,110,.3);transition:opacity .2s,transform .1s}
 .bpay:hover{opacity:.9;transform:translateY(-1px)}
 .pguar{font-size:.74rem;color:var(--muted);margin-top:11px;padding-top:11px;border-top:1px solid var(--border)}
-
-/* SECTIONS */
 .sec{padding:64px 28px}
 .sec-in{max-width:1200px;margin:0 auto}
 .stag{font-size:.72rem;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--blue);margin-bottom:10px}
 .sh2{font-family:'Cormorant Garamond',serif;font-size:clamp(1.8rem,3vw,2.5rem);font-weight:700;color:var(--navy);margin-bottom:40px}
-
-/* HOW */
 .howg{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
 .hwc{background:#fff;border:1.5px solid var(--border);border-radius:14px;padding:24px 18px;text-align:center;transition:box-shadow .2s,transform .2s}
 .hwc:hover{box-shadow:var(--shadow);transform:translateY(-4px)}
@@ -171,8 +127,6 @@ nav{background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;
 .hwtag{font-size:.63rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--blue);margin-bottom:5px}
 .hwc h3{font-size:.9rem;font-weight:700;margin-bottom:6px;color:var(--navy)}
 .hwc p{font-size:.78rem;color:var(--muted);line-height:1.65}
-
-/* SHOWCASE */
 .scbg{background:linear-gradient(155deg,var(--navy) 0%,var(--navy2) 100%)}
 .scg{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center}
 .scl{list-style:none;display:flex;flex-direction:column;gap:16px;margin-top:18px}
@@ -186,54 +140,7 @@ nav{background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;
 .tllb{font-size:.76rem;color:rgba(255,255,255,.65)}
 .tllb strong{color:#fff;display:block;font-size:.8rem}
 .tlln{flex:1;height:2px;background:rgba(255,255,255,.15);min-width:18px}
-
-/* DOC PREVIEW CARD */
 .docwrap{position:relative}
-.docback{position:absolute;width:92%;height:100%;background:#fff;border-radius:16px;top:10px;left:4%;z-index:0;box-shadow:0 6px 20px rgba(12,27,58,.1)}
-.docpaper{background:#fff;border-radius:16px;padding:26px 24px;box-shadow:var(--shadow-xl);position:relative;z-index:1;overflow:hidden}
-.docpaper::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--navy),var(--blue),var(--gold2))}
-.docwm{position:absolute;bottom:12px;right:12px;font-size:4rem;opacity:.04;font-family:'Cormorant Garamond',serif;font-weight:700;color:var(--navy);pointer-events:none;line-height:1}
-.dochdr{text-align:center;margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid var(--border)}
-.doctitle{font-family:'Cormorant Garamond',serif;font-size:.88rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:1.5px;line-height:1.4}
-.docsub{font-size:.66rem;color:var(--muted);margin-top:3px}
-.docbody{display:grid;grid-template-columns:1fr 1fr;gap:9px 20px;margin-bottom:14px}
-.docf{border-bottom:1px solid var(--bg2);padding-bottom:5px}
-.docfl{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:2px}
-.docfv{font-size:.78rem;font-weight:600;color:var(--text)}
-.docf.full{grid-column:1/-1}
-.doccert{margin-top:12px;padding-top:10px;border-top:1.5px dashed var(--border);display:flex;align-items:center;gap:11px}
-.docstamp{width:46px;height:46px;border-radius:50%;border:2px solid var(--blue);display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.docsi{font-size:.38rem;font-weight:700;color:var(--blue);text-align:center;text-transform:uppercase;letter-spacing:.4px;line-height:1.4;padding:2px}
-.docct{font-size:.68rem;color:var(--muted);line-height:1.6}
-.docct strong{color:var(--text);display:block;margin-bottom:2px}
-.docnum{font-size:.6rem;color:var(--muted);text-align:right;margin-top:8px;font-style:italic}
-.blanks-preview{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-.blank-preview-item{display:flex;flex-direction:column;gap:6px}
-.blank-preview-label{font-size:.72rem;font-weight:600;color:rgba(255,255,255,.7);text-align:center}
-.mock-doc{border-radius:8px;padding:10px 10px 28px;position:relative;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.1);min-height:200px}
-.mock-bg{background:linear-gradient(135deg,#e8e0c8 0%,#d4c9a8 100%)}
-.mock-white{background:#f8f8f6;border:1px solid #ddd}
-.mock-header{margin-bottom:8px}
-.mock-title-line{height:6px;background:rgba(12,27,58,.25);border-radius:3px;margin-bottom:3px;width:70%}
-.mock-sub-line{height:3px;background:rgba(12,27,58,.15);border-radius:2px;width:50%}
-.mock-section-label{height:8px;background:rgba(12,27,58,.2);border-radius:2px;margin:6px 0 4px;width:40%}
-.mock-row{display:flex;align-items:center;gap:4px;margin-bottom:3px}
-.mock-lbl{height:3px;background:rgba(0,0,0,.2);border-radius:1px;flex:0 0 25%;opacity:.6}
-.mock-lbl.ml{flex:0 0 18%}
-.mock-val{height:5px;background:rgba(0,0,0,.35);border-radius:2px}
-.mock-val.long{flex:0 0 55%}
-.mock-val.med{flex:0 0 35%}
-.mock-val.short{flex:0 0 20%}
-.mock-barcode{margin-top:8px;text-align:center}
-.mock-barcode-lines{height:14px;background:repeating-linear-gradient(90deg,#333 0,#333 2px,transparent 2px,transparent 4px);width:70%;margin:0 auto}
-.mock-cert-box{background:rgba(0,0,0,.04);border:1px solid rgba(0,0,0,.1);border-radius:4px;padding:5px 6px;margin-bottom:6px}
-.mock-sign-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
-.mock-sign-block{display:flex;flex-direction:column;gap:3px;align-items:center}
-.mock-sign-line{width:100%;height:1px;background:rgba(0,0,0,.3);margin:4px 0 1px}
-.mock-stamp{width:22px;height:22px;border-radius:50%;border:1px solid rgba(0,0,0,.2);margin-top:4px}
-.blank-preview-overlay{position:absolute;bottom:6px;right:6px;background:rgba(12,27,58,.85);color:#fff;font-size:.6rem;font-weight:700;padding:2px 7px;border-radius:4px;letter-spacing:1px}
-
-/* FAQ */
 .faqlist{display:flex;flex-direction:column;gap:10px;max-width:720px}
 .faqi{background:#fff;border:1.5px solid var(--border);border-radius:11px;overflow:hidden}
 .faqq{padding:15px 18px;font-weight:600;font-size:.88rem;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:11px}
@@ -242,23 +149,17 @@ nav{background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;
 .faqi.open .faqarr{transform:rotate(180deg)}
 .faqa{padding:0 18px;max-height:0;overflow:hidden;transition:max-height .3s,padding .3s;font-size:.83rem;color:var(--muted);line-height:1.75}
 .faqi.open .faqa{max-height:180px;padding:0 18px 14px}
-
-/* FOOTER */
 footer{background:var(--navy);color:rgba(255,255,255,.5);padding:40px 28px;text-align:center;font-size:.8rem}
 .ftin{max-width:1200px;margin:0 auto}
 .ftlogo{font-family:'Cormorant Garamond',serif;font-size:1.2rem;color:#fff;margin-bottom:6px}
 .ftlinks{display:flex;gap:22px;justify-content:center;margin:12px 0;flex-wrap:wrap}
 .ftlinks a{color:rgba(255,255,255,.42);text-decoration:none;transition:color .2s}
 .ftlinks a:hover{color:#fff}
-
-/* TOAST */
 .toast{position:fixed;bottom:22px;right:22px;z-index:999;background:var(--navy);color:#fff;border-radius:12px;padding:12px 18px;font-size:.84rem;font-weight:600;box-shadow:var(--shadow-xl);transform:translateY(80px);opacity:0;transition:all .3s;display:flex;align-items:center;gap:8px;max-width:300px}
 .toast.show{transform:translateY(0);opacity:1}
 .toast.ok{border-left:3px solid var(--green)}
 .toast.err{border-left:3px solid var(--red)}
 .toast.info{border-left:3px solid var(--gold2)}
-
-/* MODAL */
 .moverlay{position:fixed;inset:0;background:rgba(12,27,58,.65);z-index:500;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
 .moverlay.show{display:flex}
 .mbox{background:#fff;border-radius:20px;padding:34px;max-width:420px;width:92%;text-align:center;box-shadow:var(--shadow-xl);position:relative}
@@ -268,15 +169,6 @@ footer{background:var(--navy);color:rgba(255,255,255,.5);padding:40px 28px;text-
 .mclose{position:absolute;top:13px;right:15px;background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--muted)}
 .mbtn{width:100%;background:linear-gradient(135deg,var(--navy),var(--blue2));color:#fff;border:none;border-radius:10px;padding:12px;font-size:.9rem;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:opacity .2s}
 .mbtn:hover{opacity:.9}
-
-@media(max-width:960px){
-  .hero-inner{grid-template-columns:1fr}
-  .howg{grid-template-columns:1fr 1fr}
-  .scg{grid-template-columns:1fr}
-  .fr,.fr3{grid-template-columns:1fr}
-  .nav-links{display:none}
-  .docbody{grid-template-columns:1fr}
-}
 .doc-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:4px}
 .doc-card{border:1.5px solid var(--border);border-radius:10px;padding:10px 6px;text-align:center;cursor:pointer;transition:all .2s;position:relative;background:#fff}
 .doc-card:hover:not(.soon){border-color:var(--blue);background:rgba(26,70,184,.04);transform:translateY(-2px)}
@@ -285,15 +177,19 @@ footer{background:var(--navy);color:rgba(255,255,255,.5);padding:40px 28px;text-
 .doc-card-icon{font-size:1.4rem;margin-bottom:4px}
 .doc-card-label{font-size:.65rem;font-weight:600;color:var(--text);line-height:1.3}
 .doc-card-soon{position:absolute;top:4px;right:4px;font-size:.55rem;font-weight:700;background:var(--gold2);color:#fff;border-radius:4px;padding:1px 4px;text-transform:uppercase}
-</style>
-<style>
-#blankPreview { user-select:none; -webkit-user-select:none; }
-#blankScaleWrap img { pointer-events:none; }
+@media(max-width:960px){
+  .hero-inner{grid-template-columns:1fr}
+  .howg{grid-template-columns:1fr 1fr}
+  .scg{grid-template-columns:1fr}
+  .fr,.fr3{grid-template-columns:1fr}
+  .nav-links{display:none}
+}
+#blankPreview{user-select:none;-webkit-user-select:none}
+#blankScaleWrap img{pointer-events:none}
 </style>
 </head>
 <body>
 
-<!-- NAV -->
 <nav>
   <div class="nav-inner">
     <a href="#" class="logo">
@@ -311,7 +207,6 @@ footer{background:var(--navy);color:rgba(255,255,255,.5);padding:40px 28px;text-
   </div>
 </nav>
 
-<!-- GUIDE STRIP -->
 <div style="background:#0c1b3a;border-bottom:2px solid #c8a84b">
   <div style="max-width:1100px;margin:0 auto;padding:10px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
     <div style="display:flex;align-items:center;gap:12px">
@@ -322,7 +217,6 @@ footer{background:var(--navy);color:rgba(255,255,255,.5);padding:40px 28px;text-
   </div>
 </div>
 
-<!-- HERO -->
 <section class="hero">
   <div class="hero-pat"></div>
   <div class="hero-inner">
@@ -330,7 +224,7 @@ footer{background:var(--navy);color:rgba(255,255,255,.5);padding:40px 28px;text-
       <div class="badge">🇷🇺 Консульство РФ в США</div>
       <h1>Перевод свидетельства<br>о рождении (США)<br>для <em>Консульства РФ</em>
           <span style="display:none">Certified Translation of US Birth Certificate to Russian</span></h1>
-      <p class="hero-desc">Загрузите скан свидетельства о рождении, выданного в США — мы подготовим официальный перевод для Консульства РФ и отправим готовые документы на ваш email.</p>
+      <p class="hero-desc">Загрузите скан свидетельства о рождении или апостиля, выданного в США — мы подготовим официальный перевод для Консульства РФ и отправим готовые документы на ваш email.</p>
       <div style="display:inline-flex;align-items:baseline;gap:8px;background:rgba(200,168,75,.12);border:1px solid rgba(200,168,75,.35);border-radius:12px;padding:10px 20px;margin-bottom:20px">
         <span style="font-size:2rem;font-weight:800;color:#c8a84b;line-height:1">$59</span>
         <span style="color:rgba(255,255,255,.6);font-size:.85rem">за перевод · PDF за 10 минут</span>
@@ -347,20 +241,6 @@ footer{background:var(--navy);color:rgba(255,255,255,.5);padding:40px 28px;text-
 
     <!-- FORM -->
     <div class="hero-right" id="form-area">
-
-      <!-- API KEY BANNER - скрыт, ключ на сервере -->
-      <div class="api-banner" id="apiBanner" style="display:none">
-        <div style="font-size:1.2rem">🔑</div>
-        <div style="flex:1">
-          <div class="api-banner-text"><strong>Ключ активации</strong>Необходим для обработки документа</div>
-          <div class="api-key-wrap">
-            <input class="api-key-inp" id="apiKeyInp" type="password" placeholder="sk-...">
-            <button class="btn-save-key" onclick="saveKey()">Сохранить</button>
-          </div>
-          <div class="key-status" id="keyStatus"></div>
-        </div>
-      </div>
-
       <div class="tabs">
         <div class="tab active" id="tab1" onclick="goTab(1)">Шаг 1<span>Загрузка и данные</span></div>
         <div class="tab" id="tab2" onclick="goTab(2)">Шаг 2<span>Предпросмотр</span></div>
@@ -371,15 +251,14 @@ footer{background:var(--navy);color:rgba(255,255,255,.5);padding:40px 28px;text-
       <div class="step active" id="s1">
         <div class="fsec">📋 Тип документа</div>
         <input type="hidden" id="fDocType" value="birth">
-        <div class="doc-cards">
+        <div class="doc-cards" id="docTypeCards">
           <div class="doc-card active" onclick="selectDocType('birth', this)">
             <div class="doc-card-icon">👶</div>
             <div class="doc-card-label">Свидетельство<br>о рождении</div>
           </div>
-          <div class="doc-card soon" title="Скоро">
+          <div class="doc-card" onclick="selectDocType('apostille', this)">
             <div class="doc-card-icon">📜</div>
             <div class="doc-card-label">Апостиль</div>
-            <div class="doc-card-soon">скоро</div>
           </div>
           <div class="doc-card soon" title="Скоро">
             <div class="doc-card-icon">💍</div>
@@ -395,7 +274,7 @@ footer{background:var(--navy);color:rgba(255,255,255,.5);padding:40px 28px;text-
 
         <div class="fsec" style="margin-top:14px">🗺️ Штат</div>
         <input type="hidden" id="fState" value="florida">
-        <div class="doc-cards">
+        <div class="doc-cards" id="stateCards">
           <div class="doc-card active" onclick="selectState('florida', this)">
             <div class="doc-card-icon">🌴</div>
             <div class="doc-card-label">Флорида</div>
@@ -417,67 +296,104 @@ footer{background:var(--navy);color:rgba(255,255,255,.5);padding:40px 28px;text-
           </div>
         </div>
 
-        <div class="fsec">📎 Загрузите свидетельство о рождении</div>
-        <div class="fg">
-          <div class="uzone" id="uZone" onclick="document.getElementById('fInput').click()">
-            <div class="uic" id="uIc">⬆️</div>
-            <div class="utx" id="uTx">Перетащите JPG, PNG или PDF сюда</div>
-            <div class="uhn" id="uHn">до 10 МБ · Данные считываются автоматически</div>
-            <div class="abar" id="aBar"><div class="afill" id="aFill"></div></div>
-            <div class="albl" id="aLbl">🔍 Считываем данные из документа...</div>
+        <!-- ═══ BIRTH CERT FORM ═══ -->
+        <div id="birthForm">
+          <div class="fsec">📎 Загрузите свидетельство о рождении</div>
+          <div class="fg">
+            <div class="uzone" id="uZone" onclick="document.getElementById('fInput').click()">
+              <div class="uic" id="uIc">⬆️</div>
+              <div class="utx" id="uTx">Перетащите JPG, PNG или PDF сюда</div>
+              <div class="uhn" id="uHn">до 10 МБ · Данные считываются автоматически</div>
+              <div class="abar" id="aBar"><div class="afill" id="aFill"></div></div>
+              <div class="albl" id="aLbl">🔍 Считываем данные из документа...</div>
+            </div>
+            <div class="fchip" id="fChip">
+              <span>📄</span>
+              <div><div style="font-weight:600" id="fName"></div><div style="font-size:.7rem;color:var(--muted)" id="fSz"></div></div>
+              <span style="margin-left:auto;font-size:.7rem;color:var(--green);font-weight:600">✓ Загружено</span>
+            </div>
+            <input type="file" id="fInput" accept=".jpg,.jpeg,.png,.pdf" style="display:none" onchange="handleUpload(this)">
           </div>
-          <div class="fchip" id="fChip">
-            <span>📄</span>
-            <div><div style="font-weight:600" id="fName"></div><div style="font-size:.7rem;color:var(--muted)" id="fSz"></div></div>
-            <span style="margin-left:auto;font-size:.7rem;color:var(--green);font-weight:600">✓ Загружено</span>
+
+          <div class="fsec">👶 Данные о ребёнке</div>
+          <div class="fr3">
+            <div class="fg"><label class="fl">Фамилия</label><input autocomplete="new-password" class="fi" id="fLast" placeholder="Иванов"/></div>
+            <div class="fg"><label class="fl">Имя</label><input autocomplete="new-password" class="fi" id="fFirst" placeholder="Иван"/></div>
+            <div class="fg"><label class="fl">Отчество</label><input autocomplete="new-password" class="fi" id="fMid" placeholder="Иванович"/></div>
           </div>
-          <input type="file" id="fInput" accept=".jpg,.jpeg,.png,.pdf" style="display:none" onchange="handleUpload(this)">
+          <div class="fr">
+            <div class="fg"><label class="fl">Дата рождения</label><input autocomplete="new-password" class="fi" id="fDob" type="date"/></div>
+            <div class="fg"><label class="fl">Пол</label>
+              <select autocomplete="new-password" class="fs" id="fSex"><option value="МУЖСКОЙ">Мужской</option><option value="ЖЕНСКИЙ">Женский</option></select></div>
+          </div>
+          <div class="fr">
+            <div class="fg"><label class="fl">Время рождения</label><input autocomplete="new-password" class="fi" id="fTime" placeholder="чч:мм"/></div>
+            <div class="fg"><label class="fl">Вес при рождении</label><input autocomplete="new-password" class="fi" id="fWeight" placeholder="7 фунтов 0 унций"/></div>
+          </div>
+          <div class="fg"><label class="fl">Больница</label><input autocomplete="new-password" class="fi" id="fHospType" placeholder="БОЛЬНИЦА / МЕД. ЦЕНТР"/></div>
+          <div class="fg"><label class="fl">Место рождения</label><input autocomplete="new-password" class="fi" id="fHosp" placeholder="Название больницы"/></div>
+          <div class="fg"><label class="fl">Город и округ рождения</label><input autocomplete="new-password" class="fi" id="fPlace" placeholder="Г. Город, округ Каунти"/></div>
+          <div class="fg"><label class="fl">Номер регистрации в штате</label><input autocomplete="new-password" class="fi" id="fRegNum" placeholder="XXX-XXXX-XXXXXX"/></div>
+          <div class="fr">
+            <div class="fg"><label class="fl">Дата выдачи</label><input autocomplete="new-password" class="fi" id="fIssued" placeholder="ДД МЕСЯЦ ГГГГ г."/></div>
+            <div class="fg"><label class="fl">Дата регистрации</label><input autocomplete="new-password" class="fi" id="fRegDate" placeholder="ДД МЕСЯЦ ГГГГ г."/></div>
+          </div>
+          <div class="fsec">👩 Мать / родитель</div>
+          <div class="fr">
+            <div class="fg"><label class="fl">ФИО матери</label><input autocomplete="new-password" class="fi" id="fMom" placeholder="ФАМИЛИЯ ИМЯ ОТЧЕСТВО"/></div>
+            <div class="fg"><label class="fl">Дата рождения матери</label><input autocomplete="new-password" class="fi" id="fMomDob" placeholder="ДД МЕСЯЦ ГГГГ г."/></div>
+          </div>
+          <div class="fg"><label class="fl">Место рождения матери</label><input autocomplete="new-password" class="fi" id="fMomBirth" placeholder="Страна рождения"/></div>
+          <div class="fsec">👨 Отец / родитель</div>
+          <div class="fr">
+            <div class="fg"><label class="fl">ФИО отца</label><input autocomplete="new-password" class="fi" id="fDad" placeholder="ФАМИЛИЯ ИМЯ ОТЧЕСТВО"/></div>
+            <div class="fg"><label class="fl">Дата рождения отца</label><input autocomplete="new-password" class="fi" id="fDadDob" placeholder="ДД МЕСЯЦ ГГГГ г."/></div>
+          </div>
+          <div class="fg"><label class="fl">Место рождения отца</label><input autocomplete="new-password" class="fi" id="fDadBirth" placeholder="Страна рождения"/></div>
+          <div class="fr">
+            <div class="fg"><label class="fl">Номер запроса (REQ)</label><input autocomplete="new-password" class="fi" id="fReqNum" placeholder="Номер REQ"/></div>
+            <div class="fg"><label class="fl">Штрихкод (низ документа)</label><input autocomplete="new-password" class="fi" id="fBarcodeNum" placeholder="Цифры штрихкода"/></div>
+          </div>
+          <button class="bgen" id="btnGen" onclick="doGenerate()">✨ Сгенерировать перевод →</button>
+          <div class="priv">🔒 Данные используются только для перевода</div>
         </div>
 
-        <div class="fsec">👶 Данные о ребёнке</div>
-        <div class="fr3">
-          <div class="fg"><label class="fl">Фамилия</label><input autocomplete="new-password" class="fi" id="fLast" placeholder="Иванов"/></div>
-          <div class="fg"><label class="fl">Имя</label><input autocomplete="new-password" class="fi" id="fFirst" placeholder="Иван"/></div>
-          <div class="fg"><label class="fl">Отчество</label><input autocomplete="new-password" class="fi" id="fMid" placeholder="Иванович"/></div>
-        </div>
-        <div class="fr">
-          <div class="fg"><label class="fl">Дата рождения</label><input autocomplete="new-password" class="fi" id="fDob" type="date"/></div>
-          <div class="fg"><label class="fl">Пол</label>
-            <select autocomplete="new-password" class="fs" id="fSex"><option value="МУЖСКОЙ">Мужской</option><option value="ЖЕНСКИЙ">Женский</option></select></div>
-        </div>
-        <div class="fr">
-          <div class="fg"><label class="fl">Время рождения</label><input autocomplete="new-password" class="fi" id="fTime" placeholder="чч:мм"/></div>
-          <div class="fg"><label class="fl">Вес при рождении</label><input autocomplete="new-password" class="fi" id="fWeight" placeholder="7 фунтов 0 унций"/></div>
-        </div>
-        <div class="fg"><label class="fl">Больница</label><input autocomplete="new-password" class="fi" id="fHospType" placeholder="БОЛЬНИЦА / МЕД. ЦЕНТР"/></div>
-        <div class="fg"><label class="fl">Место рождения</label><input autocomplete="new-password" class="fi" id="fHosp" placeholder="Название больницы"/></div>
-        <div class="fg"><label class="fl">Город и округ рождения</label><input autocomplete="new-password" class="fi" id="fPlace" placeholder="Г. Город, округ Каунти"/></div>
-        <div class="fg"><label class="fl">Номер регистрации в штате</label><input autocomplete="new-password" class="fi" id="fRegNum" placeholder="XXX-XXXX-XXXXXX"/></div>
-        <div class="fr">
-          <div class="fg"><label class="fl">Дата выдачи</label><input autocomplete="new-password" class="fi" id="fIssued" placeholder="ДД МЕСЯЦ ГГГГ г."/></div>
-          <div class="fg"><label class="fl">Дата регистрации</label><input autocomplete="new-password" class="fi" id="fRegDate" placeholder="ДД МЕСЯЦ ГГГГ г."/></div>
-        </div>
+        <!-- ═══ APOSTILLE FORM ═══ -->
+        <div id="apostilleForm" style="display:none">
+          <div class="fsec">📎 Загрузите скан апостиля</div>
+          <div class="fg">
+            <div class="uzone" id="uZoneAp" onclick="document.getElementById('fInputAp').click()">
+              <div class="uic" id="uIcAp">⬆️</div>
+              <div class="utx" id="uTxAp">Перетащите JPG, PNG или PDF сюда</div>
+              <div class="uhn" id="uHnAp">до 10 МБ · Данные считываются автоматически</div>
+              <div class="abar" id="aBarAp"><div class="afill" id="aFillAp"></div></div>
+              <div class="albl" id="aLblAp">🔍 Считываем данные из апостиля...</div>
+            </div>
+            <div class="fchip" id="fChipAp">
+              <span>📄</span>
+              <div><div style="font-weight:600" id="fNameAp"></div><div style="font-size:.7rem;color:var(--muted)" id="fSzAp"></div></div>
+              <span style="margin-left:auto;font-size:.7rem;color:var(--green);font-weight:600">✓ Загружено</span>
+            </div>
+            <input type="file" id="fInputAp" accept=".jpg,.jpeg,.png,.pdf" style="display:none" onchange="handleUploadApostille(this)">
+          </div>
 
-        <div class="fsec">👩 Мать / родитель</div>
-        <div class="fr">
-          <div class="fg"><label class="fl">ФИО матери</label><input autocomplete="new-password" class="fi" id="fMom" placeholder="ФАМИЛИЯ ИМЯ ОТЧЕСТВО"/></div>
-          <div class="fg"><label class="fl">Дата рождения матери</label><input autocomplete="new-password" class="fi" id="fMomDob" placeholder="ДД МЕСЯЦ ГГГГ г."/></div>
-        </div>
-        <div class="fg"><label class="fl">Место рождения матери</label><input autocomplete="new-password" class="fi" id="fMomBirth" placeholder="Страна рождения"/></div>
+          <div class="fsec">📋 Поля апостиля</div>
+          <div class="fg"><label class="fl">2. Был подписан (ФИО)</label><input autocomplete="new-password" class="fi" id="apField2" placeholder="Автоматически из скана"/></div>
+          <div class="fg"><label class="fl">3. В качестве (должность)</label><input autocomplete="new-password" class="fi" id="apField3" placeholder="Автоматически из скана"/></div>
+          <div class="fg"><label class="fl">4. Скреплён печатью/штампом</label><input autocomplete="new-password" class="fi" id="apField4" placeholder="Автоматически из скана"/></div>
+          <div class="fr">
+            <div class="fg"><label class="fl">5. В городе</label><input autocomplete="new-password" class="fi" id="apField5" placeholder="Tallahassee, Florida"/></div>
+            <div class="fg"><label class="fl">6. Дата (словами)</label><input autocomplete="new-password" class="fi" id="apField6" placeholder="Twelfth day of..."/></div>
+          </div>
+          <div class="fr">
+            <div class="fg"><label class="fl">7. Уполномоченный орган</label><input autocomplete="new-password" class="fi" id="apField7" placeholder="Secretary of State..."/></div>
+            <div class="fg"><label class="fl">8. № апостиля</label><input autocomplete="new-password" class="fi" id="apField8" placeholder="2024-123456"/></div>
+          </div>
+          <div class="fg"><label class="fl">Номер на обороте (если есть)</label><input autocomplete="new-password" class="fi" id="apBackNum" placeholder="0000000"/></div>
 
-        <div class="fsec">👨 Отец / родитель</div>
-        <div class="fr">
-          <div class="fg"><label class="fl">ФИО отца</label><input autocomplete="new-password" class="fi" id="fDad" placeholder="ФАМИЛИЯ ИМЯ ОТЧЕСТВО"/></div>
-          <div class="fg"><label class="fl">Дата рождения отца</label><input autocomplete="new-password" class="fi" id="fDadDob" placeholder="ДД МЕСЯЦ ГГГГ г."/></div>
+          <button class="bgen" onclick="doGenerateApostille()">✨ Сгенерировать перевод →</button>
+          <div class="priv">🔒 Данные используются только для перевода</div>
         </div>
-        <div class="fg"><label class="fl">Место рождения отца</label><input autocomplete="new-password" class="fi" id="fDadBirth" placeholder="Страна рождения"/></div>
-        <div class="fr">
-          <div class="fg"><label class="fl">Номер запроса (REQ)</label><input autocomplete="new-password" class="fi" id="fReqNum" placeholder="Номер REQ"/></div>
-          <div class="fg"><label class="fl">Штрихкод (низ документа)</label><input autocomplete="new-password" class="fi" id="fBarcodeNum" placeholder="Цифры штрихкода"/></div>
-        </div>
-
-        <button class="bgen" id="btnGen" onclick="doGenerate()">✨ Сгенерировать перевод →</button>
-        <div class="priv">🔒 Данные используются только для перевода</div>
       </div>
 
       <!-- STEP 2 -->
@@ -523,7 +439,6 @@ footer{background:var(--navy);color:rgba(255,255,255,.5);padding:40px 28px;text-
           <button class="bsec" onclick="goTab(1)">← Назад</button>
           <button class="bgen" style="width:auto;padding:10px 22px;margin:0" onclick="goTab(3)">Оплатить и получить PDF →</button>
         </div>
-
       </div>
 
       <!-- STEP 3 -->
@@ -531,7 +446,7 @@ footer{background:var(--navy);color:rgba(255,255,255,.5);padding:40px 28px;text-
         <div class="pcrd">
           <div class="plbl">Итого к оплате</div>
           <div class="pbig">USD $59<span style="font-size:1.1rem">.00</span></div>
-          <div class="psub">Перевод + оформленный PDF + отправка на email за 10 мин</div>
+          <div class="psub" id="paySubtitle">Перевод + оформленный PDF + отправка на email за 10 мин</div>
           <div class="pssl">🔒 Безопасная оплата через Stripe</div>
           <div class="pms">
             <div class="pm">VISA</div><div class="pm">Mastercard</div>
@@ -551,7 +466,6 @@ footer{background:var(--navy);color:rgba(255,255,255,.5);padding:40px 28px;text-
   </div>
 </section>
 
-<!-- HOW IT WORKS -->
 <section class="sec" id="how">
   <div class="sec-in">
     <div class="stag">Процесс</div>
@@ -565,7 +479,6 @@ footer{background:var(--navy);color:rgba(255,255,255,.5);padding:40px 28px;text-
   </div>
 </section>
 
-<!-- SHOWCASE -->
 <section class="sec scbg" id="example">
   <div class="sec-in">
     <div class="scg">
@@ -586,29 +499,16 @@ footer{background:var(--navy);color:rgba(255,255,255,.5);padding:40px 28px;text-
           <li><div class="sclic">⚡</div><div class="sclt"><strong>На email за 10 минут</strong><span>Готовый PDF — распечатать и подать</span></div></li>
         </ul>
       </div>
-      <div class="docwrap" style="position:relative;user-select:none"
-           oncontextmenu="return false"
-           ondragstart="return false">
-        <img src="sample_translation.jpg"
-             alt="Certified translation of US birth certificate for Russian consulate"
-             draggable="false"
+      <div class="docwrap" style="position:relative;user-select:none" oncontextmenu="return false" ondragstart="return false">
+        <img src="sample_translation.jpg" alt="Certified translation of US birth certificate for Russian consulate" draggable="false"
              style="width:100%;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.25);display:block;pointer-events:none">
-        <div style="position:absolute;top:0;left:0;right:0;bottom:0;border-radius:16px;
-                    background:linear-gradient(to bottom,transparent 60%,rgba(12,27,58,0.7) 100%)">
-        </div>
-        <div style="position:absolute;bottom:14px;left:0;right:0;text-align:center;
-                    color:rgba(255,255,255,0.9);font-size:.8rem;font-weight:600;letter-spacing:2px;
-                    text-transform:uppercase">
-          Образец перевода
-        </div>
+        <div style="position:absolute;top:0;left:0;right:0;bottom:0;border-radius:16px;background:linear-gradient(to bottom,transparent 60%,rgba(12,27,58,0.7) 100%)"></div>
+        <div style="position:absolute;bottom:14px;left:0;right:0;text-align:center;color:rgba(255,255,255,0.9);font-size:.8rem;font-weight:600;letter-spacing:2px;text-transform:uppercase">Образец перевода</div>
       </div>
     </div>
   </div>
 </section>
 
-
-
-<!-- FAQ -->
 <section class="sec" id="faq">
   <div class="sec-in">
     <div class="stag">Вопросы</div>
@@ -616,8 +516,9 @@ footer{background:var(--navy);color:rgba(255,255,255,.5);padding:40px 28px;text-
     <div class="faqlist">
       <div class="faqi"><div class="faqq" onclick="faqT(this)">Как быстро придёт перевод? <span class="faqarr">▼</span></div><div class="faqa">После оплаты PDF отправляется автоматически в течение 10 минут.</div></div>
       <div class="faqi"><div class="faqq" onclick="faqT(this)">Как происходит считывание документа? <span class="faqarr">▼</span></div><div class="faqa">После загрузки скана наша система автоматически распознаёт все поля документа и заполняет форму перевода. Данные обрабатываются на защищённом сервере.</div></div>
-      <div class="faqi"><div class="faqq" onclick="faqT(this)">Примут ли перевод в консульстве? <span class="faqarr">▼</span></div><div class="faqa">Да. Перевод выполнен в строгом соответствии с требованиями консульств РФ в США — формат, структура и содержание соответствуют установленным стандартам. Рекомендуем также убедиться, что весь пакет документов для подачи укомплектован согласно актуальным требованиям конкретного консульства.</div></div>
+      <div class="faqi"><div class="faqq" onclick="faqT(this)">Примут ли перевод в консульстве? <span class="faqarr">▼</span></div><div class="faqa">Да. Перевод выполнен в строгом соответствии с требованиями консульств РФ в США — формат, структура и содержание соответствуют установленным стандартам.</div></div>
       <div class="faqi"><div class="faqq" onclick="faqT(this)">Включено ли нотариальное заверение? <span class="faqarr">▼</span></div><div class="faqa">Да, нотариальное заверение уже включено в комплект документов. Вы получите удостоверение перевода с подписью сертифицированного переводчика и нотариальным заверением подписи — всё готово для подачи в Консульство РФ.</div></div>
+      <div class="faqi"><div class="faqq" onclick="faqT(this)">Можно ли перевести апостиль? <span class="faqarr">▼</span></div><div class="faqa">Да! Мы переводим апостиль штата Флорида (Гаагская конвенция 1961 года). Выберите «Апостиль» в типе документа, загрузите скан — система автоматически считает все поля и подготовит перевод по стандартному шаблону.</div></div>
     </div>
   </div>
 </section>
@@ -625,13 +526,12 @@ footer{background:var(--navy);color:rgba(255,255,255,.5);padding:40px 28px;text-
 <footer>
   <div class="ftin">
     <div class="ftlogo">📄 BirthCert Translation</div>
-    <p>Перевод свидетельств о рождении для консульств РФ в США</p>
+    <p>Перевод свидетельств о рождении и апостилей для консульств РФ в США</p>
     <div class="ftlinks"><a href="#">Конфиденциальность</a><a href="#">Условия</a><a href="#">Возврат</a><a href="#">Контакты</a></div>
     <p>© 2025 BirthCert Translation. Все права защищены.</p>
   </div>
 </footer>
 
-<!-- SUCCESS MODAL -->
 <div class="moverlay" id="succModal">
   <div class="mbox">
     <div class="mbox-ico">🎉</div>
@@ -644,31 +544,30 @@ footer{background:var(--navy);color:rgba(255,255,255,.5);padding:40px 28px;text-
 <div class="toast" id="toast"></div>
 
 <script>
-// ─────────────────────────────────────────
-//  STATE
-// ─────────────────────────────────────────
 let translationText = '';
 const API = '';
 
-// ─── UTILS ───────────────────────────────────────────────
+// ── UTILS ─────────────────────────────────────────────────
 function selectDocType(val, el) {
   if (el.classList.contains('soon')) return;
   document.getElementById('fDocType').value = val;
-  document.querySelectorAll('.doc-cards').forEach((grid, i) => {
-    if (i === 0) grid.querySelectorAll('.doc-card').forEach(c => c.classList.remove('active'));
-  });
+  document.getElementById('docTypeCards').querySelectorAll('.doc-card').forEach(c => c.classList.remove('active'));
   el.classList.add('active');
+  // Переключаем формы
+  document.getElementById('birthForm').style.display    = (val === 'birth')      ? 'block' : 'none';
+  document.getElementById('apostilleForm').style.display = (val === 'apostille') ? 'block' : 'none';
+  // Subtitle на шаге 3
+  document.getElementById('paySubtitle').textContent = val === 'apostille'
+    ? 'Перевод апостиля + PDF + отправка на email за 10 мин'
+    : 'Перевод + оформленный PDF + отправка на email за 10 мин';
 }
 
 function selectState(val, el) {
   if (el.classList.contains('soon')) return;
   document.getElementById('fState').value = val;
-  document.querySelectorAll('.doc-cards')[1].querySelectorAll('.doc-card').forEach(c => c.classList.remove('active'));
+  document.getElementById('stateCards').querySelectorAll('.doc-card').forEach(c => c.classList.remove('active'));
   el.classList.add('active');
 }
-
-function onDocTypeChange(val) {}
-function onStateChange(val) {}
 
 function scrollToForm(){document.getElementById('form-area').scrollIntoView({behavior:'smooth',block:'start'})}
 function goTab(n){[1,2,3].forEach(i=>{document.getElementById('s'+i).classList.toggle('active',i===n);document.getElementById('tab'+i).classList.toggle('active',i===n)})}
@@ -680,122 +579,137 @@ function toast(type,msg){
   setTimeout(()=>t.classList.remove('show'),4500);
 }
 function af(id,val){if(!val||val==='—')return;const el=document.getElementById(id);if(el){el.value=val;el.classList.add('af');setTimeout(()=>el.classList.remove('af'),3000)}}
-function saveKey(){toast('info','Ключ хранится на сервере')}
 
-// ─── UPLOAD → конвертация PDF на клиенте → BACKEND OCR ───
+// ── ВСПОМОГАЛКА: PDF → PNG на клиенте ─────────────────────
+async function pdfToImageFile(file) {
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  const page = await pdf.getPage(1);
+  const viewport = page.getViewport({ scale: 2.0 });
+  const canvas = document.createElement('canvas');
+  canvas.width = viewport.width; canvas.height = viewport.height;
+  await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+  const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+  return new File([blob], file.name.replace(/\.pdf$/i, '.png'), { type: 'image/png' });
+}
+
+// ── BIRTH CERT UPLOAD ──────────────────────────────────────
 async function handleUpload(inp) {
   const file = inp.files[0];
   if (!file) return;
-
   document.getElementById('fName').textContent = file.name;
-  document.getElementById('fSz').textContent = (file.size / 1024).toFixed(1) + ' КБ';
-
-  // Сброс полей
+  document.getElementById('fSz').textContent = (file.size/1024).toFixed(1)+' КБ';
   ['fLast','fFirst','fMid','fTime','fWeight','fHospType','fHosp','fPlace',
    'fRegNum','fIssued','fRegDate','fMom','fMomDob','fMomBirth',
-   'fDad','fDadDob','fDadBirth','fReqNum','fBarcodeNum'].forEach(id => {
-    const el = document.getElementById(id); if (el) el.value = '';
+   'fDad','fDadDob','fDadBirth','fReqNum','fBarcodeNum'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
   });
-  window._ocrChildName = ''; window._ocrCityCounty = '';
-  window._ocrHospital = ''; window._ocrMotherName = ''; window._ocrFatherName = '';
-  document.getElementById('fSex').value = 'МУЖСКОЙ';
-  document.getElementById('fDob').value = '';
+  window._ocrChildName=''; window._ocrCityCounty='';
+  window._ocrHospital=''; window._ocrMotherName=''; window._ocrFatherName='';
+  document.getElementById('fSex').value='МУЖСКОЙ';
+  document.getElementById('fDob').value='';
   document.getElementById('fChip').classList.add('show');
-
-  const zone = document.getElementById('uZone');
+  const zone=document.getElementById('uZone');
   zone.classList.add('analyzing');
-  document.getElementById('uIc').textContent = '🔍';
-  document.getElementById('uTx').textContent = 'Отправляем на сервер...';
-  document.getElementById('uHn').textContent = 'Считываем данные из документа...';
-  const bar = document.getElementById('aBar'), fill = document.getElementById('aFill'), lbl = document.getElementById('aLbl');
+  document.getElementById('uIc').textContent='🔍';
+  document.getElementById('uTx').textContent='Отправляем на сервер...';
+  document.getElementById('uHn').textContent='Считываем данные из документа...';
+  const bar=document.getElementById('aBar'),fill=document.getElementById('aFill'),lbl=document.getElementById('aLbl');
   bar.classList.add('show'); lbl.classList.add('show');
-  let p = 0;
-  const iv = setInterval(() => { p = Math.min(p + 2, 90); fill.style.width = p + '%'; }, 300);
-
+  let p=0;
+  const iv=setInterval(()=>{p=Math.min(p+2,90);fill.style.width=p+'%';},300);
   try {
-    let uploadFile = file;
-
-    // ── Если PDF — конвертируем первую страницу в PNG прямо в браузере ──
-    if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
-      document.getElementById('uTx').textContent = 'Конвертируем PDF в изображение...';
-      const arrayBuffer = await file.arrayBuffer();
-      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-      const page = await pdf.getPage(1);
-      const scale = 2.0;
-      const viewport = page.getViewport({ scale });
-      const canvas = document.createElement('canvas');
-      canvas.width = viewport.width;
-      canvas.height = viewport.height;
-      const ctx = canvas.getContext('2d');
-      await page.render({ canvasContext: ctx, viewport }).promise;
-      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
-      uploadFile = new File([blob], file.name.replace(/\.pdf$/i, '.png'), { type: 'image/png' });
-      document.getElementById('uTx').textContent = 'Отправляем на сервер...';
+    let uploadFile=file;
+    if(file.type==='application/pdf'||file.name.toLowerCase().endsWith('.pdf')){
+      document.getElementById('uTx').textContent='Конвертируем PDF...';
+      uploadFile=await pdfToImageFile(file);
+      document.getElementById('uTx').textContent='Отправляем на сервер...';
     }
-
-    const formData = new FormData();
-    formData.append('file', uploadFile);
-
-    const res = await fetch(API + '/api/ocr', { method: 'POST', body: formData }).then(r => r.json());
-
-    clearInterval(iv); fill.style.width = '100%';
-
-    if (res.ok && res.data) {
-      const j = res.data;
-      af('fLast', j.lastName);
-      af('fFirst', j.firstName);
-      af('fMid', j.middleName);
-      window._ocrChildName   = j.childName    || '';
-      window._ocrMotherName  = j.motherName   || '';
-      window._ocrFatherName  = j.fatherName   || '';
-      if (j.dob) {
-        const d = new Date(j.dob + 'T12:00:00');
-        if (!isNaN(d)) {
-          const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), dd = String(d.getDate()).padStart(2,'0');
-          af('fDob', `${y}-${m}-${dd}`);
-        }
-      }
-      if (j.sex) document.getElementById('fSex').value = j.sex;
-      af('fTime', j.timeOfBirth);
-      af('fWeight', j.weight);
-      af('fHospType', j.hospitalType || 'БОЛЬНИЦА');
-      af('fHosp', j.hospital);
-      af('fPlace', j.cityCounty);
-      af('fRegNum', j.stateRegNum);
-      af('fIssued', j.dateIssued);
-      af('fRegDate', j.dateRegistered);
-      af('fMom', j.motherName);
-      af('fMomDob', j.motherDob);
-      af('fMomBirth', j.motherBirthPlace);
-      af('fDad', j.fatherName);
-      af('fDadDob', j.fatherDob);
-      af('fDadBirth', j.fatherBirthPlace);
-      if (j.reqNum) af('fReqNum', j.reqNum);
-      if (j.barcodeNum) { const el = document.getElementById('fBarcodeNum'); if(el) el.value = j.barcodeNum; }
-      window._ocrCityCounty   = j.cityCounty   || '';
-      window._ocrHospital     = j.hospital      || '';
-      window._ocrHospitalType = j.hospitalType  || 'БОЛЬНИЦА';
-      toast('ok', '✓ Данные считаны — проверьте поля');
-    } else {
-      toast('err', 'Ошибка OCR: ' + (res.error || 'неизвестно'));
-    }
-  } catch (err) {
-    clearInterval(iv);
-    toast('err', 'Сервер недоступен.');
-    console.error(err);
-  } finally {
-    fill.style.width = '100%';
-    setTimeout(() => {
+    const formData=new FormData();
+    formData.append('file',uploadFile);
+    const res=await fetch(API+'/api/ocr',{method:'POST',body:formData}).then(r=>r.json());
+    clearInterval(iv); fill.style.width='100%';
+    if(res.ok&&res.data){
+      const j=res.data;
+      af('fLast',j.lastName); af('fFirst',j.firstName); af('fMid',j.middleName);
+      window._ocrChildName=j.childName||''; window._ocrMotherName=j.motherName||''; window._ocrFatherName=j.fatherName||'';
+      if(j.dob){const d=new Date(j.dob+'T12:00:00');if(!isNaN(d)){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),dd=String(d.getDate()).padStart(2,'0');af('fDob',`${y}-${m}-${dd}`);}}
+      if(j.sex) document.getElementById('fSex').value=j.sex;
+      af('fTime',j.timeOfBirth); af('fWeight',j.weight); af('fHospType',j.hospitalType||'БОЛЬНИЦА');
+      af('fHosp',j.hospital); af('fPlace',j.cityCounty); af('fRegNum',j.stateRegNum);
+      af('fIssued',j.dateIssued); af('fRegDate',j.dateRegistered);
+      af('fMom',j.motherName); af('fMomDob',j.motherDob); af('fMomBirth',j.motherBirthPlace);
+      af('fDad',j.fatherName); af('fDadDob',j.fatherDob); af('fDadBirth',j.fatherBirthPlace);
+      if(j.reqNum) af('fReqNum',j.reqNum);
+      if(j.barcodeNum){const el=document.getElementById('fBarcodeNum');if(el) el.value=j.barcodeNum;}
+      window._ocrCityCounty=j.cityCounty||''; window._ocrHospital=j.hospital||''; window._ocrHospitalType=j.hospitalType||'БОЛЬНИЦА';
+      toast('ok','✓ Данные считаны — проверьте поля');
+    } else { toast('err','Ошибка OCR: '+(res.error||'неизвестно')); }
+  } catch(err){ clearInterval(iv); toast('err','Сервер недоступен.'); console.error(err); }
+  finally {
+    fill.style.width='100%';
+    setTimeout(()=>{
       zone.classList.remove('analyzing'); zone.classList.add('uploaded');
-      document.getElementById('uIc').textContent = '✅';
-      document.getElementById('uTx').textContent = 'Файл загружен';
-      document.getElementById('uHn').textContent = file.name;
+      document.getElementById('uIc').textContent='✅';
+      document.getElementById('uTx').textContent='Файл загружен';
+      document.getElementById('uHn').textContent=file.name;
       bar.classList.remove('show'); lbl.classList.remove('show');
-    }, 400);
+    },400);
   }
 }
 
-// ─── GENERATE ────────────────────────────────────────────
+// ── APOSTILLE UPLOAD ───────────────────────────────────────
+async function handleUploadApostille(inp) {
+  const file = inp.files[0];
+  if (!file) return;
+  document.getElementById('fNameAp').textContent = file.name;
+  document.getElementById('fSzAp').textContent = (file.size/1024).toFixed(1)+' КБ';
+  ['apField2','apField3','apField4','apField5','apField6','apField7','apField8','apBackNum']
+    .forEach(id=>{const el=document.getElementById(id);if(el) el.value='';});
+  document.getElementById('fChipAp').classList.add('show');
+
+  const zone=document.getElementById('uZoneAp');
+  zone.classList.add('analyzing');
+  document.getElementById('uIcAp').textContent='🔍';
+  document.getElementById('uTxAp').textContent='Отправляем на сервер...';
+  const bar=document.getElementById('aBarAp'),fill=document.getElementById('aFillAp'),lbl=document.getElementById('aLblAp');
+  bar.classList.add('show'); lbl.classList.add('show');
+  let p=0;
+  const iv=setInterval(()=>{p=Math.min(p+2,90);fill.style.width=p+'%';},300);
+
+  try {
+    let uploadFile=file;
+    if(file.type==='application/pdf'||file.name.toLowerCase().endsWith('.pdf')){
+      document.getElementById('uTxAp').textContent='Конвертируем PDF...';
+      uploadFile=await pdfToImageFile(file);
+      document.getElementById('uTxAp').textContent='Отправляем на сервер...';
+    }
+    const formData=new FormData();
+    formData.append('file',uploadFile);
+    const res=await fetch('/api/ocr-apostille',{method:'POST',body:formData}).then(r=>r.json());
+    clearInterval(iv); fill.style.width='100%';
+    if(res.ok&&res.data){
+      const j=res.data;
+      const afAp=(id,val)=>{if(!val)return;const el=document.getElementById(id);if(el){el.value=val;el.classList.add('af');setTimeout(()=>el.classList.remove('af'),3000);}};
+      afAp('apField2',j.field2); afAp('apField3',j.field3); afAp('apField4',j.field4);
+      afAp('apField5',j.field5); afAp('apField6',j.field6); afAp('apField7',j.field7);
+      afAp('apField8',j.field8); afAp('apBackNum',j.backNumber);
+      toast('ok','✓ Данные считаны — проверьте поля');
+    } else { toast('err','Ошибка OCR апостиля: '+(res.error||'')); }
+  } catch(err){ clearInterval(iv); toast('err','Сервер недоступен'); console.error(err); }
+  finally {
+    fill.style.width='100%';
+    setTimeout(()=>{
+      zone.classList.remove('analyzing'); zone.classList.add('uploaded');
+      document.getElementById('uIcAp').textContent='✅';
+      document.getElementById('uTxAp').textContent='Файл загружен';
+      document.getElementById('uHnAp').textContent=file.name;
+      bar.classList.remove('show'); lbl.classList.remove('show');
+    },400);
+  }
+}
+
+// ── BIRTH CERT GENERATE ────────────────────────────────────
 const LOAD_STEPS=[
   [15,'Считываем данные...'],
   [35,'Формируем перевод...'],
@@ -804,20 +718,19 @@ const LOAD_STEPS=[
   [92,'Отправляем на email...'],
 ];
 
-function doGenerate(){
-  const last=document.getElementById('fLast').value.trim();
-  const first=document.getElementById('fFirst').value.trim();
-  const emailEl=document.getElementById('fEmail'); const email=emailEl?emailEl.value.trim():'';
-  if(!last||!first){toast('err','⚠️ Заполните хотя бы фамилию и имя ребёнка');return}
+function startLoading() {
   goTab(2);
   document.getElementById('loadingAnim').style.display='block';
   document.getElementById('blankPreview').style.display='none';
   document.getElementById('errBox').style.display='none';
   document.getElementById('pvButtons').style.display='none';
-  // eNote removed
   document.getElementById('pvBadge').textContent='⏳ Формируем перевод...';
+  // Сброс iframe апостиля если был
+  const old=document.getElementById('apostilleIframe');
+  if(old) old.remove();
+  document.getElementById('bgDiv').style.display='block';
   let si=0;
-  const stepIv=setInterval(()=>{
+  return setInterval(()=>{
     if(si<LOAD_STEPS.length){
       const [pct,msg]=LOAD_STEPS[si];
       document.getElementById('loadBar').style.width=pct+'%';
@@ -825,6 +738,13 @@ function doGenerate(){
       si++;
     }
   },700);
+}
+
+function doGenerate(){
+  const last=document.getElementById('fLast').value.trim();
+  const first=document.getElementById('fFirst').value.trim();
+  if(!last||!first){toast('err','⚠️ Заполните хотя бы фамилию и имя ребёнка');return}
+  const stepIv=startLoading();
   const payload={
     lastName:last, firstName:first,
     middleName:document.getElementById('fMid').value.trim(),
@@ -832,24 +752,23 @@ function doGenerate(){
     sex:document.getElementById('fSex').value,
     timeOfBirth:document.getElementById('fTime').value.trim(),
     weight:document.getElementById('fWeight').value.trim(),
-    hospital:     window._ocrHospital     || document.getElementById('fHosp').value.trim(),
-    hospitalType: document.getElementById('fHospType').value.trim() || window._ocrHospitalType || 'БОЛЬНИЦА',
-    cityCounty:   window._ocrCityCounty   || document.getElementById('fPlace').value.trim(),
+    hospital:window._ocrHospital||document.getElementById('fHosp').value.trim(),
+    hospitalType:document.getElementById('fHospType').value.trim()||window._ocrHospitalType||'БОЛЬНИЦА',
+    cityCounty:window._ocrCityCounty||document.getElementById('fPlace').value.trim(),
     stateRegNum:document.getElementById('fRegNum').value.trim(),
     dateIssued:document.getElementById('fIssued').value.trim(),
     dateRegistered:document.getElementById('fRegDate').value.trim(),
-    motherName:   window._ocrMotherName   || document.getElementById('fMom').value.trim(),
+    motherName:window._ocrMotherName||document.getElementById('fMom').value.trim(),
     motherDob:document.getElementById('fMomDob').value.trim(),
     motherBirthPlace:document.getElementById('fMomBirth').value.trim(),
-    fatherName:   window._ocrFatherName   || document.getElementById('fDad').value.trim(),
+    fatherName:window._ocrFatherName||document.getElementById('fDad').value.trim(),
     fatherDob:document.getElementById('fDadDob').value.trim(),
     fatherBirthPlace:document.getElementById('fDadBirth').value.trim(),
     reqNum:document.getElementById('fReqNum').value.trim(),
     state:document.getElementById('fState').value,
-    docType:document.getElementById('fDocType').value,
+    docType:'birth',
     barcodeNum:document.getElementById('fBarcodeNum').value.trim(),
-    childName: window._ocrChildName || [last, first, document.getElementById('fMid').value.trim()].filter(Boolean).join(' '),
-    // email НЕ передаём при генерации — только после оплаты через webhook
+    childName:window._ocrChildName||[last,first,document.getElementById('fMid').value.trim()].filter(Boolean).join(' '),
   };
   fetch(API+'/api/translate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
   .then(r=>r.json())
@@ -864,21 +783,12 @@ function doGenerate(){
         window._docxBase64=res.docxBase64;
         window._pdfHtml=res.pdfHtml;
         window._orderNum=res.orderNum;
-        window._payload=payload;
-        window._lastValues = res.values || {};
-        window._lastFields = res.fields || [];
-        window._pdfHtml = res.pdfHtml;
+        window._lastValues=res.values||{};
+        window._lastFields=res.fields||[];
         showPreview(res.pdfHtml);
         document.getElementById('pvButtons').style.display='flex';
         document.getElementById('pvBadge').textContent='✓ Перевод готов — проверьте данные';
-        // email будет введён на шаге 3
-        // Файлы отправляются только после оплаты
       } else {
-        document.getElementById('blankPreview').style.display='none';
-        const err = document.createElement('div');
-        err.className='pvbox'; err.style.display='block';
-        err.textContent='❌ Ошибка: '+(res.error||'');
-        document.getElementById('blankPreview').parentNode.insertBefore(err, document.getElementById('blankPreview'));
         toast('err','Ошибка: '+(res.error||''));
       }
     },400);
@@ -886,152 +796,202 @@ function doGenerate(){
   .catch(err=>{
     clearInterval(stepIv);
     document.getElementById('loadingAnim').style.display='none';
-    document.getElementById('blankPreview').style.display='none';
     document.getElementById('errBox').style.display='block';
-    document.getElementById('errBox').textContent='❌ Ошибка сервера. Проверьте Vercel логи.';
-    toast('err','Ошибка сервера');console.error(err);
+    document.getElementById('errBox').textContent='❌ Ошибка сервера.';
+    toast('err','Ошибка сервера'); console.error(err);
   });
 }
 
-// ─── ПОКАЗ БЛАНКА С ДАННЫМИ ──────────────────────────────
+// ── APOSTILLE GENERATE ─────────────────────────────────────
+function doGenerateApostille(){
+  const f8=document.getElementById('apField8').value.trim();
+  if(!f8){toast('err','⚠️ Укажите номер апостиля (поле 8)');return}
+  const stepIv=startLoading();
+  const payload={
+    field2:document.getElementById('apField2').value.trim(),
+    field3:document.getElementById('apField3').value.trim(),
+    field4:document.getElementById('apField4').value.trim(),
+    field5:document.getElementById('apField5').value.trim(),
+    field6:document.getElementById('apField6').value.trim(),
+    field7:document.getElementById('apField7').value.trim(),
+    field8:f8,
+    backNumber:document.getElementById('apBackNum').value.trim(),
+    docType:'apostille',
+    state:document.getElementById('fState').value,
+  };
+  window._apostillePayload=payload;
+  fetch('/api/translate-apostille',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+  .then(r=>r.json())
+  .then(res=>{
+    clearInterval(stepIv);
+    document.getElementById('loadBar').style.width='100%';
+    document.getElementById('loadStep').textContent='✓ Готово!';
+    setTimeout(()=>{
+      document.getElementById('loadingAnim').style.display='none';
+      if(res.ok){
+        translationText=res.translationText;
+        window._orderNum=res.orderNum;
+        window._pdfHtml=res.pdfHtml;
+        showApostillePreview(res.pdfHtml);
+        document.getElementById('pvButtons').style.display='flex';
+        document.getElementById('pvBadge').textContent='✓ Перевод готов — проверьте данные';
+      } else {
+        toast('err','Ошибка: '+(res.error||''));
+      }
+    },400);
+  })
+  .catch(err=>{
+    clearInterval(stepIv);
+    document.getElementById('loadingAnim').style.display='none';
+    document.getElementById('errBox').style.display='block';
+    document.getElementById('errBox').textContent='❌ Ошибка сервера.';
+    toast('err','Ошибка сервера'); console.error(err);
+  });
+}
+
+// ── PREVIEW FUNCTIONS ──────────────────────────────────────
 function showPreview(html) {
-  const container  = document.getElementById('blankPreview');
-  const outer      = document.getElementById('previewOuter');
-  const scaleWrap  = document.getElementById('blankScaleWrap');
-  const overlayDiv = document.getElementById('overlayFields');
-  const containerW = container.offsetWidth || 460;
-  const scale = containerW / 794;
-  scaleWrap.style.transform = `scale(${scale})`;
-  scaleWrap.style.width = '794px';
-  const visibleH = Math.round(1123 * scale * 0.45);
-  outer.style.height = visibleH + 'px';
-  if (window._lastValues && window._lastFields) {
-    const vals   = window._lastValues;
-    const fields = window._lastFields;
-    overlayDiv.innerHTML = fields.map(f => {
-      const val = vals[f.id];
-      if (!val) return '';
+  const container=document.getElementById('blankPreview');
+  const outer=document.getElementById('previewOuter');
+  const scaleWrap=document.getElementById('blankScaleWrap');
+  // Убираем iframe апостиля если был
+  const old=document.getElementById('apostilleIframe');
+  if(old) old.remove();
+  document.getElementById('bgDiv').style.display='block';
+  const containerW=container.offsetWidth||460;
+  const scale=containerW/794;
+  scaleWrap.style.transform=`scale(${scale})`;
+  outer.style.height=Math.round(1123*scale*0.45)+'px';
+  if(window._lastValues&&window._lastFields){
+    document.getElementById('overlayFields').innerHTML=window._lastFields.map(f=>{
+      const val=window._lastValues[f.id];
+      if(!val) return '';
       return `<div style="position:absolute;top:${f.top}%;left:${f.left}%;font-size:${f.size}px;font-weight:700;color:#000;font-family:'Times New Roman',serif;white-space:nowrap;line-height:1">${val}</div>`;
     }).join('');
   }
-  container.style.display = 'block';
-  container.style.opacity = '0';
-  container.style.transform = 'translateY(8px)';
-  container.style.transition = 'opacity .4s, transform .4s';
-  requestAnimationFrame(() => {
-    container.style.opacity = '1';
-    container.style.transform = 'translateY(0)';
-  });
+  container.style.display='block';
+  container.style.opacity='0';
+  container.style.transform='translateY(8px)';
+  container.style.transition='opacity .4s, transform .4s';
+  requestAnimationFrame(()=>{container.style.opacity='1';container.style.transform='translateY(0)';});
 }
 
-function openFullDoc() {
-  if (!window._pdfHtml) { toast('err','Нет документа'); return; }
-  const w = window.open('', '_blank', 'width=860,height=1000,scrollbars=yes');
+function showApostillePreview(html) {
+  const container=document.getElementById('blankPreview');
+  const outer=document.getElementById('previewOuter');
+  const scaleWrap=document.getElementById('blankScaleWrap');
+  // Прячем фон birth cert
+  document.getElementById('bgDiv').style.display='none';
+  document.getElementById('overlayFields').innerHTML='';
+  // Создаём iframe с белым бланком
+  let iframe=document.getElementById('apostilleIframe');
+  if(!iframe){
+    iframe=document.createElement('iframe');
+    iframe.id='apostilleIframe';
+    iframe.style.cssText='width:794px;height:1123px;border:none;display:block;background:#fff;';
+    scaleWrap.appendChild(iframe);
+  }
+  iframe.srcdoc=html;
+  const containerW=container.offsetWidth||460;
+  const scale=containerW/794;
+  scaleWrap.style.transform=`scale(${scale})`;
+  outer.style.height=Math.round(1123*scale*0.55)+'px';
+  container.style.display='block';
+  container.style.opacity='0';
+  container.style.transform='translateY(8px)';
+  container.style.transition='opacity .4s, transform .4s';
+  requestAnimationFrame(()=>{container.style.opacity='1';container.style.transform='translateY(0)';});
+}
+
+function openFullDoc(){
+  if(!window._pdfHtml){toast('err','Нет документа');return}
+  const w=window.open('','_blank','width=860,height=1000,scrollbars=yes');
   w.document.write(window._pdfHtml);
   w.document.close();
 }
 
-function downloadDocx(){
-  if(!window._docxBase64){toast('err','Нет файла');return}
-  const bin=atob(window._docxBase64);
-  const buf=new Uint8Array(bin.length);
-  for(let i=0;i<bin.length;i++) buf[i]=bin.charCodeAt(i);
-  const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download='BirthCert_'+(window._orderNum||Date.now())+'.docx';
-  a.click();toast('ok','✓ DOCX скачан');
-}
-
-function downloadHtml(){
-  if(!window._pdfHtml){toast('err','Нет файла');return}
-  const blob=new Blob([window._pdfHtml],{type:'text/html;charset=utf-8'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download='BirthCert_'+(window._orderNum||Date.now())+'_с_фоном.html';
-  a.click();toast('ok','✓ HTML скачан — откройте в браузере и распечатайте');
-}
-
-function downloadPDF(){downloadDocx();}
-
+// ── PAYMENT ────────────────────────────────────────────────
 async function doPayment(){
   if(!translationText){toast('err','Сначала сгенерируйте перевод');return}
   const email=document.getElementById('fEmail').value.trim();
   if(!email){toast('err','Введите email для получения документов');return}
-
   toast('info','💳 Переход к оплате...');
 
-  // Собираем payload для передачи в Stripe metadata
-  const payload = {
-    email,
-    childName:       document.getElementById('fLast').value.trim()+' '+document.getElementById('fFirst').value.trim()+' '+document.getElementById('fMid').value.trim(),
-    firstName:       document.getElementById('fFirst').value.trim(),
-    lastName:        document.getElementById('fLast').value.trim(),
-    middleName:      document.getElementById('fMid').value.trim(),
-    dob:             document.getElementById('fDob').value.trim(),
-    sex:             document.getElementById('fSex').value.trim(),
-    timeOfBirth:     document.getElementById('fTime').value.trim(),
-    weight:          document.getElementById('fWeight').value.trim(),
-    hospitalType:    document.getElementById('fHospType').value.trim(),
-    hospital:        document.getElementById('fHosp').value.trim(),
-    cityCounty:      document.getElementById('fPlace').value.trim(),
-    stateRegNum:     document.getElementById('fRegNum').value.trim(),
-    dateIssued:      document.getElementById('fIssued').value.trim(),
-    dateRegistered:  document.getElementById('fRegDate').value.trim(),
-    motherName:      document.getElementById('fMom').value.trim(),
-    motherDob:       document.getElementById('fMomDob').value.trim(),
-    motherBirthPlace:document.getElementById('fMomBirth').value.trim(),
-    fatherName:      document.getElementById('fDad').value.trim(),
-    fatherDob:       document.getElementById('fDadDob').value.trim(),
-    fatherBirthPlace:document.getElementById('fDadBirth').value.trim(),
-    reqNum:          document.getElementById('fReqNum').value.trim(),
-    barcodeNum:      document.getElementById('fBarcodeNum').value.trim(),
-    state:           document.getElementById('fState').value,
-    docType:         document.getElementById('fDocType').value,
-    orderNum:        window._orderNum || '',
-  };
+  const docType=document.getElementById('fDocType').value;
+  let payload={email, docType, state:document.getElementById('fState').value, orderNum:window._orderNum||''};
+
+  if(docType==='apostille'){
+    // Апостиль payload
+    Object.assign(payload, window._apostillePayload||{});
+  } else {
+    // Birth cert payload
+    Object.assign(payload,{
+      childName:document.getElementById('fLast').value.trim()+' '+document.getElementById('fFirst').value.trim()+' '+document.getElementById('fMid').value.trim(),
+      firstName:document.getElementById('fFirst').value.trim(),
+      lastName:document.getElementById('fLast').value.trim(),
+      middleName:document.getElementById('fMid').value.trim(),
+      dob:document.getElementById('fDob').value.trim(),
+      sex:document.getElementById('fSex').value.trim(),
+      timeOfBirth:document.getElementById('fTime').value.trim(),
+      weight:document.getElementById('fWeight').value.trim(),
+      hospitalType:document.getElementById('fHospType').value.trim(),
+      hospital:document.getElementById('fHosp').value.trim(),
+      cityCounty:document.getElementById('fPlace').value.trim(),
+      stateRegNum:document.getElementById('fRegNum').value.trim(),
+      dateIssued:document.getElementById('fIssued').value.trim(),
+      dateRegistered:document.getElementById('fRegDate').value.trim(),
+      motherName:document.getElementById('fMom').value.trim(),
+      motherDob:document.getElementById('fMomDob').value.trim(),
+      motherBirthPlace:document.getElementById('fMomBirth').value.trim(),
+      fatherName:document.getElementById('fDad').value.trim(),
+      fatherDob:document.getElementById('fDadDob').value.trim(),
+      fatherBirthPlace:document.getElementById('fDadBirth').value.trim(),
+      reqNum:document.getElementById('fReqNum').value.trim(),
+      barcodeNum:document.getElementById('fBarcodeNum').value.trim(),
+    });
+  }
 
   try {
-    const resp = await fetch('/api/checkout', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify(payload)
-    });
-    const data = await resp.json();
-    if (data.ok && data.url) {
-      window.location.href = data.url;
-    } else {
-      toast('err', 'Ошибка: ' + (data.error || 'Попробуйте ещё раз'));
-    }
-  } catch(e) {
-    toast('err', 'Ошибка соединения');
-  }
+    const resp=await fetch('/api/checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const data=await resp.json();
+    if(data.ok&&data.url){ window.location.href=data.url; }
+    else { toast('err','Ошибка: '+(data.error||'Попробуйте ещё раз')); }
+  } catch(e){ toast('err','Ошибка соединения'); }
 }
 
-// ─── DRAG & DROP ─────────────────────────────────────────
+// ── DRAG & DROP (birth cert zone) ─────────────────────────
 const uz=document.getElementById('uZone');
 uz.addEventListener('dragover',e=>{e.preventDefault();uz.style.borderColor='var(--blue)'});
 uz.addEventListener('dragleave',()=>uz.style.borderColor='');
 uz.addEventListener('drop',e=>{
   e.preventDefault(); uz.style.borderColor='';
   const f=e.dataTransfer.files[0];
-  if(f){const dt=new DataTransfer();dt.items.add(f);document.getElementById('fInput').files=dt.files;handleUpload(document.getElementById('fInput'))}
+  if(f){const dt=new DataTransfer();dt.items.add(f);document.getElementById('fInput').files=dt.files;handleUpload(document.getElementById('fInput'));}
 });
-window.addEventListener('load', function() {
-  // Полная очистка всех полей при загрузке
-  function clearAllFields() {
-    document.querySelectorAll('input.fi, input.fdate, input[type="email"], input[type="text"], input[type="number"]').forEach(el => {
-      el.value = '';
-      el.setAttribute('autocomplete', 'new-password');
-      el.setAttribute('name', 'f_' + Math.random().toString(36).slice(2));
+
+// ── DRAG & DROP (apostille zone) ──────────────────────────
+const uzAp=document.getElementById('uZoneAp');
+uzAp.addEventListener('dragover',e=>{e.preventDefault();uzAp.style.borderColor='var(--blue)'});
+uzAp.addEventListener('dragleave',()=>uzAp.style.borderColor='');
+uzAp.addEventListener('drop',e=>{
+  e.preventDefault(); uzAp.style.borderColor='';
+  const f=e.dataTransfer.files[0];
+  if(f){const dt=new DataTransfer();dt.items.add(f);document.getElementById('fInputAp').files=dt.files;handleUploadApostille(document.getElementById('fInputAp'));}
+});
+
+// ── CLEAR ON LOAD ─────────────────────────────────────────
+window.addEventListener('load',function(){
+  function clearAllFields(){
+    document.querySelectorAll('input.fi,input[type="email"]').forEach(el=>{
+      el.value='';
+      el.setAttribute('autocomplete','new-password');
+      el.setAttribute('name','f_'+Math.random().toString(36).slice(2));
     });
-    document.querySelectorAll('select').forEach(el => {
-      el.selectedIndex = 0;
-    });
+    document.querySelectorAll('select').forEach(el=>{el.selectedIndex=0;});
   }
   clearAllFields();
-  setTimeout(clearAllFields, 100);
-  setTimeout(clearAllFields, 500);
+  setTimeout(clearAllFields,100);
+  setTimeout(clearAllFields,500);
 });
 </script>
 </body>
