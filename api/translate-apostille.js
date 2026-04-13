@@ -1,6 +1,6 @@
 // api/translate-apostille.js
 const nodemailer = require('nodemailer');
-const fetch = require('node-fetch');
+// fetch — глобальный (Node 18+, Vercel)
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
